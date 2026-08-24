@@ -403,6 +403,8 @@
 "REMOVE_POSTS_SHORTS_DESC" = "Remove posts from the feed.";
 "SHORTS_FULLSCREEN" = "Pinch to Fullscreen";
 "SHORTS_FULLSCREEN_DESC" = "Manages visibility of the overlay with pinch in and pinch out gestures, displaying Shorts in fullscreen mode.";
+"HIDE_SHORTS_DESCRIPTION" = "Hide Shorts Description";
+"HIDE_SHORTS_DESCRIPTION_DESC" = "Hide the video description text in Shorts player";
 
 "TABBAR" = "Tab bar";
 "DEFAULT_TAB" = "Default startup tab";
