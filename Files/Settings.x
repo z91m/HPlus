@@ -396,6 +396,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_SUB_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_SUB_BUTTON_DESC"), RemoveShortsPausedSubButton),
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_LIVE_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_LIVE_BUTTON_DESC"), RemoveShortsPausedLiveButton),
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_LENS_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_LENS_BUTTON_DESC"), RemoveShortsPausedLensButton),
+            YMToggle(YMLOC(@"HIDE_SHORTS_DESCRIPTION"), YMLOC(@"HIDE_SHORTS_DESCRIPTION_DESC"), HideShortsDescription),
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_TRENDS_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_TRENDS_BUTTON_DESC"), RemoveShortsPausedTrendsButton),
     ];
     YMRegisterSettingsGroup(YMLOC(@"SHORTS"), shortsItems);
