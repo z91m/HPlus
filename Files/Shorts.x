@@ -180,6 +180,27 @@ static void YouModFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     [maindpView removeFromSuperview];
 }
 
+// ✅ الدالة الجديدة لإخفاء وصف الفيديو في الشورت
+static void YouModFilterShortsDescription(_ASDisplayView *self, NSString *iden) {
+    if (!IS_ENABLED(HideShortsDescription)) return;
+    if (!iden) return;
+    
+    // قائمة بالمعرفات المحتملة لعنصر الوصف في الشورت
+    NSArray *possibleIds = @[
+        @"id.shorts.description",
+        @"eml.shorts-description",
+        @"shorts_description",
+        @"description"
+    ];
+    
+    for (NSString *target in possibleIds) {
+        if ([iden containsString:target] || [iden isEqualToString:target]) {
+            [self removeFromSuperview];
+            break;
+        }
+    }
+}
+
 // _ASDisplayView filters
 %hook _ASDisplayView
 - (void)didMoveToWindow {
@@ -203,6 +224,7 @@ static void YouModFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     
     YouModFilterShortsButtons(self, iden);
     YouModFilterShortsPausedHeader(self, iden);
+    YouModFilterShortsDescription(self, iden);  // ✅ استدعاء الدالة الجديدة
     YouModFilterShortsDisclosure(self, iden);
 }
 %end
