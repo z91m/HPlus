@@ -403,6 +403,8 @@
 "REMOVE_POSTS_SHORTS_DESC" = "إزالة المنشورات من الصفحة الرئيسية.";
 "SHORTS_FULLSCREEN" = "القرص لملء الشاشة";
 "SHORTS_FULLSCREEN_DESC" = "إدارة ظهور الطبقة العلوية بإيماءات القرص للداخل والخارج، لعرض Shorts في وضع ملء الشاشة.";
+"HIDE_SHORTS_DESCRIPTION" = "إخفاء وصف الشورت";
+"HIDE_SHORTS_DESCRIPTION_DESC" = "إخفاء نص وصف الفيديو في مشغل الشورتات";
 
 "TABBAR" = "شريط التبويبات";
 "DEFAULT_TAB" = "تبويب البدء الافتراضي";
