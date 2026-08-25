@@ -541,7 +541,7 @@ static void YouModAddEndTime(YTPlayerViewController *self, YTSingleVideoControll
 
 %new(d@:)
 - (int)maximumPlaybackRate {
-    return 10.0;
+    return 10.0 * 100;
 }
 
 %end
