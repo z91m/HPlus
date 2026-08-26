@@ -126,9 +126,8 @@ jobs:
 
           cd ..
           
-          # ضغط ملفات المشروع كاملة
-          zip -r YouMod_Source_and_Project_${VERSION}.zip YouMod -x "YouMod/.git/*"
-          mv YouMod_Source_and_Project_${VERSION}.zip ${{ github.workspace }}/
+          # ضغط ملفات المشروع مباشرة إلى المجلد الرئيسي
+          zip -r "${{ github.workspace }}/YouMod_Source_and_Project_${VERSION}.zip" YouMod -x "YouMod/.git/*"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
