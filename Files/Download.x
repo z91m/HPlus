@@ -2017,14 +2017,26 @@ void YouModConfigureDownloadButton(_ASDisplayView *view) {
 
     if ([view.accessibilityIdentifier isEqualToString:@"id.ui.add_to.offline.button"]) {
         view.userInteractionEnabled = YES;
+
+        YGNodeRef yogaNode = [view yogaNode];
+        if (yogaNode) {
+            YGNodeMarkDirty(yogaNode);
+        }
+
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(YouModDownloadButtonTapped:)];
         tap.cancelsTouchesInView = YES;
         tap.delaysTouchesBegan = YES;
         tap.delaysTouchesEnded = YES;
         [view addGestureRecognizer:tap];
+
+        if ([view respondsToSelector:@selector(setNeedsLayout)]) {
+            [view setNeedsLayout];
+        }
+
         objc_setAssociatedObject(view, @selector(YouModDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 }
+
 
 static void YouModShowTranslationDialog(NSString *text, UIViewController *presenter) {
     if (!text || text.length == 0 || !presenter) return;
