@@ -192,8 +192,8 @@ static void YouModFilterShortsDescription(_ASDisplayView *self, NSString *iden) 
         @"eml.shorts-description",
         @"shorts_description",
         @"shortDescription",
-        @"description"
-        @"description"
+        @"description",
+        @"description",
     ];
     
     for (NSString *target in possibleIds) {
