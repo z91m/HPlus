@@ -7,6 +7,8 @@
 #import <dlfcn.h>
 #import <stdarg.h>
 #import <stdlib.h>
+#import <Yoga/Yoga.h>
+#import <YogaKit/UIView+Yoga.h>
 
 @interface YouModMenuItem : NSObject
 @property (nonatomic, copy) NSString *title;
