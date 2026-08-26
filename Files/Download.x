@@ -7,8 +7,6 @@
 #import <dlfcn.h>
 #import <stdarg.h>
 #import <stdlib.h>
-#import <Yoga/Yoga.h>
-#import <YogaKit/UIView+Yoga.h>
 
 @interface YouModMenuItem : NSObject
 @property (nonatomic, copy) NSString *title;
@@ -2020,11 +2018,6 @@ void YouModConfigureDownloadButton(_ASDisplayView *view) {
     if ([view.accessibilityIdentifier isEqualToString:@"id.ui.add_to.offline.button"]) {
         view.userInteractionEnabled = YES;
 
-        YGNodeRef yogaNode = [view yogaNode];
-        if (yogaNode) {
-            YGNodeMarkDirty(yogaNode);
-        }
-
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(YouModDownloadButtonTapped:)];
         tap.cancelsTouchesInView = YES;
         tap.delaysTouchesBegan = YES;
@@ -2033,6 +2026,9 @@ void YouModConfigureDownloadButton(_ASDisplayView *view) {
 
         if ([view respondsToSelector:@selector(setNeedsLayout)]) {
             [view setNeedsLayout];
+        }
+        if ([view respondsToSelector:@selector(layoutIfNeeded)]) {
+            [view layoutIfNeeded];
         }
 
         objc_setAssociatedObject(view, @selector(YouModDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
