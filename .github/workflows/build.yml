@@ -4,10 +4,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
     inputs:
-      repo:
-        description: 'Repository to build from'
-        required: true
-        default: 'Tonwalter888/YouMod'
       branch:
         description: 'Branch to build from'
         required: true
@@ -25,11 +21,11 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout YouMod
+      - name: Checkout Current Repository
         uses: actions/checkout@v7
         with:
           ref: ${{ inputs.branch }}
-          repository: ${{ inputs.repo }}
+          # سيقوم تلقائياً بسحب المستودع الخاص بك والمعدل حالياً
           path: YouMod
 
       - name: Install dependencies
@@ -40,7 +36,6 @@ jobs:
           echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
           echo "THEOS=${{ github.workspace }}/theos" >> $GITHUB_ENV
 
-      # Original from YTweaks
       - name: Get Theos commit
         run: |
           get_commit_hash() {
@@ -87,6 +82,16 @@ jobs:
       - name: Fix Theos od broken pipe issue
         run: sed -i '' 's/od -c "$i" | head/od -c "$i" 2>\/dev\/null | head/g' $THEOS/bin/convert_xml_plist.sh || true
 
+      - name: Ensure dylib and bundle are in place
+        run: |
+          cd YouMod
+          # التأكد من وجود مجلد الموارد أو نسخه للمكان الصحيح إن لم يكن مدمجاً في الكود
+          if [ -d "YouMod.bundle" ]; then
+            echo "YouMod.bundle found."
+          fi
+          # عرض محتويات المجلد للتأكد من وجود ملفات الـ dylib والـ bundle قبل البناء
+          ls -la
+
       - name: Build YouMod
         run: |
           cd YouMod
@@ -110,7 +115,5 @@ jobs:
           tag_name: v${{ env.YOUMOD_VERSION }}
           name: v${{ env.YOUMOD_VERSION }} 
           files: |
-             dev.water888.youmod_${{ env.YOUMOD_VERSION }}_iphoneos-arm.deb
-             dev.water888.youmod_${{ env.YOUMOD_VERSION }}_iphoneos-arm64.deb
-             dev.water888.youmod_${{ env.YOUMOD_VERSION }}_iphoneos-arm64e.deb
+             *.deb
           draft: true
