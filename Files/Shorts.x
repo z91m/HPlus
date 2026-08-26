@@ -188,6 +188,11 @@ static void YouModFilterShortsDescription(_ASDisplayView *self, NSString *iden) 
         @"id.shorts.description",
         @"eml.shorts-description",
         @"shorts_description",
+        @"id.shorts.description",
+        @"eml.shorts-description",
+        @"shorts_description",
+        @"shortDescription",
+        @"description"
         @"description"
     ];
     
