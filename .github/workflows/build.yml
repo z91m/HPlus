@@ -82,50 +82,51 @@ jobs:
         run: sed -i '' 's/od -c "$i" | head/od -c "$i" 2>\/dev\/null | head/g' $THEOS/bin/convert_xml_plist.sh || true
 
       - name: Build and Extract Dylibs
+        shell: bash
         run: |
           cd YouMod
           VERSION=$(grep '^Version:' control | cut -d ' ' -f2)
           echo "YOUMOD_VERSION=$VERSION" >> $GITHUB_ENV
           
-          # دالة لبناء الحزمة واستخراج ملف الـ dylib وتسميته بالشكل المطلوب
-          build_and_extract() {
-            local scheme=$1
-            local arch_suffix=$2
-            
-            make clean package DEBUG=0 FINALPACKAGE=1 ${scheme:+THEOS_PACKAGE_SCHEME=$scheme}
-            
-            # العثور على ملف deb الناتج
-            DEB_FILE=$(ls packages/*.deb | head -n 1)
-            if [ -z "$DEB_FILE" ]; then
-              echo "Error: No deb file found!"
-              exit 1
-            }
-            
-            # فك حزمة الـ deb مؤقتاً لاستخراج ملف الـ dylib وباقي الملفات (مثل الـ bundle)
-            mkdir -p temp_extracted
-            dpkg-deb -x "$DEB_FILE" temp_extracted
-            
-            # البحث عن ملف dylib داخل الحزمة المفكوكة ونقله للمجلد الرئيسي مع الاسم الجديد
-            FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
-            if [ -n "$FOUND_DYLIB" ]; then
-              cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.youmod_${VERSION}_${arch_suffix}.dylib"
-            else
-              echo "Warning: .dylib not found inside $DEB_FILE"
-            fi
-            
-            rm -rf temp_extracted
-            make clean
-          }
-          
-          # البناء لمعماريات ومخططات مختلفة (يمكنك تعديل اللاحقة حسب رغبتك)
-          # مثال: arm64e, arm64, arm
-          build_and_extract "" "iphoneos-arm64e"
-          build_and_extract "rootless" "iphoneos-arm64"
-          build_and_extract "roothide" "iphoneos-arm"
-          
+          # البناء واستخراج الـ dylib الأول (arm64e)
+          make clean package DEBUG=0 FINALPACKAGE=1
+          DEB_FILE=$(ls packages/*.deb | head -n 1)
+          mkdir -p temp_extracted
+          dpkg-deb -x "$DEB_FILE" temp_extracted
+          FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
+          if [ -n "$FOUND_DYLIB" ]; then
+            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.youmod_${VERSION}_iphoneos-arm64e.dylib"
+          fi
+          rm -rf temp_extracted
+          make clean
+
+          # البناء واستخراج الـ dylib الثاني (rootless - arm64)
+          make clean package DEBUG=0 FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
+          DEB_FILE=$(ls packages/*.deb | head -n 1)
+          mkdir -p temp_extracted
+          dpkg-deb -x "$DEB_FILE" temp_extracted
+          FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
+          if [ -n "$FOUND_DYLIB" ]; then
+            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.youmod_${VERSION}_iphoneos-arm64.dylib"
+          fi
+          rm -rf temp_extracted
+          make clean
+
+          # البناء واستخراج الـ dylib الثالث (roothide - arm)
+          make clean package DEBUG=0 FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=roothide
+          DEB_FILE=$(ls packages/*.deb | head -n 1)
+          mkdir -p temp_extracted
+          dpkg-deb -x "$DEB_FILE" temp_extracted
+          FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
+          if [ -n "$FOUND_DYLIB" ]; then
+            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.youmod_${VERSION}_iphoneos-arm.dylib"
+          fi
+          rm -rf temp_extracted
+          make clean
+
           cd ..
           
-          # ضغط ملفات المشروع كاملة (بما فيها الكود المصدري وYouMod.bundle وملفات التكوين)
+          # ضغط ملفات المشروع كاملة
           zip -r YouMod_Source_and_Project_${VERSION}.zip YouMod -x "YouMod/.git/*"
           mv YouMod_Source_and_Project_${VERSION}.zip ${{ github.workspace }}/
 
