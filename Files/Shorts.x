@@ -55,19 +55,31 @@ static BOOL isFullscreenEnabled = NO;
         id pivotBarProvider = [self valueForKey:@"_pivotBarProvider"];
         if (pivotBarProvider && [pivotBarProvider respondsToSelector:@selector(hidePivotBar)]) {
             [pivotBarProvider performSelector:@selector(hidePivotBar)];
+        }
+    }
+    
     YTPlayerViewController *main = self.player;
+    
     if (INTFORVAL(CaptionTrack) != 0) {
         SEL captionsSelector = NSSelectorFromString(@"YouModAutoCaptions");
         if ([main respondsToSelector:captionsSelector]) {
             [main performSelector:captionsSelector withObject:nil afterDelay:0.5];
+        }
+    }
+    
     if (INTFORVAL(AutoSpeedIndex) != 0) {
         SEL speedSelector = NSSelectorFromString(@"YouModSetAutoSpeed");
         if ([main respondsToSelector:speedSelector]) {
             [main performSelector:speedSelector withObject:nil afterDelay:0.5];
+        }
+    }
+    
     if (INTFORVAL(AudioTrack) != 0) {
         SEL audioSelector = NSSelectorFromString(@"YouModAutoAudioTrack:");
         if ([self respondsToSelector:audioSelector]) {
             [self performSelector:audioSelector withObject:main afterDelay:0.5];
+        }
+    }
 }
 %new
 - (void)YouModAutoAudioTrack:(YTPlayerViewController *)pv {
