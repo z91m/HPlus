@@ -51,11 +51,23 @@ static BOOL isFullscreenEnabled = NO;
 }
 - (void)loadPlayerBar {
     %orig;
-    if ((isShortsOnlyOn && IS_ENABLED(ShortsOnly)) || (isFullscreenEnabled && IS_ENABLED(FullScreenShorts))) [[self valueForKey:@"_pivotBarProvider"] performSelector:@selector(hidePivotBar)];
+    if ((isShortsOnlyOn && IS_ENABLED(ShortsOnly)) || (isFullscreenEnabled && IS_ENABLED(FullScreenShorts))) {
+        id pivotBarProvider = [self valueForKey:@"_pivotBarProvider"];
+        if (pivotBarProvider && [pivotBarProvider respondsToSelector:@selector(hidePivotBar)]) {
+            [pivotBarProvider performSelector:@selector(hidePivotBar)];
     YTPlayerViewController *main = self.player;
-    if (INTFORVAL(CaptionTrack) != 0) [main performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.5];
-    if (INTFORVAL(AutoSpeedIndex) != 0) [main performSelector:@selector(YouModSetAutoSpeed) withObject:nil afterDelay:0.5];
-    if (INTFORVAL(AudioTrack) != 0) [self performSelector:@selector(YouModAutoAudioTrack:) withObject:main afterDelay:0.5];
+    if (INTFORVAL(CaptionTrack) != 0) {
+        SEL captionsSelector = NSSelectorFromString(@"YouModAutoCaptions");
+        if ([main respondsToSelector:captionsSelector]) {
+            [main performSelector:captionsSelector withObject:nil afterDelay:0.5];
+    if (INTFORVAL(AutoSpeedIndex) != 0) {
+        SEL speedSelector = NSSelectorFromString(@"YouModSetAutoSpeed");
+        if ([main respondsToSelector:speedSelector]) {
+            [main performSelector:speedSelector withObject:nil afterDelay:0.5];
+    if (INTFORVAL(AudioTrack) != 0) {
+        SEL audioSelector = NSSelectorFromString(@"YouModAutoAudioTrack:");
+        if ([self respondsToSelector:audioSelector]) {
+            [self performSelector:audioSelector withObject:main afterDelay:0.5];
 }
 %new
 - (void)YouModAutoAudioTrack:(YTPlayerViewController *)pv {
