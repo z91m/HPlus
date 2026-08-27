@@ -261,6 +261,7 @@ static void YouModFilterShortsDescription(UIView *self, NSString *iden) {
     @"id.shorts.video_title",
     @"eml.shorts-video-title",
     @"YTShortsVideoTitleView",
+    @"id.reels_smv_player_title_label",
     @"YTReelTitleLabel",
     ];
     
