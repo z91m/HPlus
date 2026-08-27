@@ -253,7 +253,7 @@ static void YouModFilterShortsDescription(_ASDisplayView *self, NSString *iden) 
     }
 }
 %new
-- (void)YouModFullscrrenGestureHandler:(UIPinchGestureRecognizer *)gesture {
+- (void)YouModFullscreenGestureHandler:(UIPinchGestureRecognizer *)gesture {
     if (gesture.state != UIGestureRecognizerStateBegan || (isShortsOnlyOn && IS_ENABLED(ShortsOnly))) return;
     UIViewController *appVC = [self valueForKey:@"_pivotBarProvider"];
     BOOL isTabBarHidden = [appVC performSelector:@selector(isPivotBarHidden)];
