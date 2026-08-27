@@ -254,9 +254,14 @@ static void YouModFilterShortsDescription(UIView *self, NSString *iden) {
     if (!iden) return;
     
     NSArray *possibleIds = @[
-        @"id.shorts.description",
-        @"eml.shorts-description",
-        @"shorts_description"
+    @"id.shorts.description",
+    @"eml.shorts-description",
+    @"shorts_description",
+    @"reel.player.title.access",
+    @"id.shorts.video_title",
+    @"eml.shorts-video-title",
+    @"YTShortsVideoTitleView",
+    @"YTReelTitleLabel",
     ];
     
     for (NSString *target in possibleIds) {
