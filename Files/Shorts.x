@@ -63,9 +63,7 @@
 static void YouModMakeAShortsAction(YTReelPlayerViewController *self, YTSingleVideoController *video, YTSingleVideoTime *time) {
     if (INTFORVAL(ShortsActionIndex) == 0) return;
     
-    // ✅ FIX: Use tolerance to avoid floating point issues
     if (time.time >= video.totalMediaTime - 0.1) {
-        // ✅ FIX: Get contentView and call methods on it
         id contentView = [self valueForKey:@"contentView"];
         if (!contentView) return;
         
@@ -103,7 +101,6 @@ static BOOL isFullscreenEnabled = NO;
 - (void)loadPlayerBar {
     %orig;
     
-    // Hide pivot bar if ShortsOnly or FullScreenShorts is enabled
     if ((isShortsOnlyOn && IS_ENABLED(ShortsOnly)) || (isFullscreenEnabled && IS_ENABLED(FullScreenShorts))) {
         id pivotBarProvider = [self valueForKey:@"_pivotBarProvider"];
         if (pivotBarProvider && [pivotBarProvider respondsToSelector:@selector(hidePivotBar)]) {
@@ -114,7 +111,6 @@ static BOOL isFullscreenEnabled = NO;
     YTPlayerViewController *main = self.player;
     if (!main) return;
     
-    // Auto captions (if selector exists)
     if (INTFORVAL(CaptionTrack) != 0) {
         SEL captionsSelector = NSSelectorFromString(@"YouModAutoCaptions");
         if ([main respondsToSelector:captionsSelector]) {
@@ -122,7 +118,6 @@ static BOOL isFullscreenEnabled = NO;
         }
     }
     
-    // Auto speed (if selector exists)
     if (INTFORVAL(AutoSpeedIndex) != 0) {
         SEL speedSelector = NSSelectorFromString(@"YouModSetAutoSpeed");
         if ([main respondsToSelector:speedSelector]) {
@@ -130,7 +125,6 @@ static BOOL isFullscreenEnabled = NO;
         }
     }
     
-    // Auto audio track
     if (INTFORVAL(AudioTrack) != 0) {
         SEL audioSelector = NSSelectorFromString(@"YouModAutoAudioTrack:");
         if ([self respondsToSelector:audioSelector]) {
@@ -157,7 +151,6 @@ static BOOL isFullscreenEnabled = NO;
     YTIAudioTrack *matchedTrack = nil;
     
     if (INTFORVAL(AudioTrack) == 1) {
-        // Select original audio (suffix ".4")
         for (YTIAudioTrack *track in availableTracks) {
             if ([track.id_p hasSuffix:@".4"]) {
                 matchedTrack = track;
@@ -165,7 +158,6 @@ static BOOL isFullscreenEnabled = NO;
             }
         }
     } else if (INTFORVAL(AudioTrack) == 2) {
-        // Select by language prefix
         for (YTIAudioTrack *track in availableTracks) {
             if ([track.id_p hasPrefix:userTargetLang]) {
                 matchedTrack = track;
@@ -173,12 +165,10 @@ static BOOL isFullscreenEnabled = NO;
             }
         }
         
-        // Skip dubbed tracks if needed
         if (matchedTrack && [matchedTrack isAutoDubbed] && IS_ENABLED(NoDubbedAudioTrack)) {
             matchedTrack = nil;
         }
         
-        // Fallback to original audio if no matching track found
         if (!matchedTrack && IS_ENABLED(NoDubbedAudioTrack)) {
             for (YTIAudioTrack *track in availableTracks) {
                 if ([track.id_p hasSuffix:@".4"]) {
@@ -263,7 +253,6 @@ static void YouModFilterShortsDescription(UIView *self, NSString *iden) {
     if (!IS_ENABLED(HideShortsDescription)) return;
     if (!iden) return;
     
-    // ✅ FIX: Use only the specific identifiers for Shorts description
     NSArray *possibleIds = @[
         @"id.shorts.description",
         @"eml.shorts-description",
@@ -285,9 +274,6 @@ static void YouModFilterShortsDescription(UIView *self, NSString *iden) {
 %hook _ASDisplayView
 - (void)didMoveToWindow {
     %orig;
-    
-    // ✅ FIX: Removed undefined YouModConfigureDownloadButton
-    // YouModConfigureDownloadButton(self);
     
     NSString *iden = self.accessibilityIdentifier;
     if (!iden || iden.length == 0) return;
@@ -344,7 +330,6 @@ static void YouModFilterShortsDescription(UIView *self, NSString *iden) {
     %orig;
     if (!IS_ENABLED(FullScreenShorts)) return;
     if (!self.YouModFullscreenGesture) {
-        // ✅ FIX: Corrected method name
         self.YouModFullscreenGesture = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(YouModFullscreenGestureHandler:)];
         self.YouModFullscreenGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
         [self addGestureRecognizer:self.YouModFullscreenGesture];
@@ -416,18 +401,21 @@ static void YouModFilterShortsDescription(UIView *self, NSString *iden) {
     
     isShortsOnlyOn = NO;
     
-    // ✅ FIX: Use UIAlertController instead of undefined functions
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Shorts Only Disabled"
                                                                    message:@"You can now browse other content"
                                                             preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
     
+    // ✅ FIX: Suppress deprecation warning for keyWindow
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+    #pragma clang diagnostic pop
+    
     if (topVC) {
         [topVC presentViewController:alert animated:YES completion:nil];
     }
     
-    // ✅ FIX: Safely get pivotBarProvider
     id parentResponder = [self valueForKey:@"_parentResponder"];
     id delegate = [parentResponder valueForKey:@"_delegate"];
     id pivotBarProvider = [delegate valueForKey:@"_pivotBarProvider"];
