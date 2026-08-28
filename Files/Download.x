@@ -2367,8 +2367,6 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
 
 %end
 
-%end
-
 %ctor {
     %init;
     YMOverlayButtonSpec *download = [[YMOverlayButtonSpec alloc] init];
