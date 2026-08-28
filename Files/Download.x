@@ -2319,11 +2319,10 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
         [self addSubview:downloadBtn];
     }
 
-    // الحصول على الشريط الجانبي (actionBar)
     YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
     if (!actionBar) return;
 
-    // جمع الأزرار المرئية من نوع YTQTMButton في actionBar
+    // جمع الأزرار المرئية
     NSMutableArray *visibleButtons = [NSMutableArray array];
     for (UIView *subview in actionBar.subviews) {
         if ([subview isKindOfClass:NSClassFromString(@"YTQTMButton")] && !subview.hidden && subview.alpha > 0.01) {
@@ -2331,27 +2330,39 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
         }
     }
 
-    // ترتيب الأزرار حسب الإطار الرأسي (من الأعلى إلى الأسفل)
+    // ترتيب الأزرار من الأعلى إلى الأسفل
     [visibleButtons sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
         return a.frame.origin.y > b.frame.origin.y;
     }];
 
     CGFloat btnWidth = 64.0;
     CGFloat btnHeight = 60.0;
+    CGFloat Y, X;
 
-    // تحديد موقع الزر:
-    // نضعه أسفل آخر زر مرئي مع هامش 8 نقاط.
-    // إذا لم يوجد أزرار، نستخدم موقع افتراضي.
-    CGFloat Y;
-    if (visibleButtons.count > 0) {
-        UIView *lastButton = visibleButtons.lastObject;
-        Y = CGRectGetMaxY(lastButton.frame) + 8;
-    } else {
-        Y = 60; // قيمة افتراضية
+    // البحث عن زر الإعجاب
+    UIView *likeButton = nil;
+    for (UIView *btn in visibleButtons) {
+        // المعرف قد يكون مختلفاً في نسختك، جرب القيمتين
+        if ([btn.accessibilityIdentifier isEqualToString:@"id.reel_like_button"] || 
+            [btn.accessibilityIdentifier isEqualToString:@"id.reel_like_toggled_button"]) {
+            likeButton = btn;
+            break;
+        }
     }
 
-    // المحاذاة الأفقية: نفس إحداثي X للشريط الجانبي (يسار أو يمين حسب التصميم)
-    CGFloat X = actionBar.frame.origin.x;
+    if (likeButton) {
+        // وضع الزر فوق زر الإعجاب (مع هامش 8 نقاط)
+        Y = likeButton.frame.origin.y - btnHeight - 8;
+        X = likeButton.frame.origin.x;
+    } else if (visibleButtons.count > 0) {
+        // إذا لم نجد زر الإعجاب، نضعه فوق أول زر (الأعلى)
+        UIView *firstButton = visibleButtons.firstObject;
+        Y = firstButton.frame.origin.y - btnHeight - 8;
+        X = firstButton.frame.origin.x;
+    } else {
+        Y = 60;
+        X = 0;
+    }
 
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
