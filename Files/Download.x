@@ -2189,6 +2189,11 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
         }
     }
 }
+%new
+- (void)layoutSubviews {
+    %orig; // استدعاء الدالة الأصلية إن وجدت
+    YouModConfigureDownloadButton(self);
+}
 
 %new
 - (void)YouModHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
