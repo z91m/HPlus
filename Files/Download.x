@@ -2304,6 +2304,7 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
 - (void)layoutSubviews {
     %orig;
     if (!IS_ENABLED(AddDownloadToShorts)) return;
+
     YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
     if (!downloadBtn) {
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
@@ -2317,21 +2318,41 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
         [downloadBtn enableNewTouchFeedback];
         [self addSubview:downloadBtn];
     }
+
+    // الحصول على الشريط الجانبي (actionBar)
+    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
+    if (!actionBar) return;
+
+    // جمع الأزرار المرئية من نوع YTQTMButton في actionBar
+    NSMutableArray *visibleButtons = [NSMutableArray array];
+    for (UIView *subview in actionBar.subviews) {
+        if ([subview isKindOfClass:NSClassFromString(@"YTQTMButton")] && !subview.hidden && subview.alpha > 0.01) {
+            [visibleButtons addObject:subview];
+        }
+    }
+
+    // ترتيب الأزرار حسب الإطار الرأسي (من الأعلى إلى الأسفل)
+    [visibleButtons sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
+        return a.frame.origin.y > b.frame.origin.y;
+    }];
+
     CGFloat btnWidth = 64.0;
     CGFloat btnHeight = 60.0;
-    YTReelElementAsyncComponentView *pov = nil;
-    @try {
-        pov = [self valueForKey:@"_playerOverlayView"];
-    } @catch (...) {}
-    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
-    CGFloat X = actionBar.frame.origin.x;
-    CGFloat Y = 0.0;
-    if (pov == nil) {
-        Y = actionBar.frame.origin.y - 76.0;
-        btnHeight = btnHeight + 16.0;
+
+    // تحديد موقع الزر:
+    // نضعه أسفل آخر زر مرئي مع هامش 8 نقاط.
+    // إذا لم يوجد أزرار، نستخدم موقع افتراضي.
+    CGFloat Y;
+    if (visibleButtons.count > 0) {
+        UIView *lastButton = visibleButtons.lastObject;
+        Y = CGRectGetMaxY(lastButton.frame) + 8;
     } else {
-        Y = pov.frame.origin.y - 60.0;
+        Y = 60; // قيمة افتراضية
     }
+
+    // المحاذاة الأفقية: نفس إحداثي X للشريط الجانبي (يسار أو يمين حسب التصميم)
+    CGFloat X = actionBar.frame.origin.x;
+
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
 }
@@ -2343,6 +2364,8 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
     UIViewController *presenter = YouModPresenterForSender(button, player);
     YouModShowDownloadManager(player, presenter, button, YES);
 }
+
+%end
 
 %end
 
