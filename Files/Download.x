@@ -1,6 +1,6 @@
 // ============================================================
-// Download.x – YouMod Download Module (Single File)
-// Organized with Separation of Concerns (Internal Sections)
+// Download.x – YouMod Download Module
+// Modified to avoid macro conflicts with Headers.h
 // ============================================================
 
 #import "Headers.h"
@@ -14,7 +14,7 @@
 #import <stdlib.h>
 
 // ============================================================
-// MARK: - Constants & Configuration
+// MARK: - Constants (avoid redefining macros from Headers.h)
 // ============================================================
 
 static const unsigned long long YouModFastDownloadMinimumBytes = 256ULL * 1024ULL;
@@ -22,21 +22,17 @@ static const unsigned long long YouModFastDownloadChunkBytes = 4ULL * 1024ULL * 
 static const NSUInteger YouModFastDownloadConcurrency = 8;
 static const NSUInteger YouModFastDownloadMaxAttempts = 3;
 
-// إعدادات المستخدم (تقرأ من NSUserDefaults)
-#define INTFORVAL(key) [[NSUserDefaults standardUserDefaults] integerForKey:key]
-#define IS_ENABLED(key) [[NSUserDefaults standardUserDefaults] boolForKey:key]
-#define LOC(key) NSLocalizedString(key, nil)
-
-typedef NS_ENUM(NSInteger, DownloadMethod) {
-    DownloadMethodDirect = 0,
-    DownloadMethodServer = 1,
-    DownloadMethodOnDevice = 2
+// Use custom enum names to avoid conflict with #defines in Headers.h
+typedef NS_ENUM(NSInteger, YouModDownloadMethod) {
+    YouModDownloadMethodDirect = 0,
+    YouModDownloadMethodServer = 1,
+    YouModDownloadMethodOnDevice = 2
 };
 
-typedef NS_ENUM(NSInteger, PostDownloadAction) {
-    PostDownloadActionSaveToPhotos = 0,
-    PostDownloadActionShare = 1,
-    PostDownloadActionAsk = 2
+typedef NS_ENUM(NSInteger, YouModPostDownloadAction) {
+    YouModPostDownloadActionSaveToPhotos = 0,
+    YouModPostDownloadActionShare = 1,
+    YouModPostDownloadActionAsk = 2
 };
 
 // ============================================================
@@ -551,6 +547,11 @@ static void YouModShareItem(id item, UIViewController *presenter) {
     [presenter presentViewController:activity animated:YES completion:nil];
 }
 
+// تعريف الدالة المفقودة YouModShareFile
+static void YouModShareFile(NSURL *fileURL, UIViewController *presenter) {
+    YouModShareItem(fileURL, presenter);
+}
+
 // --- Post-Download Actions ---
 static NSInteger YouModGetPostDownloadAction(void) {
     return INTFORVAL(PostDownloadAction);
@@ -559,7 +560,7 @@ static NSInteger YouModGetPostDownloadAction(void) {
 static void YouModHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, UIViewController *presenter) {
     if (!fileURL) return;
     NSInteger action = YouModGetPostDownloadAction();
-    if (action == PostDownloadActionSaveToPhotos) {
+    if (action == YouModPostDownloadActionSaveToPhotos) {
         if (isVideo && YouModVideoFileCanSaveToPhotos(fileURL)) {
             YouModSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
                 if (success) YouModSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
@@ -572,10 +573,10 @@ static void YouModHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, UIViewCon
             YouModSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
             YouModShareFile(fileURL, presenter);
         }
-    } else if (action == PostDownloadActionShare) {
+    } else if (action == YouModPostDownloadActionShare) {
         YouModSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
         YouModShareFile(fileURL, presenter);
-    } else if (action == PostDownloadActionAsk) {
+    } else if (action == YouModPostDownloadActionAsk) {
         YouModShowDownloadCompleteDialog(LOC(@"DOWNLOAD_COMPLETED"), ^{
             if (isVideo && YouModVideoFileCanSaveToPhotos(fileURL)) {
                 YouModSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
@@ -598,7 +599,7 @@ static void YouModHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, UIViewCon
 static void YouModHandlePostDownloadImage(UIImage *image, UIViewController *presenter) {
     if (!image) return;
     NSInteger action = YouModGetPostDownloadAction();
-    if (action == PostDownloadActionSaveToPhotos) {
+    if (action == YouModPostDownloadActionSaveToPhotos) {
         YouModSaveImageToPhotos(image, presenter, ^(BOOL success, NSError *error) {
             if (success) YouModSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
             else {
@@ -606,10 +607,10 @@ static void YouModHandlePostDownloadImage(UIImage *image, UIViewController *pres
                 YouModShareItem(image, presenter);
             }
         });
-    } else if (action == PostDownloadActionShare) {
+    } else if (action == YouModPostDownloadActionShare) {
         YouModSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
         YouModShareItem(image, presenter);
-    } else if (action == PostDownloadActionAsk) {
+    } else if (action == YouModPostDownloadActionAsk) {
         YouModShowDownloadCompleteDialog(LOC(@"DOWNLOAD_COMPLETED"), ^{
             YouModSaveImageToPhotos(image, presenter, ^(BOOL success, NSError *error) {
                 if (success) YouModSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
@@ -1155,7 +1156,7 @@ typedef void (^YouModRangeDownloadProgress)(unsigned long long completedBytes);
 
 - (void)startDirectVideoDownloadWithVideoFormat:(YouModMediaFormat *)videoFormat audioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
     [self cleanupTemporaryFiles];
-    if (INTFORVAL(DownloadMethod) == DownloadMethodOnDevice) {
+    if (INTFORVAL(DownloadMethod) == YouModDownloadMethodOnDevice) {
         [self startSABRVideoDownloadWithVideoFormat:videoFormat audioFormat:audioFormat fileName:fileName presenter:presenter];
         return;
     }
@@ -1172,7 +1173,7 @@ typedef void (^YouModRangeDownloadProgress)(unsigned long long completedBytes);
     self.videoTempURL = YouModTemporaryFileURL(YouModFileExtensionForFormat(videoFormat));
     self.audioTempURL = YouModTemporaryFileURL(YouModFileExtensionForFormat(audioFormat));
     NSString *outputExtension = YouModMergedVideoOutputExtension(videoFormat, audioFormat);
-    if (INTFORVAL(DownloadMethod) == DownloadMethodServer) {
+    if (INTFORVAL(DownloadMethod) == YouModDownloadMethodServer) {
         [self triggerSilentDownloadWithQuality:[NSString stringWithFormat:@"%d", videoFormat.itag] isAudio:NO videoID:vidID presenter:presenter];
         return;
     }
@@ -1207,7 +1208,7 @@ typedef void (^YouModRangeDownloadProgress)(unsigned long long completedBytes);
 
 - (void)startDirectAudioDownloadWithAudioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
     [self cleanupTemporaryFiles];
-    if (INTFORVAL(DownloadMethod) == DownloadMethodOnDevice) {
+    if (INTFORVAL(DownloadMethod) == YouModDownloadMethodOnDevice) {
         [self startSABRAudioDownloadWithAudioFormat:audioFormat fileName:fileName presenter:presenter];
         return;
     }
@@ -1224,7 +1225,7 @@ typedef void (^YouModRangeDownloadProgress)(unsigned long long completedBytes);
     NSString *tempFileName = [NSString stringWithFormat:@"Temp_%@", fileName];
     NSURL *downloadURL = YouModUniqueFileURL(tempFileName, @"m4a");
     self.audioTempURL = downloadURL;
-    if (INTFORVAL(DownloadMethod) == DownloadMethodServer) {
+    if (INTFORVAL(DownloadMethod) == YouModDownloadMethodServer) {
         [self triggerSilentDownloadWithQuality:nil isAudio:YES videoID:vidID presenter:presenter];
         return;
     }
@@ -1736,7 +1737,7 @@ static void YouModShowCaptionsSheet(YTPlayerViewController *player, UIViewContro
 static void YouModShowAudioTrackSelectionSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, NSString *fileName, BOOL downloadVideo, YouModMediaFormat *videoFormat) {
     NSArray <YouModMediaFormat *> *audioFormats = YouModFormatsForPlayer(player, NO);
     if (audioFormats.count == 0) { YouModSendError(LOC(@"NO_AUDIO_STREAM_FOUND")); return; }
-    if (audioFormats.count == 1 || INTFORVAL(DownloadMethod) == DownloadMethodServer || INTFORVAL(DownloadMethod) == DownloadMethodOnDevice) {
+    if (audioFormats.count == 1 || INTFORVAL(DownloadMethod) == YouModDownloadMethodServer || INTFORVAL(DownloadMethod) == YouModDownloadMethodOnDevice) {
         YouModMediaFormat *selectedFormat = audioFormats.firstObject;
         if (downloadVideo) {
             [[YouModDownloadCoordinator sharedCoordinator] startVideoDownloadWithVideoFormat:videoFormat audioFormat:selectedFormat fileName:fileName presenter:presenter videoID:player.currentVideoID];
