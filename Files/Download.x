@@ -2322,46 +2322,49 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
     YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
     if (!actionBar) return;
 
-    // جمع الأزرار المرئية
+    // جمع جميع الأزرار المرئية (أي نوع)
     NSMutableArray *visibleButtons = [NSMutableArray array];
     for (UIView *subview in actionBar.subviews) {
-        if ([subview isKindOfClass:NSClassFromString(@"YTQTMButton")] && !subview.hidden && subview.alpha > 0.01) {
+        if (!subview.hidden && subview.alpha > 0.01) {
             [visibleButtons addObject:subview];
         }
     }
 
-    // ترتيب الأزرار من الأعلى إلى الأسفل
+    // ترتيب الأزرار من الأعلى إلى الأسفل حسب Y
     [visibleButtons sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
         return a.frame.origin.y > b.frame.origin.y;
     }];
 
     CGFloat btnWidth = 64.0;
     CGFloat btnHeight = 60.0;
-    CGFloat Y, X;
 
-    // البحث عن زر الإعجاب
-    UIView *likeButton = nil;
+    // البحث عن زر الثلاث نقاط (عادةً في الأسفل)
+    UIView *moreButton = nil;
     for (UIView *btn in visibleButtons) {
-        // المعرف قد يكون مختلفاً في نسختك، جرب القيمتين
-        if ([btn.accessibilityIdentifier isEqualToString:@"id.reel_like_button"] || 
-            [btn.accessibilityIdentifier isEqualToString:@"id.reel_like_toggled_button"]) {
-            likeButton = btn;
+        // جرب هذه المعرفات، قد تختلف حسب نسخة يوتيوب
+        if ([btn.accessibilityIdentifier isEqualToString:@"id.reel_more_button"] ||
+            [btn.accessibilityIdentifier isEqualToString:@"id.shorts_more_button"] ||
+            [btn.accessibilityIdentifier isEqualToString:@"More"]) {
+            moreButton = btn;
             break;
         }
     }
 
-    if (likeButton) {
-        // وضع الزر فوق زر الإعجاب (مع هامش 8 نقاط)
-        Y = likeButton.frame.origin.y - btnHeight - 8;
-        X = likeButton.frame.origin.x;
-    } else if (visibleButtons.count > 0) {
-        // إذا لم نجد زر الإعجاب، نضعه فوق أول زر (الأعلى)
-        UIView *firstButton = visibleButtons.firstObject;
-        Y = firstButton.frame.origin.y - btnHeight - 8;
-        X = firstButton.frame.origin.x;
+    // إذا لم نجد زر الثلاث نقاط، نأخذ آخر زر (الأسفل)
+    if (!moreButton && visibleButtons.count > 0) {
+        moreButton = visibleButtons.lastObject;
+    }
+
+    CGFloat X, Y;
+    if (moreButton) {
+        // نأخذ X من زر الثلاث نقاط لضمان المحاذاة
+        X = moreButton.frame.origin.x;
+        // نضع زر التحميل فوق زر الثلاث نقاط مع هامش 8 نقاط
+        Y = moreButton.frame.origin.y - btnHeight - 8;
     } else {
-        Y = 60;
+        // قيمة افتراضية
         X = 0;
+        Y = 60;
     }
 
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
