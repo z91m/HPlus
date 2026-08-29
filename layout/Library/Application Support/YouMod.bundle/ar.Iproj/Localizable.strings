@@ -381,6 +381,8 @@
 "REMOVE_SHORTS_TITLE_BUTTON_DESC" = "إخفاء نص وصف الفيديو في المشغل";
 "REMOVE_SHORTS_LIKE_BUTTON" = "إزالة زر الإعجاب";
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "إزالة زر الإعجاب من طبقة Shorts العلوية.";
+"REMOVE_SHORTS_SAVE_BUTTON" = "إزالة زر الحفظ";
+"REMOVE_SHORTS_SAVE_BUTTON_DESC" = "إزالة زر الحفظ / الإشارة المرجعية من واجهة الفيديوهات القصيرة.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "إزالة زر التعليق";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "إزالة زر التعليق من طبقة Shorts العلوية.";
 "REMOVE_SHORTS_SHARE_BUTTON" = "إزالة زر المشاركة";
