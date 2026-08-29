@@ -128,6 +128,7 @@ static void YouModFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
+        @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
         @"id.reels_smv_player_title_label_button": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
