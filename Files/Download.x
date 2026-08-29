@@ -2017,24 +2017,14 @@ void YouModConfigureDownloadButton(_ASDisplayView *view) {
 
     if ([view.accessibilityIdentifier isEqualToString:@"id.ui.add_to.offline.button"]) {
         view.userInteractionEnabled = YES;
-
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(YouModDownloadButtonTapped:)];
         tap.cancelsTouchesInView = YES;
         tap.delaysTouchesBegan = YES;
         tap.delaysTouchesEnded = YES;
         [view addGestureRecognizer:tap];
-
-        if ([view respondsToSelector:@selector(setNeedsLayout)]) {
-            [view setNeedsLayout];
-        }
-        if ([view respondsToSelector:@selector(layoutIfNeeded)]) {
-            [view layoutIfNeeded];
-        }
-
         objc_setAssociatedObject(view, @selector(YouModDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 }
-
 
 static void YouModShowTranslationDialog(NSString *text, UIViewController *presenter) {
     if (!text || text.length == 0 || !presenter) return;
@@ -2189,10 +2179,6 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
         }
     }
 }
-- (void)layoutSubviews {
-    %orig; // استدعاء الدالة الأصلية إن وجدت
-    YouModConfigureDownloadButton(self);
-}
 
 %new
 - (void)YouModHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
@@ -2304,7 +2290,6 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
 - (void)layoutSubviews {
     %orig;
     if (!IS_ENABLED(AddDownloadToShorts)) return;
-
     YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
     if (!downloadBtn) {
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
@@ -2318,55 +2303,21 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
         [downloadBtn enableNewTouchFeedback];
         [self addSubview:downloadBtn];
     }
-
-    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
-    if (!actionBar) return;
-
-    // جمع جميع الأزرار المرئية (أي نوع)
-    NSMutableArray *visibleButtons = [NSMutableArray array];
-    for (UIView *subview in actionBar.subviews) {
-        if (!subview.hidden && subview.alpha > 0.01) {
-            [visibleButtons addObject:subview];
-        }
-    }
-
-    // ترتيب الأزرار من الأعلى إلى الأسفل حسب Y
-    [visibleButtons sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
-        return a.frame.origin.y > b.frame.origin.y;
-    }];
-
     CGFloat btnWidth = 64.0;
     CGFloat btnHeight = 60.0;
-
-    // البحث عن زر الثلاث نقاط (عادةً في الأسفل)
-    UIView *moreButton = nil;
-    for (UIView *btn in visibleButtons) {
-        // جرب هذه المعرفات، قد تختلف حسب نسخة يوتيوب
-        if ([btn.accessibilityIdentifier isEqualToString:@"id.reel_more_button"] ||
-            [btn.accessibilityIdentifier isEqualToString:@"id.shorts_more_button"] ||
-            [btn.accessibilityIdentifier isEqualToString:@"More"]) {
-            moreButton = btn;
-            break;
-        }
-    }
-
-    // إذا لم نجد زر الثلاث نقاط، نأخذ آخر زر (الأسفل)
-    if (!moreButton && visibleButtons.count > 0) {
-        moreButton = visibleButtons.lastObject;
-    }
-
-    CGFloat X, Y;
-    if (moreButton) {
-        // نأخذ X من زر الثلاث نقاط لضمان المحاذاة
-        X = moreButton.frame.origin.x;
-        // نضع زر التحميل فوق زر الثلاث نقاط مع هامش 8 نقاط
-        Y = moreButton.frame.origin.y - btnHeight - 8;
+    YTReelElementAsyncComponentView *pov = nil;
+    @try {
+        pov = [self valueForKey:@"_playerOverlayView"];
+    } @catch (...) {}
+    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
+    CGFloat X = actionBar.frame.origin.x;
+    CGFloat Y = 0.0;
+    if (pov == nil) {
+        Y = actionBar.frame.origin.y - 76.0;
+        btnHeight = btnHeight + 16.0;
     } else {
-        // قيمة افتراضية
-        X = 0;
-        Y = 60;
+        Y = pov.frame.origin.y - 60.0;
     }
-
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
 }
