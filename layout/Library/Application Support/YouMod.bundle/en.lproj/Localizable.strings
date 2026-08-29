@@ -2,7 +2,7 @@
 "INTERFACE" = "Interface";
 
 "SEARCH" = "Search";
-"SEARCH_DESC" = "Search YouMod settings.";
+"SEARCH_DESC" = "Search Hamad Plus settings.";
 
 "URL_COPIED" = "Copied video link";
 "COPY_URL" = "Copy video link";
@@ -25,7 +25,7 @@
 "FIX_PLAYBACK_ISSUES" = "Fix playback issues (Temporary)";
 "FIX_PLAYBACK_ISSUES_DESC" = "Try to fix video playback issues for some users. Turning this on will make the player automatically reloads itself everytime it errors or fails to play the video.";
 
-"PERFER_HEADER" = "YouMod perferences";
+"PERFER_HEADER" = "Hamad Plus perferences";
 "PERFER" = "Perferences";
 "IMPORT" = "Import settings";
 "IMPORT_DESC" = "Load your preferences in a .plist file.";
@@ -52,7 +52,7 @@
 
 "DOWNLOADING" = "Downloading";
 "DOWNLOAD_MANAGER" = "Download manager";
-"DOWNLOAD_MANAGER_DESC" = "Replaces YouTube's video downloader with YouMod one. With ablity to downloading videos, audios, captions, and thumbnails.";
+"DOWNLOAD_MANAGER_DESC" = "Replaces YouTube's video downloader with Hamad Plus one. With ablity to downloading videos, audios, captions, and thumbnails.";
 "POST_DOWNLOAD_ACTION" = "Post-download action";
 "POST_ACTION_SAVE_PHOTOS" = "Save to Photos";
 "POST_ACTION_SHARE" = "Share";
