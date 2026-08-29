@@ -289,7 +289,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             [YMPicker(YMLOC(@"CAPTION_TRACK_SELECT"), YMLOC(@"CAPTION_TRACK_SELECT_DESC"), CaptionTrackLangIndex, getAllSystemLanguageTitles(), 0) visibleWhenKey:CaptionTrack equals:2],
             [YMToggle(YMLOC(@"DISABLES_CAPTION_TRACK"), YMLOC(@"DISABLES_CAPTION_TRACK_DESC"), DisablesCaptionTrack) visibleWhenKey:CaptionTrack equals:2],
             YMHeader(@""),
-            YMPicker(YMLOC(@"HOLD_TO_SPEED"), YMLOC(@"HOLD_TO_SPEED_DESC"), HoldToSpeedIndex, (@[YMLOC(@"DEFAULT"), @"0.25x", @"0.5x", @"0.75x", @"1x", @"1.25x", @"1.5x", @"1.75x", @"2x", @"3x", @"4x", @"5x", @"7.5x", @"10x"]), 0),
+            YMPicker(YMLOC(@"HOLD_TO_SPEED"), YMLOC(@"HOLD_TO_SPEED_DESC"), HoldToSpeedIndex, (@[YMLOC(@"DEFAULT"), @"0.25x", @"0.5x", @"0.75x", @"1x", @"1.25x", @"1.5x", @"1.75x", @"2x", @"3x", @"4x", @"5x"]), 0),
             [YMToggle(YMLOC(@"LOCK_SPEED"), YMLOC(@"LOCK_SPEED_DESC"), LockSpeed) visibleWhenKey:HoldToSpeedIndex isGreaterThan:0],
             YMHeader(YMLOC(@"INTERFACE")),
             YMAction(YMLOC(@"MANAGE_OVERLAY_BUTTONS"), YMLOC(@"MANAGE_OVERLAY_BUTTONS_DESC"), ^(UIViewController *vc) {
@@ -335,7 +335,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"SKIP_FORWARD"), YMLOC(@"SKIP_FORWARD_DESC"), SkipForwardEnabled),
             [YMSlider(YMLOC(@"FORWARD_SECONDS"), nil, ForwardSeconds, 5, 60, 5, 10) visibleWhenBoolKey:SkipForwardEnabled],
             YMHeader(YMLOC(@"PLAYER_ACTIONS")),
-            YMPicker(YMLOC(@"DEFAULT_SPEED"), YMLOC(@"DEFAULT_SPEED_DESC"), AutoSpeedIndex, (@[YMLOC(@"DISABLED"), @"0.25x", @"0.5x", @"0.75x", @"1x", @"1.25x", @"1.5x", @"1.75x", @"2x", @"3x", @"4x", @"5x", @"7.5x", @"10x"]), 0),
+            YMPicker(YMLOC(@"DEFAULT_SPEED"), YMLOC(@"DEFAULT_SPEED_DESC"), AutoSpeedIndex, (@[YMLOC(@"DISABLED"), @"0.25x", @"0.5x", @"0.75x", @"1x", @"1.25x", @"1.5x", @"1.75x", @"2x", @"3x", @"4x", @"5x"]), 0),
             YMToggle(YMLOC(@"FORCE_MINIPLAYER"), YMLOC(@"FORCE_MINIPLAYER_DESC"), ForceMiniPlayer),
             YMToggle(YMLOC(@"HIDE_CONTENT_WARNING"), YMLOC(@"HIDE_CONTENT_WARNING_DESC"), HideContentWarning),
             YMToggle(YMLOC(@"STOP_AUTOPLAY_VIDEO"), YMLOC(@"STOP_AUTOPLAY_VIDEO_DESC"), StopAutoplayVideo),
@@ -396,7 +396,6 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_SUB_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_SUB_BUTTON_DESC"), RemoveShortsPausedSubButton),
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_LIVE_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_LIVE_BUTTON_DESC"), RemoveShortsPausedLiveButton),
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_LENS_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_LENS_BUTTON_DESC"), RemoveShortsPausedLensButton),
-            YMToggle(YMLOC(@"HIDE_SHORTS_DESCRIPTION"), YMLOC(@"HIDE_SHORTS_DESCRIPTION_DESC"), HideShortsDescription),
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_TRENDS_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_TRENDS_BUTTON_DESC"), RemoveShortsPausedTrendsButton),
     ];
     YMRegisterSettingsGroup(YMLOC(@"SHORTS"), shortsItems);
