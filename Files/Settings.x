@@ -2,7 +2,7 @@
 // Thanks to the original codes from YTUHD by PoomSmart - https://github.com/PoomSmart/YTUHD/blob/0e735616fd8fc6546339da7fdc78466f16f23ffd/Settings.x
 #import "Headers.h"
 
-#define TweakName @"YouMod"
+#define TweakName @"Hamad Plus"
 
 #define YMLOC(x) [YouModBundle() localizedStringForKey:x value:nil table:nil]
 #define STRINGIFY(x) #x
