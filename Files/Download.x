@@ -2310,7 +2310,7 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
         pov = [self valueForKey:@"_playerOverlayView"];
     } @catch (...) {}
     YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
-    CGFloat X = actionBar.frame.origin.x;
+    CGFloat X = [UIScreen mainScreen].bounds.size.width - actionBar.frame.origin.x - btnWidth;
     CGFloat Y = 0.0;
     if (pov == nil) {
         Y = actionBar.frame.origin.y - 76.0;
