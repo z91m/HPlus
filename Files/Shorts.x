@@ -129,7 +129,6 @@ static void YouModFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"id.reels_smv_player_title_label": @(IS_ENABLED(HideShortsTitle)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
     for (NSString *button in buttonsList) {
@@ -153,6 +152,7 @@ static void YouModFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden)
         @"id.ui.shorts_paused_state.subscriptions_button": @(IS_ENABLED(RemoveShortsPausedSubButton)),
         @"id.ui.shorts_paused_state.live_button": @(IS_ENABLED(RemoveShortsPausedLiveButton)),
         @"id.ui.shorts_paused_state.lens_button": @(IS_ENABLED(RemoveShortsPausedLensButton)),
+        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsTitle)),
         @"id.ui.shorts_paused_state.trends_button" : @(IS_ENABLED(RemoveShortsPausedTrendsButton))
     };
     for (NSString *button in buttonsList) {
