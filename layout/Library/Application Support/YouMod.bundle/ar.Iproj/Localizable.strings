@@ -377,7 +377,8 @@
 "HIDE_SHORTS_RECBAR_DESC" = "إخفاء شريط الإجراءات المقترحة في مشغل Shorts (مثل: جرّب هذا الصوت، التسوق، معاينة التعليق).";
 "HIDE_SHORTS_DISCLOSURE" = "إخفاء 'يحصل على عمولة'";
 "HIDE_SHORTS_DISCLOSURE_DESC" = "إخفاء تنويه 'يحصل على عمولة' في طبقة Shorts العلوية.";
-"HIDE_SHORTS_TITEL" = "إزالة الوصف";
+"REMOVE_SHORTS_TITEL" = "إزالة الوصف";
+"REMOVE_SHORTS_TITEL_DESC" = "إخفاء نص وصف الفيديو اسفل المشغل  ";
 "REMOVE_SHORTS_LIKE_BUTTON" = "إزالة زر الإعجاب";
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "إزالة زر الإعجاب من طبقة Shorts العلوية.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "إزالة زر التعليق";
