@@ -103,7 +103,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
 
     // Tweak Version (at the top)
     // Thanks to the original codes from YTweaks by fosterbarnes - https://github.com/fosterbarnes/YTweaks/blob/e921591a89b87256a2b37c4788bd99282f70d9c2/Settings.x
-    YTSettingsSectionItem *tweakVersion = [YTSettingsSectionItemClass itemWithTitle:@"Hamad Plus v1.0.1"
+    YTSettingsSectionItem *tweakVersion = [YTSettingsSectionItemClass itemWithTitle:@"Hamad Plus v1.0.0"
         titleDescription:nil
         accessibilityIdentifier:nil
         detailTextBlock:nil
@@ -123,24 +123,13 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         }];
     [sectionItems addObject:github];
 
-    // Issues
-    YTSettingsSectionItem *issues = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"NEW_ISSUES")
-        titleDescription:YMLOC(@"NEW_ISSUES_DESC") // Found bug or Feature request -> Report Issues
-        accessibilityIdentifier:nil
-        detailTextBlock:nil
-        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/YouMod/issues/new/choose"]];
-        }
-    ];
-    [sectionItems addObject:issues];
-
     // Sources codes
     YTSettingsSectionItem *sourceCodes = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"SOURCE_CODES")
         titleDescription:YMLOC(@"SOURCE_CODES_DESC") // Take a look
         accessibilityIdentifier:nil
         detailTextBlock:nil
         selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/YouMod"]];
+            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/z91m/YouMod"]];
         }
     ];
     [sectionItems addObject:sourceCodes];
