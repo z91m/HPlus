@@ -84,7 +84,7 @@ jobs:
       - name: Build and Extract Dylibs
         shell: bash
         run: |
-          cd YouMod
+          cd youmod
           VERSION=$(grep '^Version:' control | cut -d ' ' -f2)
           echo "YOUMOD_VERSION=$VERSION" >> $GITHUB_ENV
           
