@@ -2,7 +2,7 @@
 "INTERFACE" = "الواجهة";
 
 "SEARCH" = "بحث";
-"SEARCH_DESC" = "البحث في إعدادات YouMod.";
+"SEARCH_DESC" = "البحث في إعدادات Hamad Plus.";
 
 "URL_COPIED" = "تم نسخ رابط الفيديو";
 "COPY_URL" = "نسخ رابط الفيديو";
@@ -25,7 +25,7 @@
 "FIX_PLAYBACK_ISSUES" = "إصلاح مشكلات التشغيل (مؤقت)";
 "FIX_PLAYBACK_ISSUES_DESC" = "محاولة إصلاح مشكلات تشغيل الفيديو لبعض المستخدمين. تفعيل هذا الخيار سيجعل المشغل يعيد التحميل تلقائيًا كلما حدث خطأ أو فشل في تشغيل الفيديو.";
 
-"PERFER_HEADER" = "تفضيلات YouMod";
+"PERFER_HEADER" = "تفضيلات Hamad Plus";
 "PERFER" = "التفضيلات";
 "IMPORT" = "استيراد الإعدادات";
 "IMPORT_DESC" = "تحميل تفضيلاتك من ملف .plist.";
@@ -377,7 +377,7 @@
 "HIDE_SHORTS_RECBAR_DESC" = "إخفاء شريط الإجراءات المقترحة في مشغل Shorts (مثل: جرّب هذا الصوت، التسوق، معاينة التعليق).";
 "HIDE_SHORTS_DISCLOSURE" = "إخفاء 'يحصل على عمولة'";
 "HIDE_SHORTS_DISCLOSURE_DESC" = "إخفاء تنويه 'يحصل على عمولة' في طبقة Shorts العلوية.";
-"REMOVE_SHORTS_TITEL_BUTTON" = "إزالة الوصف";
+"HIDE_SHORTS_TITEL" = "إزالة الوصف";
 "REMOVE_SHORTS_LIKE_BUTTON" = "إزالة زر الإعجاب";
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "إزالة زر الإعجاب من طبقة Shorts العلوية.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "إزالة زر التعليق";
