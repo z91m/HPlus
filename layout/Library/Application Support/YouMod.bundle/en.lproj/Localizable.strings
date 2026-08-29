@@ -377,8 +377,8 @@
 "HIDE_SHORTS_RECBAR_DESC" = "Hide the suggested action bar in the Shorts player (e.g. Try this sound, Shopping, Preview comment).";
 "HIDE_SHORTS_DISCLOSURE" = "Hide 'Earns commission'";
 "HIDE_SHORTS_DISCLOSURE_DESC" = "Hide 'Earns commission' disclosure overlay in Shorts.";
-"REMOVE_SHORTS_TITEL" = "Remove Shorts Title";
-"REMOVE_SHORTS_TITEL_DESC" = "Hide the video title text below the Shorts player";
+"REMOVE_SHORTS_TITLE_BUTTON" = "Remove Shorts Title";
+"REMOVE_SHORTS_TITLE_BUTTON_DESC" = "Hide the video title text below the Shorts player";
 "REMOVE_SHORTS_LIKE_BUTTON" = "Remove like button";
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "Removes the like button from the Shorts overlay.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "Remove comment button";
