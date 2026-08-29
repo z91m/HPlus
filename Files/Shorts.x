@@ -214,6 +214,7 @@ static void YouModFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
+        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsTitle)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
     
@@ -236,37 +237,6 @@ static void YouModFilterShortsPausedHeader(UIView *self, NSString *iden) {
     
     for (NSString *button in buttonsList) {
         if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
-            self.hidden = YES;
-            self.userInteractionEnabled = NO;
-            break;
-        }
-    }
-}
-
-static void YouModFilterShortsDisclosure(UIView *self, NSString *iden) {
-    if (![iden isEqualToString:@"eml.shorts-disclosures"] || !IS_ENABLED(RemoveShortsDisclosure)) return;
-    self.hidden = YES;
-    self.userInteractionEnabled = NO;
-}
-
-static void YouModFilterShortsDescription(UIView *self, NSString *iden) {
-    if (!IS_ENABLED(HideShortsDescription)) return;
-    if (!iden) return;
-    
-    NSArray *possibleIds = @[
-    @"id.shorts.description",
-    @"eml.shorts-description",
-    @"shorts_description",
-    @"reel.player.title.access",
-    @"id.shorts.video_title",
-    @"eml.shorts-video-title",
-    @"YTShortsVideoTitleView",
-    @"id.reels_smv_player_title_label",
-    @"YTReelTitleLabel",
-    ];
-    
-    for (NSString *target in possibleIds) {
-        if ([iden containsString:target] || [iden isEqualToString:target]) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
             break;
