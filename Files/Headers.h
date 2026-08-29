@@ -230,7 +230,7 @@
 #define RemoveShortsPausedLensButton @"YouModRemoveShortsPausedLensButton"
 #define RemoveShortsPausedTrendsButton @"YouModRemoveShortsPausedTrendsButton"
 #define RemoveShortsDisclosure @"YouModRemoveShortsDisclosure"
-#define RemoveShortsTitleButton @"YouModRemoveShortsTitleButton"
+#define RemoveShortsTitle @"YouModRemoveShortsTitle"
 // Tab bar
 #define DefaultTab @"YouModDefaultStartupTab"
 #define TabOrder @"YouModTabOrder"
