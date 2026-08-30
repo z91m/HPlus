@@ -1,4 +1,4 @@
-name: Build YouMod
+name: Build Hamad Plus
 on:
   push:
     branches: [ "main" ]
