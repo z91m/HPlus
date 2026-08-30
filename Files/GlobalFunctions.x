@@ -1,21 +1,15 @@
 #import "Headers.h"
 
 // HPlus's bundle (For localizations)
-NSBundle *HPlusBundle() {
+NSBundle *HPlusdBundle() {
     static NSBundle *bundle = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        // جرب تحميل الحزمة عن طريق المعرف الجديد
-        bundle = [NSBundle bundleWithIdentifier:@"dev.hamad.hplus"];
-        
-        // لو ما لقاها، جرب المسار الجديد (احتياطي)
-        if (!bundle) {
-            bundle = [NSBundle bundleWithPath:@"/Library/Application Support/HPlus.bundle"];
-        }
-        
-        // لو للحين ما لقاها (تأكيد إضافي)، جرب الـ MainBundle
-        if (!bundle) {
-            bundle = [NSBundle mainBundle];
+        NSString *tweakBundlePath = [[NSBundle mainBundle] pathForResource:@"HPlus" ofType:@"bundle"];
+        if (tweakBundlePath) {
+            bundle = [NSBundle bundleWithPath:tweakBundlePath];
+        } else {
+            bundle = [NSBundle bundleWithPath:[NSString stringWithFormat:jbroot(@"/Library/Application Support/%@.bundle"), @"HPlus"]];
         }
     });
     return bundle;
