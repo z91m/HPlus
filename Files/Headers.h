@@ -208,7 +208,6 @@
 #import <YouTubeHeader/YTActionSheetDialogViewControllerDelegate.h>
 #import <YouTubeHeader/YTAdjustableAccessibilityProtocol.h>
 #import <YouTubeHeader/YTAppCollectionViewController.h>
-#import <YouTubeHeader/YTAppDelegate.h>
 #import <YouTubeHeader/YTAppSettingsSectionItemActionController.h>
 #import <YouTubeHeader/YTAppSettingsStore.h>
 #import <YouTubeHeader/YTApplicationNotificationsObserver.h>
@@ -216,7 +215,6 @@
 #import <YouTubeHeader/YTAttributedLabel.h>
 #import <YouTubeHeader/YTAttributedLabelFactory.h>
 #import <YouTubeHeader/YTAutonavEndscreenController.h>
-#import <YouTubeHeader/YTAutoplayAutonavController.h>
 #import <YouTubeHeader/YTAutoplayController.h>
 #import <YouTubeHeader/YTBackgroundabilityPolicy.h>
 #import <YouTubeHeader/YTBackgroundabilityPolicyImpl.h>
