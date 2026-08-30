@@ -9,7 +9,7 @@ NSBundle *HPlusdBundle() {
         if (tweakBundlePath) {
             bundle = [NSBundle bundleWithPath:tweakBundlePath];
         } else {
-            bundle = [NSBundle bundleWithPath:[NSString stringWithFormat:jbroot(@"/Library/Application Support/%@.bundle"), @"HPlus"]];
+            bundle = [NSBundle bundleWithPath:[NSString stringWithFormat:(@"/Library/Application Support/%@.bundle"), @"HPlus"]];
         }
     });
     return bundle;
