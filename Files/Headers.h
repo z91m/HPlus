@@ -47,7 +47,6 @@
 #import <YouTubeHeader/YTTypeStyle.h>
 #import <YouTubeHeader/YTModularPlayerBarController.h>
 #import <dlfcn.h>
-#import <jbroot.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 #import <netinet/in.h>
 #import <YouTubeHeader/YTAppViewControllerImpl.h>
