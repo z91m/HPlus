@@ -69,7 +69,6 @@
 #import <YouTubeHeader/_ASCollectionViewCell.h>
 #import <YouTubeHeader/YTReelElementAsyncComponentView.h>
 
-#import <YouTubeHeader/YTReelHeader.h>
 #import <YouTubeHeader/YTReelHeaderDelegate.h>
 #import <YouTubeHeader/YTReelHeaderUpdater.h>
 #import <YouTubeHeader/YTReelHeaderUpdaterV2.h>
