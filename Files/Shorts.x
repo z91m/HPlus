@@ -27,7 +27,7 @@
 - (BOOL)mobileShortsTablnlinedExpandWatchOnDismiss { return IS_ENABLED(ShowShortsSeekbar) ? YES : %orig; }
 %end
 
-static void YouModMakeAShortsAction(YTReelPlayerViewController *self, YTSingleVideoController *video, YTSingleVideoTime *time) {
+static void HPlusMakeAShortsAction(YTReelPlayerViewController *self, YTSingleVideoController *video, YTSingleVideoTime *time) {
     if (INTFORVAL(ShortsActionIndex) == 0) return;
 
     if (floor(time.time) >= floor(video.totalMediaTime)) {
@@ -47,18 +47,18 @@ static BOOL isFullscreenEnabled = NO;
 - (BOOL)shouldEnablePlayerBarOnlyOnPause { return IS_ENABLED(ShowShortsSeekbar) ? NO : %orig; }
 - (void)singleVideo:(YTSingleVideoController *)video currentVideoTimeDidChange:(YTSingleVideoTime *)time {
     %orig;
-    YouModMakeAShortsAction(self, video, time);
+    HPlusMakeAShortsAction(self, video, time);
 }
 - (void)loadPlayerBar {
     %orig;
     if ((isShortsOnlyOn && IS_ENABLED(ShortsOnly)) || (isFullscreenEnabled && IS_ENABLED(FullScreenShorts))) [[self valueForKey:@"_pivotBarProvider"] performSelector:@selector(hidePivotBar)];
     YTPlayerViewController *main = self.player;
-    if (INTFORVAL(CaptionTrack) != 0) [main performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.5];
-    if (INTFORVAL(AutoSpeedIndex) != 0) [main performSelector:@selector(YouModSetAutoSpeed) withObject:nil afterDelay:0.5];
-    if (INTFORVAL(AudioTrack) != 0) [self performSelector:@selector(YouModAutoAudioTrack:) withObject:main afterDelay:0.5];
+    if (INTFORVAL(CaptionTrack) != 0) [main performSelector:@selector(HPlusAutoCaptions) withObject:nil afterDelay:0.5];
+    if (INTFORVAL(AutoSpeedIndex) != 0) [main performSelector:@selector(HPlusSetAutoSpeed) withObject:nil afterDelay:0.5];
+    if (INTFORVAL(AudioTrack) != 0) [self performSelector:@selector(HPlusAutoAudioTrack:) withObject:main afterDelay:0.5];
 }
 %new
-- (void)YouModAutoAudioTrack:(YTPlayerViewController *)pv {
+- (void)HPlusAutoAudioTrack:(YTPlayerViewController *)pv {
     NSInteger selectedIndex = INTFORVAL(AudioTrackLangIndex);
     NSArray *langCodes = getAllSystemLanguageValues();
     NSString *userTargetLang = langCodes[selectedIndex];
@@ -120,9 +120,9 @@ static BOOL isFullscreenEnabled = NO;
 }
 %end
 
-extern void YouModConfigureDownloadButton(_ASDisplayView *view);
+extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
-static void YouModFilterShortsButtons(UIView *self, NSString *iden) {
+static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
     NSDictionary *buttonsList = @{
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
@@ -149,7 +149,7 @@ static void YouModFilterShortsButtons(UIView *self, NSString *iden) {
     }
 }
 
-static void YouModFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden) {
+static void HPlusFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden) {
     NSDictionary *buttonsList = @{
         @"id.ui.shorts_paused_state.subscriptions_button": @(IS_ENABLED(RemoveShortsPausedSubButton)),
         @"id.ui.shorts_paused_state.live_button": @(IS_ENABLED(RemoveShortsPausedLiveButton)),
@@ -172,7 +172,7 @@ static void YouModFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden)
     }
 }
 
-static void YouModFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
+static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     if (![self.accessibilityIdentifier isEqualToString:@"eml.shorts-disclosures"] || !IS_ENABLED(RemoveShortsDisclosure)) return;
     _ASDisplayView *dpView = (_ASDisplayView *)self.superview;
     ASDisplayNode *node = dpView.keepalive_node;
@@ -186,7 +186,7 @@ static void YouModFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
 %hook _ASDisplayView
 - (void)didMoveToWindow {
     %orig;
-    YouModConfigureDownloadButton(self);
+    HPlusConfigureDownloadButton(self);
     NSString *iden = self.accessibilityIdentifier;
     if (!iden || iden.length == 0) return;
     NSDictionary *elements = @{
@@ -203,9 +203,9 @@ static void YouModFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
         return;
     }
     
-    YouModFilterShortsButtons(self, iden);
-    YouModFilterShortsPausedHeader(self, iden);
-    YouModFilterShortsDisclosure(self, iden);
+    HPlusFilterShortsButtons(self, iden);
+    HPlusFilterShortsPausedHeader(self, iden);
+    HPlusFilterShortsDisclosure(self, iden);
 }
 %end
 
@@ -219,18 +219,18 @@ static void YouModFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
 %end
 
 %hook YTReelWatchPlaybackOverlayView
-%property (nonatomic, retain) UIPinchGestureRecognizer *YouModFullscreenGesture;
+%property (nonatomic, retain) UIPinchGestureRecognizer *HPlusFullscreenGesture;
 - (void)didMoveToWindow {
     %orig;
     if (!IS_ENABLED(FullScreenShorts)) return;
-    if (!self.YouModFullscreenGesture) {
-        self.YouModFullscreenGesture = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(YouModFullscrrenGestureHandler:)];
-        self.YouModFullscreenGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
-        [self.superview addGestureRecognizer:self.YouModFullscreenGesture];
+    if (!self.HPlusFullscreenGesture) {
+        self.HPlusFullscreenGesture = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusFullscrrenGestureHandler:)];
+        self.HPlusFullscreenGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
+        [self.superview addGestureRecognizer:self.HPlusFullscreenGesture];
     }
 }
 %new
-- (void)YouModFullscrrenGestureHandler:(UIPinchGestureRecognizer *)gesture {
+- (void)HPlusFullscrrenGestureHandler:(UIPinchGestureRecognizer *)gesture {
     if (gesture.state != UIGestureRecognizerStateBegan || (isShortsOnlyOn && IS_ENABLED(ShortsOnly))) return;
     UIViewController *appVC = [self valueForKey:@"_pivotBarProvider"];
     BOOL isTabBarHidden = [appVC performSelector:@selector(isPivotBarHidden)];
@@ -254,7 +254,7 @@ static void YouModFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
 }
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModFullscreenGesture) {
+    if (gestureRecognizer == self.HPlusFullscreenGesture) {
         return YES;
     }
     return NO;
@@ -262,21 +262,21 @@ static void YouModFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
 %end
 
 %hook YTReelContentView
-%property (nonatomic, retain) UILongPressGestureRecognizer *YouModExitShortsOnlyGesture;
+%property (nonatomic, retain) UILongPressGestureRecognizer *HPlusExitShortsOnlyGesture;
 - (void)setPlaybackView:(id)arg1 {
     %orig;
     self.playbackOverlay.alpha = !isFullscreenEnabled;
     if (!IS_ENABLED(ShortsOnly)) return;
     if (isShortsOnlyOn) {
-        self.YouModExitShortsOnlyGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(YouModTurnOffShortsOnly:)];
-        self.YouModExitShortsOnlyGesture.numberOfTouchesRequired = 2;
-        self.YouModExitShortsOnlyGesture.minimumPressDuration = 0.5;
-        self.YouModExitShortsOnlyGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
-        [self addGestureRecognizer:self.YouModExitShortsOnlyGesture];
+        self.HPlusExitShortsOnlyGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusTurnOffShortsOnly:)];
+        self.HPlusExitShortsOnlyGesture.numberOfTouchesRequired = 2;
+        self.HPlusExitShortsOnlyGesture.minimumPressDuration = 0.5;
+        self.HPlusExitShortsOnlyGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
+        [self addGestureRecognizer:self.HPlusExitShortsOnlyGesture];
     }
 }
 %new
-- (void)YouModTurnOffShortsOnly:(UILongPressGestureRecognizer *)gesture {
+- (void)HPlusTurnOffShortsOnly:(UILongPressGestureRecognizer *)gesture {
     if (gesture.state != UIGestureRecognizerStateBegan) return;
     isShortsOnlyOn = NO;
     UIView *parent = sbGetNotificationParent();
@@ -289,14 +289,14 @@ static void YouModFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
 }
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModExitShortsOnlyGesture && [otherGestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
+    if (gestureRecognizer == self.HPlusExitShortsOnlyGesture && [otherGestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
         return YES;
     }
     return NO;
 }
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModExitShortsOnlyGesture) {
+    if (gestureRecognizer == self.HPlusExitShortsOnlyGesture) {
         return NO;
     }
     return YES;

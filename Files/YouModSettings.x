@@ -1,4 +1,4 @@
-// YouModSettings.x — Reusable UIKit-based sub-page for YouMod settings sections
+// HPlusSettings.x — Reusable UIKit-based sub-page for HPlus settings sections
 #import "Headers.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
@@ -1187,7 +1187,7 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
 
 #pragma mark - Settings Search
 
-// A searchable group of YouMod (YMSettingsItem-based) settings: the group's
+// A searchable group of HPlus (YMSettingsItem-based) settings: the group's
 // display name plus its items. Registered by Settings.x so the search VC can build
 // a flat index without knowing how each group's items are constructed.
 @interface YMSettingsGroup : NSObject
@@ -1200,7 +1200,7 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
 @implementation YMSearchRow
 @end
 
-// The registered YouMod setting groups (excludes SponsorBlock, which contributes
+// The registered HPlus setting groups (excludes SponsorBlock, which contributes
 // its own rows via sbSearchRows). Settings.x re-registers these each time the
 // settings screen is built; registration dedupes by title (see below).
 static NSMutableArray<YMSettingsGroup *> *gYMSearchGroups = nil;
@@ -1440,7 +1440,7 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
     static YTAssetLoader *cachedLoader = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        cachedLoader = [[%c(YTAssetLoader) alloc] initWithBundle:YouModBundle()];
+        cachedLoader = [[%c(YTAssetLoader) alloc] initWithBundle:HPlusBundle()];
     });
 
     if ([tabID isEqualToString:@"create"]) {
@@ -1609,7 +1609,7 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
     }
     [[NSUserDefaults standardUserDefaults] setObject:toSave forKey:TabOrder];
     [[NSUserDefaults standardUserDefaults] synchronize];
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"YouModUpdateTabBar" object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"HPlusUpdateTabBar" object:nil];
 }
 
 - (void)takeSnapshot {
@@ -1811,7 +1811,7 @@ void YMPresentTabOrderModally(id parentResponder) {
         initWithBarButtonSystemItem:UIBarButtonSystemItemDone
         primaryAction:doneAction];
 
-    UIViewController *presenter = YouModTopViewController(nil);
+    UIViewController *presenter = HPlusTopViewController(nil);
     if (!presenter) return;
     [presenter presentViewController:nav animated:YES completion:nil];
 }
@@ -2024,7 +2024,7 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
     }
     [[NSUserDefaults standardUserDefaults] setObject:toSave forKey:OverlayButtonOrder];
     [[NSUserDefaults standardUserDefaults] synchronize];
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"YouModUpdateOverlayButtons" object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"HPlusUpdateOverlayButtons" object:nil];
 }
 
 - (void)takeSnapshot {
@@ -2194,7 +2194,7 @@ static void ymRegisterStyledSubclass(Class sourceClass, const char *name) {
     // Copy methods and properties from sourceClass up through its own class chain,
     // stopping before UIViewController/YTStyledViewController. Walking the chain
     // (not just sourceClass) is required when sourceClass itself subclasses another
-    // YouMod controller — e.g. YMSettingsSearchViewController inherits its cell
+    // HPlus controller — e.g. YMSettingsSearchViewController inherits its cell
     // builders from YMSubSettingsViewController; a single-level copy would drop
     // them. Subclass levels are copied first so an override wins over its parent
     // (class_addMethod does not replace an already-added selector).
@@ -2250,14 +2250,14 @@ static void ymRegisterStyledSubclass(Class sourceClass, const char *name) {
 %hook YTPivotBarViewController
 - (void)viewDidLoad {
     %orig;
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"YouModUpdateTabBar" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"HPlusUpdateTabBar" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(YouModReloadTabBar:)
-                                                 name:@"YouModUpdateTabBar"
+                                             selector:@selector(HPlusReloadTabBar:)
+                                                 name:@"HPlusUpdateTabBar"
                                                object:nil];
 }
 %new
-- (void)YouModReloadTabBar:(id)arg {
+- (void)HPlusReloadTabBar:(id)arg {
     [self.parentViewController performSelector:@selector(refreshPivotBarWithTriggedByNotification:) withObject:@YES];
 }
 %end

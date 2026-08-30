@@ -6,7 +6,7 @@
 // carries the session's auth / PoToken in its URL) and REPLAYING a modified copy of
 // it — selecting the mp4 itags we want, then reading the returned UMP media parts to
 // disk — instead of reconstructing a SABR session from scratch. The two elementary
-// files are handed to YouMod's existing muxer for the final mp4.
+// files are handed to HPlus's existing muxer for the final mp4.
 //
 // Additive: gated on SABR_ENABLED(), off by default. Touches none of the existing
 // (direct / server) download paths.

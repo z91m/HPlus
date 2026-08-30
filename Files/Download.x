@@ -8,7 +8,7 @@
 #import <stdarg.h>
 #import <stdlib.h>
 
-@interface YouModMenuItem : NSObject
+@interface HPlusMenuItem : NSObject
 @property (nonatomic, copy) NSString *title;
 @property (nonatomic, copy) NSString *subtitle;
 @property (nonatomic, strong) UIImage *iconImage;
@@ -16,9 +16,9 @@
 + (instancetype)itemWithTitle:(NSString *)title subtitle:(NSString *)subtitle icon:(UIImage *)icon handler:(void (^)(void))handler;
 @end
 
-@implementation YouModMenuItem
+@implementation HPlusMenuItem
 + (instancetype)itemWithTitle:(NSString *)title subtitle:(NSString *)subtitle icon:(UIImage *)icon handler:(void (^)(void))handler {
-    YouModMenuItem *item = [YouModMenuItem new];
+    HPlusMenuItem *item = [HPlusMenuItem new];
     item.title = title;
     item.subtitle = subtitle;
     item.iconImage = icon;
@@ -27,7 +27,7 @@
 }
 @end
 
-@interface YouModMediaFormat : NSObject
+@interface HPlusMediaFormat : NSObject
 @property (nonatomic, strong) YTIFormatStream *source;
 @property (nonatomic, copy) NSString *urlString;
 @property (nonatomic, copy) NSString *qualityLabel;
@@ -41,32 +41,32 @@
 @property (nonatomic, assign) BOOL video;
 @end
 
-@implementation YouModMediaFormat
+@implementation HPlusMediaFormat
 @end
 
-typedef void (^YouModFileDownloadCompletion)(NSURL *fileURL, NSError *error);
-typedef void (^YouModMergeCompletion)(BOOL success, NSError *error);
-typedef void (^YouModRangeDownloadProgress)(unsigned long long completedBytes);
+typedef void (^HPlusFileDownloadCompletion)(NSURL *fileURL, NSError *error);
+typedef void (^HPlusMergeCompletion)(BOOL success, NSError *error);
+typedef void (^HPlusRangeDownloadProgress)(unsigned long long completedBytes);
 
-@interface YouModDownloadChunk : NSObject
+@interface HPlusDownloadChunk : NSObject
 @property (nonatomic, assign) unsigned long long offset;
 @property (nonatomic, assign) unsigned long long length;
 @property (nonatomic, assign) NSUInteger attempts;
 @end
 
-@implementation YouModDownloadChunk
+@implementation HPlusDownloadChunk
 @end
 
-@interface YouModRangeDownloader : NSObject
+@interface HPlusRangeDownloader : NSObject
 @property (nonatomic, strong) NSURL *url;
 @property (nonatomic, strong) NSURL *destinationURL;
 @property (nonatomic, copy) NSDictionary *httpHeaders;
 @property (nonatomic, assign) unsigned long long expectedBytes;
-@property (nonatomic, copy) YouModRangeDownloadProgress progress;
-@property (nonatomic, copy) YouModFileDownloadCompletion completion;
+@property (nonatomic, copy) HPlusRangeDownloadProgress progress;
+@property (nonatomic, copy) HPlusFileDownloadCompletion completion;
 @property (nonatomic, strong) NSURLSession *session;
 @property (nonatomic, strong) NSFileHandle *fileHandle;
-@property (nonatomic, strong) NSMutableArray <YouModDownloadChunk *> *pendingChunks;
+@property (nonatomic, strong) NSMutableArray <HPlusDownloadChunk *> *pendingChunks;
 @property (nonatomic, strong) NSMutableSet <NSURLSessionDataTask *> *tasks;
 @property (nonatomic, strong) dispatch_queue_t stateQueue;
 @property (nonatomic, strong) dispatch_queue_t fileQueue;
@@ -75,20 +75,20 @@ typedef void (^YouModRangeDownloadProgress)(unsigned long long completedBytes);
 @property (nonatomic, assign) unsigned long long completedBytes;
 @property (nonatomic, assign) BOOL cancelled;
 @property (nonatomic, assign) BOOL finished;
-- (instancetype)initWithURL:(NSURL *)url destinationURL:(NSURL *)destinationURL expectedBytes:(unsigned long long)expectedBytes headers:(NSDictionary *)headers progress:(YouModRangeDownloadProgress)progress completion:(YouModFileDownloadCompletion)completion;
+- (instancetype)initWithURL:(NSURL *)url destinationURL:(NSURL *)destinationURL expectedBytes:(unsigned long long)expectedBytes headers:(NSDictionary *)headers progress:(HPlusRangeDownloadProgress)progress completion:(HPlusFileDownloadCompletion)completion;
 - (void)start;
 - (void)cancel;
 @end
 
-@interface YouModDownloadCoordinator : NSObject <NSURLSessionDownloadDelegate>
+@interface HPlusDownloadCoordinator : NSObject <NSURLSessionDownloadDelegate>
 @property (nonatomic, strong) NSURLSession *session;
 @property (nonatomic, strong) NSURLSessionDownloadTask *task;
 @property (nonatomic, strong) NSURLSessionDataTask *metadataTask;
-@property (nonatomic, strong) YouModRangeDownloader *rangeDownloader;
+@property (nonatomic, strong) HPlusRangeDownloader *rangeDownloader;
 @property (nonatomic, strong) AVAssetExportSession *exporter;
 @property (nonatomic, strong) YMDownloadProgressView *progressPill;
 @property (nonatomic, weak) UIViewController *presenter;
-@property (nonatomic, copy) YouModFileDownloadCompletion fileCompletion;
+@property (nonatomic, copy) HPlusFileDownloadCompletion fileCompletion;
 @property (nonatomic, strong) NSURL *destinationURL;
 @property (nonatomic, strong) NSURL *videoTempURL;
 @property (nonatomic, strong) NSURL *audioTempURL;
@@ -104,21 +104,21 @@ typedef void (^YouModRangeDownloadProgress)(unsigned long long completedBytes);
 @property (nonatomic, assign) NSTimeInterval downloadStartTime;
 @property (nonatomic, copy) void (^downloadCompletionBlock)(NSURL *localURL, NSString *errorMsg);
 + (instancetype)sharedCoordinator;
-- (void)startVideoDownloadWithVideoFormat:(YouModMediaFormat *)videoFormat audioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
-- (void)startAudioDownloadWithAudioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
-- (void)startDirectVideoDownloadWithVideoFormat:(YouModMediaFormat *)videoFormat audioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
-- (void)startDirectAudioDownloadWithAudioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
+- (void)startVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
+- (void)startAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
+- (void)startDirectVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
+- (void)startDirectAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
 - (void)trimAudioToHalfLengthAtURL:(NSURL *)inputURL toURL:(NSURL *)outputURL completion:(void (^)(NSError *error))completion;
 - (void)mergeVideoURL:(NSURL *)videoURL audioURL:(NSURL *)audioURL fileName:(NSString *)fileName outputExtension:(NSString *)outputExtension durationMs:(unsigned long long)durationMs presenter:(UIViewController *)presenter;
 - (void)mergeVideoWithAVFoundationVideoURL:(NSURL *)videoURL audioURL:(NSURL *)audioURL outputURL:(NSURL *)outputURL durationMs:(unsigned long long)durationMs presenter:(UIViewController *)presenter fallbackError:(NSError *)fallbackError;
 @end
 
-static const unsigned long long YouModFastDownloadMinimumBytes = 256ULL * 1024ULL;
-static const unsigned long long YouModFastDownloadChunkBytes = 4ULL * 1024ULL * 1024ULL;
-static const NSUInteger YouModFastDownloadConcurrency = 8;
-static const NSUInteger YouModFastDownloadMaxAttempts = 3;
+static const unsigned long long HPlusFastDownloadMinimumBytes = 256ULL * 1024ULL;
+static const unsigned long long HPlusFastDownloadChunkBytes = 4ULL * 1024ULL * 1024ULL;
+static const NSUInteger HPlusFastDownloadConcurrency = 8;
+static const NSUInteger HPlusFastDownloadMaxAttempts = 3;
 
-static BOOL YouModHTTPHeadersContainField(NSDictionary *headers, NSString *field) {
+static BOOL HPlusHTTPHeadersContainField(NSDictionary *headers, NSString *field) {
     for (id key in headers) {
         if ([key isKindOfClass:NSString.class] && [(NSString *)key caseInsensitiveCompare:field] == NSOrderedSame)
             return YES;
@@ -126,7 +126,7 @@ static BOOL YouModHTTPHeadersContainField(NSDictionary *headers, NSString *field
     return NO;
 }
 
-static NSString *YouModYouTubeCookiesString(void) {
+static NSString *HPlusYouTubeCookiesString(void) {
     NSMutableArray *cookieStrings = [NSMutableArray array];
     for (NSHTTPCookie *cookie in [[NSHTTPCookieStorage sharedHTTPCookieStorage] cookies]) {
         if ([cookie.domain containsString:@"youtube.com"]) {
@@ -136,37 +136,37 @@ static NSString *YouModYouTubeCookiesString(void) {
     return [cookieStrings componentsJoinedByString:@"; "];
 }
 
-static NSString *YouModNativeUserAgent(void) {
+static NSString *HPlusNativeUserAgent(void) {
     NSString *device = isPad() ? @"iPad" : @"iPhone";
     return [NSString stringWithFormat:@"com.google.ios.youtube/21.26.4 (%@; CPU OS 18_7 like Mac OS X)", device];
 }
 
-static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary *headers) {
+static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary *headers) {
     for (id key in headers) {
         id value = headers[key];
         if ([key isKindOfClass:NSString.class] && [value isKindOfClass:NSString.class])
             [request setValue:value forHTTPHeaderField:key];
     }
-    if (!YouModHTTPHeadersContainField(headers, @"User-Agent"))
-        [request setValue:YouModNativeUserAgent() forHTTPHeaderField:@"User-Agent"];
-    if (!YouModHTTPHeadersContainField(headers, @"Origin"))
+    if (!HPlusHTTPHeadersContainField(headers, @"User-Agent"))
+        [request setValue:HPlusNativeUserAgent() forHTTPHeaderField:@"User-Agent"];
+    if (!HPlusHTTPHeadersContainField(headers, @"Origin"))
         [request setValue:@"https://www.youtube.com" forHTTPHeaderField:@"Origin"];
-    if (!YouModHTTPHeadersContainField(headers, @"Referer"))
+    if (!HPlusHTTPHeadersContainField(headers, @"Referer"))
         [request setValue:@"https://www.youtube.com/" forHTTPHeaderField:@"Referer"];
-    if (!YouModHTTPHeadersContainField(headers, @"Cookie")) {
-        NSString *cookies = YouModYouTubeCookiesString();
+    if (!HPlusHTTPHeadersContainField(headers, @"Cookie")) {
+        NSString *cookies = HPlusYouTubeCookiesString();
         if (cookies.length > 0) [request setValue:cookies forHTTPHeaderField:@"Cookie"];
     }
-    extern NSString *YouModGlobalAuthHeader;
-    if (YouModGlobalAuthHeader && !YouModHTTPHeadersContainField(headers, @"Authorization")) {
-        [request setValue:YouModGlobalAuthHeader forHTTPHeaderField:@"Authorization"];
+    extern NSString *HPlusGlobalAuthHeader;
+    if (HPlusGlobalAuthHeader && !HPlusHTTPHeadersContainField(headers, @"Authorization")) {
+        [request setValue:HPlusGlobalAuthHeader forHTTPHeaderField:@"Authorization"];
     }
     [request setValue:@"identity" forHTTPHeaderField:@"Accept-Encoding"];
 }
 
-@implementation YouModRangeDownloader
+@implementation HPlusRangeDownloader
 
-- (instancetype)initWithURL:(NSURL *)url destinationURL:(NSURL *)destinationURL expectedBytes:(unsigned long long)expectedBytes headers:(NSDictionary *)headers progress:(YouModRangeDownloadProgress)progress completion:(YouModFileDownloadCompletion)completion {
+- (instancetype)initWithURL:(NSURL *)url destinationURL:(NSURL *)destinationURL expectedBytes:(unsigned long long)expectedBytes headers:(NSDictionary *)headers progress:(HPlusRangeDownloadProgress)progress completion:(HPlusFileDownloadCompletion)completion {
     self = [super init];
     if (self) {
         _url = url;
@@ -181,7 +181,7 @@ static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionar
         _fileQueue = dispatch_queue_create("com.youmod.download.range.file", DISPATCH_QUEUE_SERIAL);
 
         NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
-        configuration.HTTPMaximumConnectionsPerHost = YouModFastDownloadConcurrency;
+        configuration.HTTPMaximumConnectionsPerHost = HPlusFastDownloadConcurrency;
         configuration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
         configuration.timeoutIntervalForResource = 300;
         NSMutableDictionary *additionalHeaders = [NSMutableDictionary dictionary];
@@ -190,19 +190,19 @@ static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionar
             if ([key isKindOfClass:NSString.class] && [value isKindOfClass:NSString.class])
                 additionalHeaders[key] = value;
         }
-        if (!YouModHTTPHeadersContainField(additionalHeaders, @"User-Agent"))
-            additionalHeaders[@"User-Agent"] = YouModNativeUserAgent();
-        if (!YouModHTTPHeadersContainField(additionalHeaders, @"Origin"))
+        if (!HPlusHTTPHeadersContainField(additionalHeaders, @"User-Agent"))
+            additionalHeaders[@"User-Agent"] = HPlusNativeUserAgent();
+        if (!HPlusHTTPHeadersContainField(additionalHeaders, @"Origin"))
             additionalHeaders[@"Origin"] = @"https://www.youtube.com";
-        if (!YouModHTTPHeadersContainField(additionalHeaders, @"Referer"))
+        if (!HPlusHTTPHeadersContainField(additionalHeaders, @"Referer"))
             additionalHeaders[@"Referer"] = @"https://www.youtube.com/";
-        if (!YouModHTTPHeadersContainField(additionalHeaders, @"Cookie")) {
-            NSString *cookies = YouModYouTubeCookiesString();
+        if (!HPlusHTTPHeadersContainField(additionalHeaders, @"Cookie")) {
+            NSString *cookies = HPlusYouTubeCookiesString();
             if (cookies.length > 0) additionalHeaders[@"Cookie"] = cookies;
         }
-        extern NSString *YouModGlobalAuthHeader;
-        if (YouModGlobalAuthHeader && !YouModHTTPHeadersContainField(additionalHeaders, @"Authorization")) {
-            additionalHeaders[@"Authorization"] = YouModGlobalAuthHeader;
+        extern NSString *HPlusGlobalAuthHeader;
+        if (HPlusGlobalAuthHeader && !HPlusHTTPHeadersContainField(additionalHeaders, @"Authorization")) {
+            additionalHeaders[@"Authorization"] = HPlusGlobalAuthHeader;
         }
         additionalHeaders[@"Accept-Encoding"] = @"identity";
         configuration.HTTPAdditionalHeaders = additionalHeaders;
@@ -212,7 +212,7 @@ static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionar
 }
 
 - (NSError *)errorWithCode:(NSInteger)code message:(NSString *)message {
-    return [NSError errorWithDomain:@"YouMod" code:code userInfo:@{NSLocalizedDescriptionKey: message ?: @"Download failed"}];
+    return [NSError errorWithDomain:@"HPlus" code:code userInfo:@{NSLocalizedDescriptionKey: message ?: @"Download failed"}];
 }
 
 - (BOOL)prepareDestinationWithError:(NSError **)error {
@@ -252,10 +252,10 @@ static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionar
 
         unsigned long long chunkSize = self.expectedBytes / 100ULL;
         if (chunkSize < 256ULL * 1024ULL) chunkSize = 256ULL * 1024ULL;
-        if (chunkSize > YouModFastDownloadChunkBytes) chunkSize = YouModFastDownloadChunkBytes;
+        if (chunkSize > HPlusFastDownloadChunkBytes) chunkSize = HPlusFastDownloadChunkBytes;
 
         for (unsigned long long offset = 0; offset < self.expectedBytes; offset += chunkSize) {
-            YouModDownloadChunk *chunk = [YouModDownloadChunk new];
+            HPlusDownloadChunk *chunk = [HPlusDownloadChunk new];
             chunk.offset = offset;
             unsigned long long remaining = self.expectedBytes - offset;
             chunk.length = remaining < chunkSize ? remaining : chunkSize;
@@ -286,8 +286,8 @@ static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionar
 
 - (void)scheduleChunksLocked {
     if (self.finished || self.cancelled) return;
-    while (self.activeTaskCount < YouModFastDownloadConcurrency && self.pendingChunks.count > 0) {
-        YouModDownloadChunk *chunk = self.pendingChunks.firstObject;
+    while (self.activeTaskCount < HPlusFastDownloadConcurrency && self.pendingChunks.count > 0) {
+        HPlusDownloadChunk *chunk = self.pendingChunks.firstObject;
         [self.pendingChunks removeObjectAtIndex:0];
         [self startChunkLocked:chunk];
     }
@@ -297,10 +297,10 @@ static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionar
     }
 }
 
-- (void)startChunkLocked:(YouModDownloadChunk *)chunk {
+- (void)startChunkLocked:(HPlusDownloadChunk *)chunk {
     unsigned long long end = chunk.offset + chunk.length - 1;
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:self.url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:60.0];
-    YouModApplyDownloadHeaders(request, self.httpHeaders);
+    HPlusApplyDownloadHeaders(request, self.httpHeaders);
     [request setValue:[NSString stringWithFormat:@"bytes=%llu-%llu", chunk.offset, end] forHTTPHeaderField:@"Range"];
 
     __weak typeof(self) weakSelf = self;
@@ -315,7 +315,7 @@ static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionar
     [task resume];
 }
 
-- (NSError *)validationErrorForChunk:(YouModDownloadChunk *)chunk data:(NSData *)data response:(NSURLResponse *)response error:(NSError *)error {
+- (NSError *)validationErrorForChunk:(HPlusDownloadChunk *)chunk data:(NSData *)data response:(NSURLResponse *)response error:(NSError *)error {
     if (error) return error;
 
     NSHTTPURLResponse *httpResponse = [response isKindOfClass:NSHTTPURLResponse.class] ? (NSHTTPURLResponse *)response : nil;
@@ -330,7 +330,7 @@ static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionar
     return nil;
 }
 
-- (void)completeChunk:(YouModDownloadChunk *)chunk task:(NSURLSessionDataTask *)task data:(NSData *)data response:(NSURLResponse *)response error:(NSError *)error {
+- (void)completeChunk:(HPlusDownloadChunk *)chunk task:(NSURLSessionDataTask *)task data:(NSData *)data response:(NSURLResponse *)response error:(NSError *)error {
     dispatch_async(self.stateQueue, ^{
         if (self.activeTaskCount > 0) self.activeTaskCount--;
         if (task) [self.tasks removeObject:task];
@@ -342,7 +342,7 @@ static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionar
                 [self finishWithErrorLocked:validationError];
                 return;
             }
-            if (chunk.attempts + 1 < YouModFastDownloadMaxAttempts) {
+            if (chunk.attempts + 1 < HPlusFastDownloadMaxAttempts) {
                 chunk.attempts++;
                 [self.pendingChunks insertObject:chunk atIndex:0];
                 [self scheduleChunksLocked];
@@ -417,17 +417,17 @@ static void YouModApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionar
 
 @end
 
-static __weak YTPlayerViewController *YouModCurrentPlayerViewController;
+static __weak YTPlayerViewController *HPlusCurrentPlayerViewController;
 
-void YouModDownloadSetCurrentPlayer(YTPlayerViewController *player) {
-    YouModCurrentPlayerViewController = player;
+void HPlusDownloadSetCurrentPlayer(YTPlayerViewController *player) {
+    HPlusCurrentPlayerViewController = player;
 }
 
-YTPlayerViewController *YouModDownloadGetCurrentPlayer(void) {
-    return YouModCurrentPlayerViewController;
+YTPlayerViewController *HPlusDownloadGetCurrentPlayer(void) {
+    return HPlusCurrentPlayerViewController;
 }
 
-static id YouModObjectFromSelector(id object, SEL selector) {
+static id HPlusObjectFromSelector(id object, SEL selector) {
     if (!object) return nil;
     if ([object respondsToSelector:selector]) {
         return ((id (*)(id, SEL))objc_msgSend)(object, selector);
@@ -439,29 +439,29 @@ static id YouModObjectFromSelector(id object, SEL selector) {
     }
 }
 
-static void YouModSendToast(NSString *message) {
+static void HPlusSendToast(NSString *message) {
     UIView *parent = sbGetNotificationParent();
     [SBSkipNotificationView showInView:parent message:message buttonTitle:nil action:nil duration:3.0];
 }
 
-static void YouModSendSuccess(NSString *message) {
+static void HPlusSendSuccess(NSString *message) {
     UIView *parent = sbGetNotificationParent();
     [SBSkipNotificationView showSuccessInView:parent message:message duration:3.0];
 }
 
-static void YouModSendError(NSString *message) {
+static void HPlusSendError(NSString *message) {
     UIView *parent = sbGetNotificationParent();
     [SBSkipNotificationView showErrorInView:parent message:message duration:4.0];
 }
 
-static NSString *YouModByteCount(unsigned long long bytes) {
+static NSString *HPlusByteCount(unsigned long long bytes) {
     if (bytes == 0) return nil;
     NSByteCountFormatter *formatter = [NSByteCountFormatter new];
     formatter.countStyle = NSByteCountFormatterCountStyleFile;
     return [formatter stringFromByteCount:(long long)bytes];
 }
 
-static NSString *YouModURLStringBypassingThrottle(NSString *urlString) {
+static NSString *HPlusURLStringBypassingThrottle(NSString *urlString) {
     if (urlString.length == 0) return urlString;
     NSURLComponents *components = [NSURLComponents componentsWithString:urlString];
     if (components) {
@@ -484,16 +484,16 @@ static NSString *YouModURLStringBypassingThrottle(NSString *urlString) {
     return urlString;
 }
 
-static NSString *YouModURLStringWithCPN(NSString *urlString) {
+static NSString *HPlusURLStringWithCPN(NSString *urlString) {
     if (urlString.length == 0) return urlString;
-    urlString = YouModURLStringBypassingThrottle(urlString);
+    urlString = HPlusURLStringBypassingThrottle(urlString);
     if ([urlString containsString:@"cpn="]) return urlString;
     NSString *cpn = [%c(YTDataUtils) generateClientSideNonce];
     NSString *separator = [urlString containsString:@"?"] ? @"&" : @"?";
     return [NSString stringWithFormat:@"%@%@cpn=%@", urlString, separator, cpn];
 }
 
-static NSString *YouModSanitizedFileName(NSString *name) {
+static NSString *HPlusSanitizedFileName(NSString *name) {
     if (name.length == 0) return @"YouTube Video";
     NSMutableCharacterSet *invalid = [NSMutableCharacterSet characterSetWithCharactersInString:@"/\\?%*|\"<>:"];
     [invalid formUnionWithCharacterSet:NSCharacterSet.newlineCharacterSet];
@@ -504,16 +504,16 @@ static NSString *YouModSanitizedFileName(NSString *name) {
     return clean.length ? clean : @"YouTube Video";
 }
 
-static NSURL *YouModDownloadsDirectoryURL(void) {
+static NSURL *HPlusDownloadsDirectoryURL(void) {
     NSURL *documentsURL = [NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
-    NSURL *downloadsURL = [documentsURL URLByAppendingPathComponent:@"YouMod_Downloads" isDirectory:YES];
+    NSURL *downloadsURL = [documentsURL URLByAppendingPathComponent:@"HPlus_Downloads" isDirectory:YES];
     [NSFileManager.defaultManager createDirectoryAtURL:downloadsURL withIntermediateDirectories:YES attributes:nil error:nil];
     return downloadsURL;
 }
 
-static NSURL *YouModUniqueFileURL(NSString *fileName, NSString *extension) {
-    NSString *safeName = YouModSanitizedFileName(fileName);
-    NSURL *directoryURL = YouModDownloadsDirectoryURL();
+static NSURL *HPlusUniqueFileURL(NSString *fileName, NSString *extension) {
+    NSString *safeName = HPlusSanitizedFileName(fileName);
+    NSURL *directoryURL = HPlusDownloadsDirectoryURL();
     NSURL *candidate = [directoryURL URLByAppendingPathComponent:[safeName stringByAppendingPathExtension:extension]];
     NSUInteger index = 2;
     while ([NSFileManager.defaultManager fileExistsAtPath:candidate.path]) {
@@ -523,12 +523,12 @@ static NSURL *YouModUniqueFileURL(NSString *fileName, NSString *extension) {
     return candidate;
 }
 
-static NSURL *YouModTemporaryFileURL(NSString *extension) {
+static NSURL *HPlusTemporaryFileURL(NSString *extension) {
     NSString *name = [[NSUUID UUID].UUIDString stringByAppendingPathExtension:extension];
     return [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:name]];
 }
 
-static unsigned long long YouModDurationMsForURL(NSURL *url) {
+static unsigned long long HPlusDurationMsForURL(NSURL *url) {
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:nil];
     if (!CMTIME_IS_NUMERIC(asset.duration) || !CMTIME_IS_VALID(asset.duration)) return 0;
     Float64 seconds = CMTimeGetSeconds(asset.duration);
@@ -536,79 +536,79 @@ static unsigned long long YouModDurationMsForURL(NSURL *url) {
     return (unsigned long long)llround(seconds * 1000.0);
 }
 
-static BOOL YouModCMTimeIsUsable(CMTime time) {
+static BOOL HPlusCMTimeIsUsable(CMTime time) {
     if (!CMTIME_IS_VALID(time) || !CMTIME_IS_NUMERIC(time) || CMTIME_IS_INDEFINITE(time)) return NO;
     Float64 seconds = CMTimeGetSeconds(time);
     return isfinite(seconds) && seconds > 0.0;
 }
 
-static CMTime YouModMinUsableDuration(CMTime first, CMTime second) {
-    BOOL firstOK = YouModCMTimeIsUsable(first);
-    BOOL secondOK = YouModCMTimeIsUsable(second);
+static CMTime HPlusMinUsableDuration(CMTime first, CMTime second) {
+    BOOL firstOK = HPlusCMTimeIsUsable(first);
+    BOOL secondOK = HPlusCMTimeIsUsable(second);
     if (firstOK && secondOK) return CMTIME_COMPARE_INLINE(first, <, second) ? first : second;
     if (firstOK) return first;
     if (secondOK) return second;
     return kCMTimeInvalid;
 }
 
-static CMTime YouModExportDuration(AVAsset *videoAsset, AVAsset *audioAsset, unsigned long long expectedDurationMs) {
+static CMTime HPlusExportDuration(AVAsset *videoAsset, AVAsset *audioAsset, unsigned long long expectedDurationMs) {
     CMTime duration = kCMTimeInvalid;
     if (expectedDurationMs > 0)
         duration = CMTimeMakeWithSeconds((double)expectedDurationMs / 1000.0, 600);
 
-    CMTime videoDuration = YouModMinUsableDuration(videoAsset.duration, [[videoAsset tracksWithMediaType:AVMediaTypeVideo] firstObject].timeRange.duration);
-    CMTime audioDuration = audioAsset ? YouModMinUsableDuration(audioAsset.duration, [[audioAsset tracksWithMediaType:AVMediaTypeAudio] firstObject].timeRange.duration) : kCMTimeInvalid;
-    CMTime mediaDuration = audioAsset ? YouModMinUsableDuration(videoDuration, audioDuration) : videoDuration;
+    CMTime videoDuration = HPlusMinUsableDuration(videoAsset.duration, [[videoAsset tracksWithMediaType:AVMediaTypeVideo] firstObject].timeRange.duration);
+    CMTime audioDuration = audioAsset ? HPlusMinUsableDuration(audioAsset.duration, [[audioAsset tracksWithMediaType:AVMediaTypeAudio] firstObject].timeRange.duration) : kCMTimeInvalid;
+    CMTime mediaDuration = audioAsset ? HPlusMinUsableDuration(videoDuration, audioDuration) : videoDuration;
 
-    if (!YouModCMTimeIsUsable(duration)) return mediaDuration;
-    if (YouModCMTimeIsUsable(mediaDuration) && CMTIME_COMPARE_INLINE(duration, >, mediaDuration))
+    if (!HPlusCMTimeIsUsable(duration)) return mediaDuration;
+    if (HPlusCMTimeIsUsable(mediaDuration) && CMTIME_COMPARE_INLINE(duration, >, mediaDuration))
         return mediaDuration;
     return duration;
 }
 
-static BOOL YouModPathExtensionIsPhotosVideo(NSString *extension) {
+static BOOL HPlusPathExtensionIsPhotosVideo(NSString *extension) {
     NSString *lower = extension.lowercaseString;
     return [@[@"mp4"] containsObject:lower];
 }
 
-static NSString *YouModMimeDetail(NSString *mimeType) {
+static NSString *HPlusMimeDetail(NSString *mimeType) {
     NSString *lower = mimeType.lowercaseString;
     if ([lower containsString:@"mp4"]) return @"MP4";
     return mimeType;
 }
 
-static NSString *YouModFileExtensionForFormat(YouModMediaFormat *format) {
+static NSString *HPlusFileExtensionForFormat(HPlusMediaFormat *format) {
     NSString *lower = format.mimeType.lowercaseString;
     if ([lower containsString:@"mp4a"]) return @"m4a";
     if ([lower containsString:@"mp4"]) return @"mp4";
     return nil;
 }
 
-static BOOL YouModFormatLooksMP4Family(YouModMediaFormat *format) {
+static BOOL HPlusFormatLooksMP4Family(HPlusMediaFormat *format) {
     NSString *mime = format.mimeType.lowercaseString;
-    NSString *extension = YouModFileExtensionForFormat(format);
+    NSString *extension = HPlusFileExtensionForFormat(format);
     return [mime containsString:@"mp4"] || [mime containsString:@"mp4a"] || [@[@"mp4", @"mp4a"] containsObject:extension];
 }
 
-static NSString *YouModMergedVideoOutputExtension(YouModMediaFormat *videoFormat, YouModMediaFormat *audioFormat) {
-    if (YouModFormatLooksMP4Family(videoFormat) && YouModFormatLooksMP4Family(audioFormat)) return @"mp4";
+static NSString *HPlusMergedVideoOutputExtension(HPlusMediaFormat *videoFormat, HPlusMediaFormat *audioFormat) {
+    if (HPlusFormatLooksMP4Family(videoFormat) && HPlusFormatLooksMP4Family(audioFormat)) return @"mp4";
     return nil;
 }
 
-static BOOL YouModVideoFileCanUseAVFoundation(NSURL *fileURL) {
-    return YouModPathExtensionIsPhotosVideo(fileURL.pathExtension);
+static BOOL HPlusVideoFileCanUseAVFoundation(NSURL *fileURL) {
+    return HPlusPathExtensionIsPhotosVideo(fileURL.pathExtension);
 }
 
-static BOOL YouModVideoFileCanSaveToPhotos(NSURL *fileURL) {
-    return YouModPathExtensionIsPhotosVideo(fileURL.pathExtension);
+static BOOL HPlusVideoFileCanSaveToPhotos(NSURL *fileURL) {
+    return HPlusPathExtensionIsPhotosVideo(fileURL.pathExtension);
 }
 
-static NSString *YouModFormatSubtitle(YouModMediaFormat *format, BOOL video) {
+static NSString *HPlusFormatSubtitle(HPlusMediaFormat *format, BOOL video) {
     if (video) {
         NSMutableArray *parts = [NSMutableArray array];
-        NSString *detail = YouModMimeDetail(format.mimeType);
+        NSString *detail = HPlusMimeDetail(format.mimeType);
         if (detail.length) [parts addObject:detail];
-        NSString *size = YouModByteCount(format.contentLength);
+        NSString *size = HPlusByteCount(format.contentLength);
         if (size.length) [parts addObject:size];
         return [parts componentsJoinedByString:@" - "];
     }
@@ -616,7 +616,7 @@ static NSString *YouModFormatSubtitle(YouModMediaFormat *format, BOOL video) {
     return cut;
 }
 
-static YTIPlayerResponse *YouModPlayerDataForPlayer(YTPlayerViewController *player) {
+static YTIPlayerResponse *HPlusPlayerDataForPlayer(YTPlayerViewController *player) {
     YTPlayerResponse *response;
     if ([player respondsToSelector:@selector(contentPlayerResponse)]) {
         response = player.contentPlayerResponse;
@@ -627,8 +627,8 @@ static YTIPlayerResponse *YouModPlayerDataForPlayer(YTPlayerViewController *play
     return playerData;
 }
 
-static NSArray *YouModCaptionTracksForPlayer(YTPlayerViewController *player) {
-    YTIPlayerResponse *playerData = YouModPlayerDataForPlayer(player);
+static NSArray *HPlusCaptionTracksForPlayer(YTPlayerViewController *player) {
+    YTIPlayerResponse *playerData = HPlusPlayerDataForPlayer(player);
     YTICaptionsSupportedRenderers *captions = playerData.captions;
     YTIPlayerCaptionsTrackListRenderer *tracklistRenderer = captions.playerCaptionsTracklistRenderer;
     NSArray *tracks = tracklistRenderer.captionTracksArray;
@@ -636,33 +636,33 @@ static NSArray *YouModCaptionTracksForPlayer(YTPlayerViewController *player) {
     return nil;
 }
 
-static YTIVideoDetails *YouModVideoDetailsForPlayer(YTPlayerViewController *player) {
-    YTIPlayerResponse *ires = YouModPlayerDataForPlayer(player);
+static YTIVideoDetails *HPlusVideoDetailsForPlayer(YTPlayerViewController *player) {
+    YTIPlayerResponse *ires = HPlusPlayerDataForPlayer(player);
     return ires.videoDetails;
 }
 
-static NSString *YouModAuthorForPlayer(YTPlayerViewController *player) {
-    YTIVideoDetails *details = YouModVideoDetailsForPlayer(player);
+static NSString *HPlusAuthorForPlayer(YTPlayerViewController *player) {
+    YTIVideoDetails *details = HPlusVideoDetailsForPlayer(player);
     return details.author;
 }
 
-static NSString *YouModTitleForPlayer(YTPlayerViewController *player) {
-    YTIVideoDetails *details = YouModVideoDetailsForPlayer(player);
+static NSString *HPlusTitleForPlayer(YTPlayerViewController *player) {
+    YTIVideoDetails *details = HPlusVideoDetailsForPlayer(player);
     return details.title;
 }
 
-static NSString *YouModDescriptionForPlayer(YTPlayerViewController *player) {
-    YTIVideoDetails *details = YouModVideoDetailsForPlayer(player);
+static NSString *HPlusDescriptionForPlayer(YTPlayerViewController *player) {
+    YTIVideoDetails *details = HPlusVideoDetailsForPlayer(player);
     return details.shortDescription;
 }
 
-static NSArray *YouModAdaptiveFormatObjectsForPlayer(YTPlayerViewController *player) {
-    YTIPlayerResponse *playerData = YouModPlayerDataForPlayer(player);
+static NSArray *HPlusAdaptiveFormatObjectsForPlayer(YTPlayerViewController *player) {
+    YTIPlayerResponse *playerData = HPlusPlayerDataForPlayer(player);
     YTIStreamingData *streamingData = playerData.streamingData;
     return streamingData.adaptiveFormatsArray;
 }
 
-static YouModMediaFormat *YouModMediaFormatFromStream(YTIFormatStream *stream, BOOL video) {
+static HPlusMediaFormat *HPlusMediaFormatFromStream(YTIFormatStream *stream, BOOL video) {
     NSString *url = stream.URL;
     NSString *mimeType = stream.mimeType;
     NSString *lowerMime = mimeType.lowercaseString;
@@ -672,10 +672,10 @@ static YouModMediaFormat *YouModMediaFormatFromStream(YTIFormatStream *stream, B
     BOOL mimeLooksMP4 = [lowerMime containsString:@"mp4"] && ([lowerMime containsString:@"avc1"] || ([lowerMime containsString:@"mp4a"] && stream.itag == 140));
     if (mimeType.length && !mimeLooksMP4) return nil;
 
-    YouModMediaFormat *format = [YouModMediaFormat new];
+    HPlusMediaFormat *format = [HPlusMediaFormat new];
     format.source = stream;
     format.video = video;
-    format.urlString = YouModURLStringWithCPN(url);
+    format.urlString = HPlusURLStringWithCPN(url);
     format.mimeType = mimeType;
     int height = stream.height;
     if (video && height > 1080) return nil;
@@ -699,14 +699,14 @@ static YouModMediaFormat *YouModMediaFormatFromStream(YTIFormatStream *stream, B
     return format;
 }
 
-static NSArray <YouModMediaFormat *> *YouModFormatsForPlayer(YTPlayerViewController *player, BOOL video) {
+static NSArray <HPlusMediaFormat *> *HPlusFormatsForPlayer(YTPlayerViewController *player, BOOL video) {
     NSMutableArray *formats = [NSMutableArray array];
-    for (YTIFormatStream *stream in YouModAdaptiveFormatObjectsForPlayer(player)) {
-        YouModMediaFormat *format = YouModMediaFormatFromStream(stream, video);
+    for (YTIFormatStream *stream in HPlusAdaptiveFormatObjectsForPlayer(player)) {
+        HPlusMediaFormat *format = HPlusMediaFormatFromStream(stream, video);
         if (format) [formats addObject:format];
     }
 
-    [formats sortUsingComparator:^NSComparisonResult(YouModMediaFormat *left, YouModMediaFormat *right) {
+    [formats sortUsingComparator:^NSComparisonResult(HPlusMediaFormat *left, HPlusMediaFormat *right) {
         if (video) {
             NSInteger leftRes = left.resolution;
             NSInteger rightRes = right.resolution;
@@ -716,8 +716,8 @@ static NSArray <YouModMediaFormat *> *YouModFormatsForPlayer(YTPlayerViewControl
             if (leftFPS != rightFPS) return leftFPS > rightFPS ? NSOrderedAscending : NSOrderedDescending;
         }
         
-        BOOL leftMP4 = YouModFormatLooksMP4Family(left);
-        BOOL rightMP4 = YouModFormatLooksMP4Family(right);
+        BOOL leftMP4 = HPlusFormatLooksMP4Family(left);
+        BOOL rightMP4 = HPlusFormatLooksMP4Family(right);
         if (leftMP4 != rightMP4) return leftMP4 ? NSOrderedAscending : NSOrderedDescending;
 
         if (left.contentLength != right.contentLength)
@@ -727,11 +727,11 @@ static NSArray <YouModMediaFormat *> *YouModFormatsForPlayer(YTPlayerViewControl
 
     NSMutableArray *unique = [NSMutableArray array];
     NSMutableSet *seen = [NSMutableSet set];
-    for (YouModMediaFormat *format in formats) {
+    for (HPlusMediaFormat *format in formats) {
         NSInteger fps = format.fps;
         NSString *key = video
-            ? [NSString stringWithFormat:@"%@-%ld-%@", format.qualityLabel, (long)fps, YouModMimeDetail(format.mimeType)]
-            : [NSString stringWithFormat:@"%@-%@", format.qualityLabel, YouModMimeDetail(format.mimeType)];
+            ? [NSString stringWithFormat:@"%@-%ld-%@", format.qualityLabel, (long)fps, HPlusMimeDetail(format.mimeType)]
+            : [NSString stringWithFormat:@"%@-%@", format.qualityLabel, HPlusMimeDetail(format.mimeType)];
         if ([seen containsObject:key]) continue;
         [seen addObject:key];
         [unique addObject:format];
@@ -739,29 +739,29 @@ static NSArray <YouModMediaFormat *> *YouModFormatsForPlayer(YTPlayerViewControl
     return unique.copy;
 }
 
-static UIViewController *YouModPresenterForSender(UIView *sender, YTPlayerViewController *player) {
+static UIViewController *HPlusPresenterForSender(UIView *sender, YTPlayerViewController *player) {
     UIViewController *presenter = nil;
     if ([sender respondsToSelector:@selector(_viewControllerForAncestor)])
         presenter = [sender _viewControllerForAncestor];
     if (!presenter) presenter = player;
-    return YouModTopViewController(presenter);
+    return HPlusTopViewController(presenter);
 }
 
-static YTPlayerViewController *YouModPlayerFromViewController(UIViewController *vc) {
+static YTPlayerViewController *HPlusPlayerFromViewController(UIViewController *vc) {
     Class playerClass = NSClassFromString(@"YTPlayerViewController");
     UIViewController *cursor = vc;
     while (cursor) {
         if (playerClass && [cursor isKindOfClass:playerClass]) return (YTPlayerViewController *)cursor;
-        id player = YouModObjectFromSelector(cursor, @selector(playerViewController));
+        id player = HPlusObjectFromSelector(cursor, @selector(playerViewController));
         if (playerClass && [player isKindOfClass:playerClass]) return (YTPlayerViewController *)player;
         cursor = cursor.parentViewController;
     }
-    return YouModCurrentPlayerViewController;
+    return HPlusCurrentPlayerViewController;
 }
 
-static NSURL *YouModThumbnailURL(YTPlayerViewController *player) {
+static NSURL *HPlusThumbnailURL(YTPlayerViewController *player) {
     if (!player) return nil;
-    YTIVideoDetails *details = YouModVideoDetailsForPlayer(player);
+    YTIVideoDetails *details = HPlusVideoDetailsForPlayer(player);
     YTIThumbnailDetails *thumbmain = details.thumbnail;
     YTIThumbnailDetails_Thumbnail *bestThumbnail = nil;
     NSUInteger maxPixels = 0;
@@ -777,16 +777,16 @@ static NSURL *YouModThumbnailURL(YTPlayerViewController *player) {
     return [NSURL URLWithString:bestThumbnail.URL];
 }
 
-static void YouModRequestPhotoAccess(void (^completion)(BOOL granted)) {
+static void HPlusRequestPhotoAccess(void (^completion)(BOOL granted)) {
     [PHPhotoLibrary requestAuthorizationForAccessLevel:PHAccessLevelAddOnly handler:^(PHAuthorizationStatus status) {
         completion(status == PHAuthorizationStatusAuthorized || status == PHAuthorizationStatusLimited);
     }];
 }
 
-static void YouModSaveVideoToPhotos(NSURL *fileURL, UIViewController *presenter, void (^completion)(BOOL success, NSError *error)) {
-    YouModRequestPhotoAccess(^(BOOL granted) {
+static void HPlusSaveVideoToPhotos(NSURL *fileURL, UIViewController *presenter, void (^completion)(BOOL success, NSError *error)) {
+    HPlusRequestPhotoAccess(^(BOOL granted) {
         if (!granted) {
-            NSError *error = [NSError errorWithDomain:@"YouMod" code:1 userInfo:@{NSLocalizedDescriptionKey: @"Photos access denied"}];
+            NSError *error = [NSError errorWithDomain:@"HPlus" code:1 userInfo:@{NSLocalizedDescriptionKey: @"Photos access denied"}];
             completion(NO, error);
             return;
         }
@@ -800,7 +800,7 @@ static void YouModSaveVideoToPhotos(NSURL *fileURL, UIViewController *presenter,
     });
 }
 
-static void YouModShareItem(id item, UIViewController *presenter) {
+static void HPlusShareItem(id item, UIViewController *presenter) {
     if (!item || !presenter) return;
     UIActivityViewController *activity = [[UIActivityViewController alloc] initWithActivityItems:@[item] applicationActivities:nil];
     if (isPad()) {
@@ -813,67 +813,67 @@ static void YouModShareItem(id item, UIViewController *presenter) {
     [presenter presentViewController:activity animated:YES completion:nil];
 }
 
-static void YouModShareFile(NSURL *fileURL, UIViewController *presenter) {
-    YouModShareItem(fileURL, presenter);
+static void HPlusShareFile(NSURL *fileURL, UIViewController *presenter) {
+    HPlusShareItem(fileURL, presenter);
 }
 
-static NSInteger YouModGetPostDownloadAction(void) {
+static NSInteger HPlusGetPostDownloadAction(void) {
     return INTFORVAL(PostDownloadAction);
 }
 
-static void YouModHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, UIViewController *presenter) {
+static void HPlusHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, UIViewController *presenter) {
     if (!fileURL) return;
-    NSInteger action = YouModGetPostDownloadAction();
+    NSInteger action = HPlusGetPostDownloadAction();
 
     if (action == PostDownloadActionSaveToPhotos) {
-        if (isVideo && YouModVideoFileCanSaveToPhotos(fileURL)) {
-            YouModSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
+        if (isVideo && HPlusVideoFileCanSaveToPhotos(fileURL)) {
+            HPlusSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
                 if (success) {
-                    YouModSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
+                    HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
                 } else {
-                    YouModSendError(error.localizedDescription ?: LOC(@"CANNOT_SAVE_TO_PHOTOS"));
-                    YouModShareFile(fileURL, presenter);
+                    HPlusSendError(error.localizedDescription ?: LOC(@"CANNOT_SAVE_TO_PHOTOS"));
+                    HPlusShareFile(fileURL, presenter);
                 }
             });
         } else {
-            YouModSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
-            YouModShareFile(fileURL, presenter);
+            HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
+            HPlusShareFile(fileURL, presenter);
         }
     } else if (action == PostDownloadActionShare) {
-        YouModSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
-        YouModShareFile(fileURL, presenter);
+        HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
+        HPlusShareFile(fileURL, presenter);
     } else if (action == PostDownloadActionAsk) {
         UIView *parent = sbGetNotificationParent();
         [SBSkipNotificationView showDownloadCompleteDialogInView:parent
                                                         message:LOC(@"DOWNLOAD_COMPLETED")
                                                     saveHandler:^{
-            if (isVideo && YouModVideoFileCanSaveToPhotos(fileURL)) {
-                YouModSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
+            if (isVideo && HPlusVideoFileCanSaveToPhotos(fileURL)) {
+                HPlusSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
                     if (success) {
-                        YouModSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
+                        HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
                     } else {
-                        YouModSendError(error.localizedDescription ?: LOC(@"CANNOT_SAVE_TO_PHOTOS"));
-                        YouModShareFile(fileURL, presenter);
+                        HPlusSendError(error.localizedDescription ?: LOC(@"CANNOT_SAVE_TO_PHOTOS"));
+                        HPlusShareFile(fileURL, presenter);
                     }
                 });
             } else {
-                YouModSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
-                YouModShareFile(fileURL, presenter);
+                HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
+                HPlusShareFile(fileURL, presenter);
             }
         } shareHandler:^{
-            YouModShareFile(fileURL, presenter);
+            HPlusShareFile(fileURL, presenter);
         } duration:8.0];
     }
 }
 
-static void YouModHandlePostDownloadImage(UIImage *image, UIViewController *presenter) {
+static void HPlusHandlePostDownloadImage(UIImage *image, UIViewController *presenter) {
     if (!image) return;
-    NSInteger action = YouModGetPostDownloadAction();
+    NSInteger action = HPlusGetPostDownloadAction();
 
     if (action == PostDownloadActionSaveToPhotos) {
-        YouModRequestPhotoAccess(^(BOOL granted) {
+        HPlusRequestPhotoAccess(^(BOOL granted) {
             if (!granted) {
-                YouModSendError(LOC(@"PHOTO_ACCESS_DENINED"));
+                HPlusSendError(LOC(@"PHOTO_ACCESS_DENINED"));
                 return;
             }
             [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
@@ -881,25 +881,25 @@ static void YouModHandlePostDownloadImage(UIImage *image, UIViewController *pres
             } completionHandler:^(BOOL success, NSError *saveError) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     if (success) {
-                        YouModSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
+                        HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
                     } else {
-                        YouModSendError(saveError.localizedDescription ?: LOC(@"SAVE_FAILED"));
-                        YouModShareItem(image, presenter);
+                        HPlusSendError(saveError.localizedDescription ?: LOC(@"SAVE_FAILED"));
+                        HPlusShareItem(image, presenter);
                     }
                 });
             }];
         });
     } else if (action == PostDownloadActionShare) {
-        YouModSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
-        YouModShareItem(image, presenter);
+        HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
+        HPlusShareItem(image, presenter);
     } else if (action == PostDownloadActionAsk) {
         UIView *parent = sbGetNotificationParent();
         [SBSkipNotificationView showDownloadCompleteDialogInView:parent
                                                         message:LOC(@"DOWNLOAD_COMPLETED")
                                                     saveHandler:^{
-            YouModRequestPhotoAccess(^(BOOL granted) {
+            HPlusRequestPhotoAccess(^(BOOL granted) {
                 if (!granted) {
-                    YouModSendError(LOC(@"PHOTO_ACCESS_DENINED"));
+                    HPlusSendError(LOC(@"PHOTO_ACCESS_DENINED"));
                     return;
                 }
                 [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
@@ -907,23 +907,23 @@ static void YouModHandlePostDownloadImage(UIImage *image, UIViewController *pres
                 } completionHandler:^(BOOL success, NSError *saveError) {
                     dispatch_async(dispatch_get_main_queue(), ^{
                         if (success) {
-                            YouModSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
+                            HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
                         } else {
-                            YouModSendError(saveError.localizedDescription ?: LOC(@"SAVE_FAILED"));
+                            HPlusSendError(saveError.localizedDescription ?: LOC(@"SAVE_FAILED"));
                         }
                     });
                 }];
             });
         } shareHandler:^{
-            YouModShareItem(image, presenter);
+            HPlusShareItem(image, presenter);
         } duration:8.0];
     }
 }
 
-static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMenuItem *> *items, UIViewController *presenter, UIView *sender) {
-    presenter = YouModTopViewController(presenter);
+static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuItem *> *items, UIViewController *presenter, UIView *sender) {
+    presenter = HPlusTopViewController(presenter);
     YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:presenter];
-    for (YouModMenuItem *item in items) {
+    for (HPlusMenuItem *item in items) {
         YTActionSheetAction *action;
         if (item.subtitle == nil) {
             action = [%c(YTActionSheetAction) actionWithTitle:item.title iconImage:item.iconImage style:0 handler:^(__unused YTActionSheetAction *action) {
@@ -937,7 +937,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
         [sheet addAction:action];
     }
     if (player && player != nil) {
-        [sheet addHeaderWithTitle:YouModAuthorForPlayer(player) subtitle:YouModTitleForPlayer(player)];
+        [sheet addHeaderWithTitle:HPlusAuthorForPlayer(player) subtitle:HPlusTitleForPlayer(player)];
     }
     if (sender) {
         [sheet presentFromView:sender animated:YES completion:nil];
@@ -946,13 +946,13 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     }
 }
 
-@implementation YouModDownloadCoordinator
+@implementation HPlusDownloadCoordinator
 
 + (instancetype)sharedCoordinator {
-    static YouModDownloadCoordinator *coordinator;
+    static HPlusDownloadCoordinator *coordinator;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        coordinator = [YouModDownloadCoordinator new];
+        coordinator = [HPlusDownloadCoordinator new];
     });
     return coordinator;
 }
@@ -966,7 +966,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
             @"Origin": @"https://www.youtube.com",
             @"Referer": @"https://www.youtube.com/",
         };
-        configuration.HTTPMaximumConnectionsPerHost = YouModFastDownloadConcurrency;
+        configuration.HTTPMaximumConnectionsPerHost = HPlusFastDownloadConcurrency;
         configuration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
         configuration.timeoutIntervalForResource = 300;
         _session = [NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:[NSOperationQueue mainQueue]];
@@ -1042,7 +1042,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     self.cancelled = YES;
     if (self.progressPill) { [self.progressPill dismiss]; self.progressPill = nil; }
     [self cleanupTemporaryFiles];
-    if (message.length) YouModSendError(message);
+    if (message.length) HPlusSendError(message);
 }
 
 - (void)cleanupTemporaryFiles {
@@ -1054,7 +1054,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     self.destinationURL = nil;
 }
 
-- (void)downloadURL:(NSURL *)url toURL:(NSURL *)destinationURL expectedBytes:(unsigned long long)expectedBytes headers:(NSDictionary *)headers completion:(YouModFileDownloadCompletion)completion {
+- (void)downloadURL:(NSURL *)url toURL:(NSURL *)destinationURL expectedBytes:(unsigned long long)expectedBytes headers:(NSDictionary *)headers completion:(HPlusFileDownloadCompletion)completion {
     self.currentResolvedSizeAddedToTotal = NO;
     self.currentExpectedBytes = expectedBytes;
     self.currentBytes = 0;
@@ -1071,7 +1071,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     [self beginDownloadURL:url toURL:destinationURL expectedBytes:expectedBytes headers:headers allowFast:YES completion:completion];
 }
 
-- (void)beginDownloadURL:(NSURL *)url toURL:(NSURL *)destinationURL expectedBytes:(unsigned long long)expectedBytes headers:(NSDictionary *)headers allowFast:(BOOL)allowFast completion:(YouModFileDownloadCompletion)completion {
+- (void)beginDownloadURL:(NSURL *)url toURL:(NSURL *)destinationURL expectedBytes:(unsigned long long)expectedBytes headers:(NSDictionary *)headers allowFast:(BOOL)allowFast completion:(HPlusFileDownloadCompletion)completion {
     self.destinationURL = destinationURL;
     self.currentExpectedBytes = expectedBytes;
     self.currentBytes = 0;
@@ -1086,9 +1086,9 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
 
     if (allowFast && expectedBytes == 0) allowFast = NO;
 
-    if (allowFast && expectedBytes >= YouModFastDownloadMinimumBytes) {
+    if (allowFast && expectedBytes >= HPlusFastDownloadMinimumBytes) {
         __weak typeof(self) weakSelf = self;
-        self.rangeDownloader = [[YouModRangeDownloader alloc] initWithURL:url destinationURL:destinationURL expectedBytes:expectedBytes headers:headers progress:^(unsigned long long completedBytes) {
+        self.rangeDownloader = [[HPlusRangeDownloader alloc] initWithURL:url destinationURL:destinationURL expectedBytes:expectedBytes headers:headers progress:^(unsigned long long completedBytes) {
             __strong typeof(weakSelf) self = weakSelf;
             if (!self || self.cancelled) return;
             self.currentBytes = completedBytes;
@@ -1108,7 +1108,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     }
 
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:60.0];
-    YouModApplyDownloadHeaders(request, headers);
+    HPlusApplyDownloadHeaders(request, headers);
     self.task = [self.session downloadTaskWithRequest:request];
     [self.task resume];
 }
@@ -1116,7 +1116,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
 - (void)resolveExpectedBytesForURL:(NSURL *)url headers:(NSDictionary *)headers completion:(void (^)(unsigned long long bytes))completion {
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:15.0];
     request.HTTPMethod = @"HEAD";
-    YouModApplyDownloadHeaders(request, headers);
+    HPlusApplyDownloadHeaders(request, headers);
 
     __weak typeof(self) weakSelf = self;
     self.metadataTask = [NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(__unused NSData *data, NSURLResponse *response, __unused NSError *error) {
@@ -1176,15 +1176,15 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     }
 }
 
-- (void)startVideoDownloadWithVideoFormat:(YouModMediaFormat *)videoFormat audioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
+- (void)startVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
     if (self.active) {
-        YouModSendToast(LOC(@"ALREADY_DOWNLOADING"));
+        HPlusSendToast(LOC(@"ALREADY_DOWNLOADING"));
         return;
     }
     [self startDirectVideoDownloadWithVideoFormat:videoFormat audioFormat:audioFormat fileName:fileName presenter:presenter videoID:vidID];
 }
 
-- (void)startDirectVideoDownloadWithVideoFormat:(YouModMediaFormat *)videoFormat audioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
+- (void)startDirectVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
     [self cleanupTemporaryFiles];
     // On-device SABR path. Checked first: on modern YouTube the format URLs are empty
     // (media flows via SABR), so the URL check below would otherwise abort.
@@ -1195,7 +1195,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     NSURL *videoURL = [NSURL URLWithString:videoFormat.urlString];
     NSURL *audioURL = [NSURL URLWithString:audioFormat.urlString];
     if (!videoURL || !audioURL) {
-        YouModSendError(LOC(@"NO_STREAM_URL"));
+        HPlusSendError(LOC(@"NO_STREAM_URL"));
         return;
     }
 
@@ -1203,9 +1203,9 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     self.cancelled = NO;
     self.completedBytes = 0;
     self.totalBytes = videoFormat.contentLength + audioFormat.contentLength;
-    self.videoTempURL = YouModTemporaryFileURL(YouModFileExtensionForFormat(videoFormat));
-    self.audioTempURL = YouModTemporaryFileURL(YouModFileExtensionForFormat(audioFormat));
-    NSString *outputExtension = YouModMergedVideoOutputExtension(videoFormat, audioFormat);
+    self.videoTempURL = HPlusTemporaryFileURL(HPlusFileExtensionForFormat(videoFormat));
+    self.audioTempURL = HPlusTemporaryFileURL(HPlusFileExtensionForFormat(audioFormat));
+    NSString *outputExtension = HPlusMergedVideoOutputExtension(videoFormat, audioFormat);
     if (INTFORVAL(DownloadMethod) == DownloadMethodServer) {
         NSString *resolutionStr = [NSString stringWithFormat:@"%d", videoFormat.itag];
         [self triggerSilentDownloadWithQuality:resolutionStr isAudio:NO videoID:vidID presenter:presenter];
@@ -1218,7 +1218,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
         __strong typeof(weakSelf) self = weakSelf;
         if (!self || self.cancelled) return;
         if (videoError) {
-            [self failWithError:videoError ?: [NSError errorWithDomain:@"YouMod" code:2 userInfo:@{NSLocalizedDescriptionKey: @"Video download failed"}]];
+            [self failWithError:videoError ?: [NSError errorWithDomain:@"HPlus" code:2 userInfo:@{NSLocalizedDescriptionKey: @"Video download failed"}]];
             return;
         }
 
@@ -1228,7 +1228,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
             __strong typeof(weakSelf) self = weakSelf;
             if (!self || self.cancelled) return;
             if (audioError) {
-                [self failWithError:audioError ?: [NSError errorWithDomain:@"YouMod" code:3 userInfo:@{NSLocalizedDescriptionKey: @"Audio download failed"}]];
+                [self failWithError:audioError ?: [NSError errorWithDomain:@"HPlus" code:3 userInfo:@{NSLocalizedDescriptionKey: @"Audio download failed"}]];
                 return;
             }
             unsigned long long durationMs = videoFormat.durationMs ?: audioFormat.durationMs;
@@ -1241,7 +1241,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
 // engine (which captures/replays the app's own signed request), then hand the two
 // elementary files to the existing muxer. Additive — the direct/server paths above
 // are untouched.
-- (void)startSABRVideoDownloadWithVideoFormat:(YouModMediaFormat *)videoFormat audioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter {
+- (void)startSABRVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter {
     self.active = YES;
     self.cancelled = NO;
     self.completedBytes = 0;
@@ -1263,7 +1263,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
             __strong typeof(weakSelf) self = weakSelf;
             if (!self || self.cancelled) return;
             if (err || !videoURL || !audioURL) {
-                [self failWithError:[NSError errorWithDomain:@"YouMod" code:20 userInfo:@{NSLocalizedDescriptionKey: err ?: LOC(@"DOWNLOAD_FAILED")}]];
+                [self failWithError:[NSError errorWithDomain:@"HPlus" code:20 userInfo:@{NSLocalizedDescriptionKey: err ?: LOC(@"DOWNLOAD_FAILED")}]];
                 return;
             }
             self.videoTempURL = videoURL; // so cleanupTemporaryFiles removes them afterwards
@@ -1275,7 +1275,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
 // On-device SABR audio-only download: fetch the chosen m4a audio itag via SABR, then
 // remux the fragmented-mp4 track into a clean .m4a with AVFoundation (passthrough, no
 // re-encode). No half-length trim: SABR delivers a properly segmented, complete track.
-- (void)startSABRAudioDownloadWithAudioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter {
+- (void)startSABRAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter {
     self.active = YES;
     self.cancelled = NO;
     self.completedBytes = 0;
@@ -1283,7 +1283,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     self.totalBytes = audioFormat.contentLength;
     [self showProgressWithTitle:LOC(@"DOWNLOADING_AUDIO") presenter:presenter];
 
-    NSURL *finalURL = YouModUniqueFileURL(fileName, @"m4a");
+    NSURL *finalURL = HPlusUniqueFileURL(fileName, @"m4a");
     __weak typeof(self) weakSelf = self;
     [YMSABR downloadAudioItag:audioFormat.itag
         progress:^(float fraction, unsigned long long bytesDownloaded) {
@@ -1295,7 +1295,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
             __strong typeof(weakSelf) self = weakSelf;
             if (!self || self.cancelled) return;
             if (err || !audioURL) {
-                [self failWithError:[NSError errorWithDomain:@"YouMod" code:21 userInfo:@{NSLocalizedDescriptionKey: err ?: LOC(@"DOWNLOAD_FAILED")}]];
+                [self failWithError:[NSError errorWithDomain:@"HPlus" code:21 userInfo:@{NSLocalizedDescriptionKey: err ?: LOC(@"DOWNLOAD_FAILED")}]];
                 return;
             }
             self.audioTempURL = audioURL; // so cleanupTemporaryFiles removes it afterwards
@@ -1309,7 +1309,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:audioURL options:nil];
     AVAssetExportSession *exportSession = [AVAssetExportSession exportSessionWithAsset:asset presetName:AVAssetExportPresetAppleM4A];
     if (!exportSession) {
-        [self failWithError:[NSError errorWithDomain:@"YouMod" code:22 userInfo:@{NSLocalizedDescriptionKey: LOC(@"DOWNLOAD_FAILED")}]];
+        [self failWithError:[NSError errorWithDomain:@"HPlus" code:22 userInfo:@{NSLocalizedDescriptionKey: LOC(@"DOWNLOAD_FAILED")}]];
         return;
     }
     exportSession.outputURL = outputURL;
@@ -1326,21 +1326,21 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
             if (exportSession.status == AVAssetExportSessionStatusCompleted) {
                 [self completeWithFileURL:outputURL isVideo:NO presenter:presenter];
             } else {
-                [self failWithError:exportSession.error ?: [NSError errorWithDomain:@"YouMod" code:23 userInfo:@{NSLocalizedDescriptionKey: LOC(@"DOWNLOAD_FAILED")}]];
+                [self failWithError:exportSession.error ?: [NSError errorWithDomain:@"HPlus" code:23 userInfo:@{NSLocalizedDescriptionKey: LOC(@"DOWNLOAD_FAILED")}]];
             }
         });
     }];
 }
 
-- (void)startAudioDownloadWithAudioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
+- (void)startAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
     if (self.active) {
-        YouModSendToast(LOC(@"ALREADY_DOWNLOADING"));
+        HPlusSendToast(LOC(@"ALREADY_DOWNLOADING"));
         return;
     }
     [self startDirectAudioDownloadWithAudioFormat:audioFormat fileName:fileName presenter:presenter videoID:vidID];
 }
 
-- (void)startDirectAudioDownloadWithAudioFormat:(YouModMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
+- (void)startDirectAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
     [self cleanupTemporaryFiles];
     // On-device SABR path. Checked first: on modern YouTube the format URLs are empty
     // (media flows via SABR), so the URL check below would otherwise abort.
@@ -1350,7 +1350,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     }
     NSURL *audioURL = [NSURL URLWithString:audioFormat.urlString];
     if (!audioURL) {
-        YouModSendError(LOC(@"NO_AUDIO_URL"));
+        HPlusSendError(LOC(@"NO_AUDIO_URL"));
         return;
     }
 
@@ -1359,9 +1359,9 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     self.completedBytes = 0;
     self.totalBytes = audioFormat.contentLength;
 
-    NSURL *finalURL = YouModUniqueFileURL(fileName, @"m4a");
+    NSURL *finalURL = HPlusUniqueFileURL(fileName, @"m4a");
     NSString *tempFileName = [NSString stringWithFormat:@"Temp_%@", fileName];
-    NSURL *downloadURL = YouModUniqueFileURL(tempFileName, @"m4a");
+    NSURL *downloadURL = HPlusUniqueFileURL(tempFileName, @"m4a");
     self.audioTempURL = downloadURL;
     if (INTFORVAL(DownloadMethod) == DownloadMethodServer) {
         [self triggerSilentDownloadWithQuality:nil isAudio:YES videoID:vidID presenter:presenter];
@@ -1379,7 +1379,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
         }
         if (error) {
             [[NSFileManager defaultManager] removeItemAtURL:downloadURL error:nil];
-            [self failWithError:error ?: [NSError errorWithDomain:@"YouMod" code:4 userInfo:@{NSLocalizedDescriptionKey: @"Audio download failed"}]];
+            [self failWithError:error ?: [NSError errorWithDomain:@"HPlus" code:4 userInfo:@{NSLocalizedDescriptionKey: @"Audio download failed"}]];
             return;
         }
         
@@ -1404,7 +1404,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
         AVKeyValueStatus status = [asset statusOfValueForKey:@"duration" error:&error];
         if (status != AVKeyValueStatusLoaded) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                completion(error ?: [NSError errorWithDomain:@"YouMod" code:5 userInfo:@{NSLocalizedDescriptionKey: @"Failed to load audio duration"}]);
+                completion(error ?: [NSError errorWithDomain:@"HPlus" code:5 userInfo:@{NSLocalizedDescriptionKey: @"Failed to load audio duration"}]);
             });
             return;
         }
@@ -1416,7 +1416,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
         AVAssetExportSession *exportSession = [AVAssetExportSession exportSessionWithAsset:asset presetName:AVAssetExportPresetAppleM4A];
         if (!exportSession) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                completion([NSError errorWithDomain:@"YouMod" code:6 userInfo:@{NSLocalizedDescriptionKey: @"Failed to create export session"}]);
+                completion([NSError errorWithDomain:@"HPlus" code:6 userInfo:@{NSLocalizedDescriptionKey: @"Failed to create export session"}]);
             });
             return;
         }
@@ -1430,7 +1430,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
                 if (exportSession.status == AVAssetExportSessionStatusCompleted) {
                     completion(nil);
                 } else {
-                    completion(exportSession.error ?: [NSError errorWithDomain:@"YouMod" code:7 userInfo:@{NSLocalizedDescriptionKey: @"Audio trim export failed"}]);
+                    completion(exportSession.error ?: [NSError errorWithDomain:@"HPlus" code:7 userInfo:@{NSLocalizedDescriptionKey: @"Audio trim export failed"}]);
                 }
             });
         }];
@@ -1439,13 +1439,13 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
 
 - (void)mergeVideoURL:(NSURL *)videoURL audioURL:(NSURL *)audioURL fileName:(NSString *)fileName outputExtension:(NSString *)outputExtension durationMs:(unsigned long long)durationMs presenter:(UIViewController *)presenter {
     [self updateProgressTitle:LOC(@"MERGING_VID") progress:0.985f];
-    NSURL *outputURL = YouModUniqueFileURL(fileName, outputExtension.length ? outputExtension : @"mp4");
-    if (durationMs == 0) durationMs = YouModDurationMsForURL(videoURL);
+    NSURL *outputURL = HPlusUniqueFileURL(fileName, outputExtension.length ? outputExtension : @"mp4");
+    if (durationMs == 0) durationMs = HPlusDurationMsForURL(videoURL);
 
-    if (YouModVideoFileCanUseAVFoundation(outputURL)) {
+    if (HPlusVideoFileCanUseAVFoundation(outputURL)) {
         [self mergeVideoWithAVFoundationVideoURL:videoURL audioURL:audioURL outputURL:outputURL durationMs:durationMs presenter:presenter fallbackError:nil];
     } else {
-        [self failWithError:[NSError errorWithDomain:@"YouMod" code:16 userInfo:@{NSLocalizedDescriptionKey: @"Cannot download audio from this stream"}]];
+        [self failWithError:[NSError errorWithDomain:@"HPlus" code:16 userInfo:@{NSLocalizedDescriptionKey: @"Cannot download audio from this stream"}]];
     }
 }
 
@@ -1458,13 +1458,13 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     AVAssetTrack *videoTrack = [[videoAsset tracksWithMediaType:AVMediaTypeVideo] firstObject];
     AVAssetTrack *audioTrack = [[audioAsset tracksWithMediaType:AVMediaTypeAudio] firstObject];
     if (!videoTrack || !audioTrack) {
-        [self failWithError:fallbackError ?: [NSError errorWithDomain:@"YouMod" code:5 userInfo:@{NSLocalizedDescriptionKey: @"Merge failed"}]];
+        [self failWithError:fallbackError ?: [NSError errorWithDomain:@"HPlus" code:5 userInfo:@{NSLocalizedDescriptionKey: @"Merge failed"}]];
         return;
     }
 
-    CMTime duration = YouModExportDuration(videoAsset, audioAsset, durationMs);
-    if (!YouModCMTimeIsUsable(duration)) {
-        [self failWithError:fallbackError ?: [NSError errorWithDomain:@"YouMod" code:9 userInfo:@{NSLocalizedDescriptionKey: @"Cannot determine duration"}]];
+    CMTime duration = HPlusExportDuration(videoAsset, audioAsset, durationMs);
+    if (!HPlusCMTimeIsUsable(duration)) {
+        [self failWithError:fallbackError ?: [NSError errorWithDomain:@"HPlus" code:9 userInfo:@{NSLocalizedDescriptionKey: @"Cannot determine duration"}]];
         return;
     }
     NSError *insertError = nil;
@@ -1477,7 +1477,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     }
 
     AVMutableCompositionTrack *compositionAudio = [composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];
-    CMTime audioDuration = YouModMinUsableDuration(duration, audioTrack.timeRange.duration);
+    CMTime audioDuration = HPlusMinUsableDuration(duration, audioTrack.timeRange.duration);
     [compositionAudio insertTimeRange:CMTimeRangeMake(kCMTimeZero, audioDuration) ofTrack:audioTrack atTime:kCMTimeZero error:&insertError];
     if (insertError) {
         [self failWithError:insertError];
@@ -1500,7 +1500,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
             if (exporter.status == AVAssetExportSessionStatusCompleted) {
                 [self completeWithFileURL:outputURL isVideo:YES presenter:presenter];
             } else {
-                [self failWithError:exporter.error ?: [NSError errorWithDomain:@"YouMod" code:6 userInfo:@{NSLocalizedDescriptionKey: @"Merge failed"}]];
+                [self failWithError:exporter.error ?: [NSError errorWithDomain:@"HPlus" code:6 userInfo:@{NSLocalizedDescriptionKey: @"Merge failed"}]];
             }
         });
     }];
@@ -1512,7 +1512,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     [self updateProgressTitle:LOC(@"DOWNLOAD_COMPLETED") progress:1.0f];
     if (self.progressPill) { [self.progressPill dismiss]; self.progressPill = nil; }
 
-    YouModHandlePostDownloadFile(fileURL, isVideo, presenter);
+    HPlusHandlePostDownloadFile(fileURL, isVideo, presenter);
 }
 
 - (void)failWithError:(NSError *)error {
@@ -1520,7 +1520,7 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
     self.active = NO;
     if (self.progressPill) { [self.progressPill dismiss]; self.progressPill = nil; }
     [self cleanupTemporaryFiles];
-    YouModSendError(error.localizedDescription ?: LOC(@"DOWNLOAD_FAILED"));
+    HPlusSendError(error.localizedDescription ?: LOC(@"DOWNLOAD_FAILED"));
 }
 
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
@@ -1689,10 +1689,10 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
 
 @end
 
-static void YouModShowThumbnailViewer(YTPlayerViewController *player, UIViewController *presenter) {
-    NSURL *thumbnailURL = YouModThumbnailURL(player);
+static void HPlusShowThumbnailViewer(YTPlayerViewController *player, UIViewController *presenter) {
+    NSURL *thumbnailURL = HPlusThumbnailURL(player);
     if (!thumbnailURL) {
-        YouModSendError(LOC(@"NO_THUMBNAIL_FOUND"));
+        HPlusSendError(LOC(@"NO_THUMBNAIL_FOUND"));
         return;
     }
 
@@ -1700,11 +1700,11 @@ static void YouModShowThumbnailViewer(YTPlayerViewController *player, UIViewCont
         UIImage *image = data ? [UIImage imageWithData:data] : nil;
         dispatch_async(dispatch_get_main_queue(), ^{
             if (!image || error) {
-                YouModSendError(error.localizedDescription ?: LOC(@"THUMBNAIL_FAILED"));
+                HPlusSendError(error.localizedDescription ?: LOC(@"THUMBNAIL_FAILED"));
                 return;
             }
             
-            YouModThumbnailViewController *viewerVC = [[YouModThumbnailViewController alloc] init];
+            HPlusThumbnailViewController *viewerVC = [[HPlusThumbnailViewController alloc] init];
             viewerVC.thumbnailImage = image;
             viewerVC.modalPresentationStyle = UIModalPresentationFormSheet;
             viewerVC.modalTransitionStyle = UIModalTransitionStyleCoverVertical; 
@@ -1714,150 +1714,150 @@ static void YouModShowThumbnailViewer(YTPlayerViewController *player, UIViewCont
     }] resume];
 }
 
-static void YouModCopyThumbnail(YTPlayerViewController *player, UIViewController *presenter) {
-    NSURL *thumbnailURL = YouModThumbnailURL(player);
+static void HPlusCopyThumbnail(YTPlayerViewController *player, UIViewController *presenter) {
+    NSURL *thumbnailURL = HPlusThumbnailURL(player);
     if (!thumbnailURL) {
-        YouModSendError(LOC(@"NO_THUMBNAIL_FOUND"));
+        HPlusSendError(LOC(@"NO_THUMBNAIL_FOUND"));
         return;
     }
 
-    YouModSendToast(LOC(@"DOWNLOADING_THUMBNAIL"));
+    HPlusSendToast(LOC(@"DOWNLOADING_THUMBNAIL"));
     [[NSURLSession.sharedSession dataTaskWithURL:thumbnailURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         UIImage *image = data ? [UIImage imageWithData:data] : nil;
         dispatch_async(dispatch_get_main_queue(), ^{
             if (!image || error) {
-                YouModSendError(error.localizedDescription ?: LOC(@"THUMBNAIL_FAILED"));
+                HPlusSendError(error.localizedDescription ?: LOC(@"THUMBNAIL_FAILED"));
                 return;
             }
             [[UIPasteboard generalPasteboard] setImage:image];
-            YouModSendSuccess(LOC(@"COPIED_TO_CLIPBOARD"));
+            HPlusSendSuccess(LOC(@"COPIED_TO_CLIPBOARD"));
         });
     }] resume];
 }
 
-static void YouModDownloadThumbnail(YTPlayerViewController *player, UIViewController *presenter) {
-    NSURL *thumbnailURL = YouModThumbnailURL(player);
+static void HPlusDownloadThumbnail(YTPlayerViewController *player, UIViewController *presenter) {
+    NSURL *thumbnailURL = HPlusThumbnailURL(player);
     if (!thumbnailURL) {
-        YouModSendError(LOC(@"NO_THUMBNAIL_FOUND"));
+        HPlusSendError(LOC(@"NO_THUMBNAIL_FOUND"));
         return;
     }
 
-    YouModSendToast(LOC(@"DOWNLOADING_THUMBNAIL"));
+    HPlusSendToast(LOC(@"DOWNLOADING_THUMBNAIL"));
     [[NSURLSession.sharedSession dataTaskWithURL:thumbnailURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         UIImage *image = data ? [UIImage imageWithData:data] : nil;
         dispatch_async(dispatch_get_main_queue(), ^{
             if (!image || error) {
-                YouModSendError(error.localizedDescription ?: LOC(@"THUMBNAIL_FAILED"));
+                HPlusSendError(error.localizedDescription ?: LOC(@"THUMBNAIL_FAILED"));
                 return;
             }
-            YouModHandlePostDownloadImage(image, presenter);
+            HPlusHandlePostDownloadImage(image, presenter);
         });
     }] resume];
 }
 
-static void YouModCopyTextToPasteboard(NSString *text, NSString *successKey) {
+static void HPlusCopyTextToPasteboard(NSString *text, NSString *successKey) {
     UIPasteboard.generalPasteboard.string = text;
-    YouModSendSuccess(LOC(successKey));
+    HPlusSendSuccess(LOC(successKey));
 }
 
-static void YouModCopyImageToPasteboard(UIImage *image, NSString *successKey) {
+static void HPlusCopyImageToPasteboard(UIImage *image, NSString *successKey) {
     UIPasteboard.generalPasteboard.image = image;
-    YouModSendSuccess(LOC(successKey));
+    HPlusSendSuccess(LOC(successKey));
 }
 
-static void YouModShowCopyVideoInfoSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
-    NSString *author = YouModAuthorForPlayer(player);
-    NSString *title = YouModTitleForPlayer(player);
-    NSString *description = YouModDescriptionForPlayer(player);
+static void HPlusShowCopyVideoInfoSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
+    NSString *author = HPlusAuthorForPlayer(player);
+    NSString *title = HPlusTitleForPlayer(player);
+    NSString *description = HPlusDescriptionForPlayer(player);
     NSString *all = [NSString stringWithFormat:@"%@ - %@\n%@", author, title, description];
 
     NSMutableArray *items = [NSMutableArray array];
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_ALL_VID_INFO") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModCopyTextToPasteboard(all, @"COPIED_VID_INFO");
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_ALL_VID_INFO") subtitle:nil icon:HPlusYTIconImage(250, NO, nil) handler:^{
+        HPlusCopyTextToPasteboard(all, @"COPIED_VID_INFO");
     }]];
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_AUTHOR") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModCopyTextToPasteboard(author, @"COPIED_AUTHOR");
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_AUTHOR") subtitle:nil icon:HPlusYTIconImage(250, NO, nil) handler:^{
+        HPlusCopyTextToPasteboard(author, @"COPIED_AUTHOR");
     }]];
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_TITLE") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModCopyTextToPasteboard(title, @"COPIED_TITLE");
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_TITLE") subtitle:nil icon:HPlusYTIconImage(250, NO, nil) handler:^{
+        HPlusCopyTextToPasteboard(title, @"COPIED_TITLE");
     }]];
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_DESCRIPTION") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModCopyTextToPasteboard(description, @"COPIED_DESCRIPTION");
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_DESCRIPTION") subtitle:nil icon:HPlusYTIconImage(250, NO, nil) handler:^{
+        HPlusCopyTextToPasteboard(description, @"COPIED_DESCRIPTION");
     }]];
 
-    YouModPresentMenu(nil, items, presenter, sender);
+    HPlusPresentMenu(nil, items, presenter, sender);
 }
 
-static void YouModShowAudioTrackSelectionSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, NSString *fileName, BOOL downloadVideo, YouModMediaFormat *videoFormat) {
-    NSArray <YouModMediaFormat *> *audioFormats = YouModFormatsForPlayer(player, NO);
+static void HPlusShowAudioTrackSelectionSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, NSString *fileName, BOOL downloadVideo, HPlusMediaFormat *videoFormat) {
+    NSArray <HPlusMediaFormat *> *audioFormats = HPlusFormatsForPlayer(player, NO);
     if (audioFormats.count == 0) {
-        YouModSendError(LOC(@"NO_AUDIO_STREAM_FOUND"));
+        HPlusSendError(LOC(@"NO_AUDIO_STREAM_FOUND"));
         return;
     }
 
     // Skip the audio-track chooser for a single format, or the server path (which
     // can't fetch a chosen track). Direct and on-device SABR both honor the choice.
     if (audioFormats.count == 1 || INTFORVAL(DownloadMethod) == DownloadMethodServer || INTFORVAL(DownloadMethod) == DownloadMethodOnDevice) {
-        YouModMediaFormat *selectedFormat = audioFormats.firstObject;
+        HPlusMediaFormat *selectedFormat = audioFormats.firstObject;
         if (downloadVideo) {
-            [[YouModDownloadCoordinator sharedCoordinator] startVideoDownloadWithVideoFormat:videoFormat audioFormat:selectedFormat fileName:fileName presenter:presenter videoID:player.currentVideoID];
+            [[HPlusDownloadCoordinator sharedCoordinator] startVideoDownloadWithVideoFormat:videoFormat audioFormat:selectedFormat fileName:fileName presenter:presenter videoID:player.currentVideoID];
         } else {
-            [[YouModDownloadCoordinator sharedCoordinator] startAudioDownloadWithAudioFormat:selectedFormat fileName:fileName presenter:presenter videoID:player.currentVideoID];
+            [[HPlusDownloadCoordinator sharedCoordinator] startAudioDownloadWithAudioFormat:selectedFormat fileName:fileName presenter:presenter videoID:player.currentVideoID];
         }
         return;
     }
 
     NSMutableArray *items = [NSMutableArray array];
-    for (YouModMediaFormat *format in audioFormats) {
+    for (HPlusMediaFormat *format in audioFormats) {
         NSString *rowTitle = format.qualityLabel;
-        NSString *subtitle = YouModFormatSubtitle(format, NO);
-        [items addObject:[YouModMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:YouModYTIconImage(906, NO, nil) handler:^{
+        NSString *subtitle = HPlusFormatSubtitle(format, NO);
+        [items addObject:[HPlusMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:HPlusYTIconImage(906, NO, nil) handler:^{
             if (downloadVideo) {
-                [[YouModDownloadCoordinator sharedCoordinator] startVideoDownloadWithVideoFormat:videoFormat audioFormat:format fileName:fileName presenter:presenter videoID:player.currentVideoID];
+                [[HPlusDownloadCoordinator sharedCoordinator] startVideoDownloadWithVideoFormat:videoFormat audioFormat:format fileName:fileName presenter:presenter videoID:player.currentVideoID];
             } else {
-                [[YouModDownloadCoordinator sharedCoordinator] startAudioDownloadWithAudioFormat:format fileName:fileName presenter:presenter videoID:player.currentVideoID];
+                [[HPlusDownloadCoordinator sharedCoordinator] startAudioDownloadWithAudioFormat:format fileName:fileName presenter:presenter videoID:player.currentVideoID];
             }
         }]];
     }
 
-    YouModPresentMenu(nil, items, presenter, sender);
+    HPlusPresentMenu(nil, items, presenter, sender);
 }
 
-static void YouModShowVideoQualitySheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, BOOL isShorts) {
-    NSArray <YouModMediaFormat *> *videoFormats = YouModFormatsForPlayer(player, YES);
-    NSString *title = YouModTitleForPlayer(player);
+static void HPlusShowVideoQualitySheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, BOOL isShorts) {
+    NSArray <HPlusMediaFormat *> *videoFormats = HPlusFormatsForPlayer(player, YES);
+    NSString *title = HPlusTitleForPlayer(player);
 
     if (videoFormats.count == 0) {
-        YouModSendError(LOC(@"NO_VID_AUDIO_STREAM_FOUND"));
+        HPlusSendError(LOC(@"NO_VID_AUDIO_STREAM_FOUND"));
         return;
     }
 
     NSMutableArray *items = [NSMutableArray array];
-    for (YouModMediaFormat *format in videoFormats) {
+    for (HPlusMediaFormat *format in videoFormats) {
         NSString *rowTitle = format.qualityLabel;
-        NSString *subtitle = YouModFormatSubtitle(format, YES);
+        NSString *subtitle = HPlusFormatSubtitle(format, YES);
         if (isShorts) {
-            [items addObject:[YouModMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:YouModYTIconImage(769, NO, nil) handler:^{
-                YouModShowAudioTrackSelectionSheet(player, presenter, sender, title, YES, format);
+            [items addObject:[HPlusMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:HPlusYTIconImage(769, NO, nil) handler:^{
+                HPlusShowAudioTrackSelectionSheet(player, presenter, sender, title, YES, format);
             }]];
         } else {
-            [items addObject:[YouModMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:YouModYTIconImage(658, NO, nil) handler:^{
-                YouModShowAudioTrackSelectionSheet(player, presenter, sender, title, YES, format);
+            [items addObject:[HPlusMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:HPlusYTIconImage(658, NO, nil) handler:^{
+                HPlusShowAudioTrackSelectionSheet(player, presenter, sender, title, YES, format);
             }]];
         }
     }
-    YouModPresentMenu(nil, items, presenter, sender);
+    HPlusPresentMenu(nil, items, presenter, sender);
 }
 
-static void YouModStartDownloadAudio(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
-    NSString *title = YouModTitleForPlayer(player);
-    YouModShowAudioTrackSelectionSheet(player, presenter, sender, title, NO, nil);
+static void HPlusStartDownloadAudio(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
+    NSString *title = HPlusTitleForPlayer(player);
+    HPlusShowAudioTrackSelectionSheet(player, presenter, sender, title, NO, nil);
 }
 
-static void YouModShowCaptionsSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
-    NSArray *tracks = YouModCaptionTracksForPlayer(player);
+static void HPlusShowCaptionsSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
+    NSArray *tracks = HPlusCaptionTracksForPlayer(player);
     if (tracks.count == 0) {
-        YouModSendError(LOC(@"NO_CAPTIONS"));
+        HPlusSendError(LOC(@"NO_CAPTIONS"));
         return;
     }
     
@@ -1870,35 +1870,35 @@ static void YouModShowCaptionsSheet(YTPlayerViewController *player, UIViewContro
         YTIFormattedString *nameObj = track.name;
         NSString *nameStr = nameObj.dropdownOptionTitle;
         
-        [items addObject:[YouModMenuItem itemWithTitle:nameStr subtitle:languageCode icon:YouModYTIconImage(50, NO, nil) handler:^{
+        [items addObject:[HPlusMenuItem itemWithTitle:nameStr subtitle:languageCode icon:HPlusYTIconImage(50, NO, nil) handler:^{
             NSString *vttURL = [baseURL stringByAppendingString:@"&fmt=vtt"];
             NSURL *url = [NSURL URLWithString:vttURL];
             if (!url) {
-                YouModSendError(LOC(@"NO_CAPTIONS_URL"));
+                HPlusSendError(LOC(@"NO_CAPTIONS_URL"));
                 return;
             }
-            YouModSendToast(LOC(@"DOWNLOADING_CAPTIONS"));
+            HPlusSendToast(LOC(@"DOWNLOADING_CAPTIONS"));
             [[NSURLSession.sharedSession dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
                 if (error || data.length == 0) {
                     dispatch_async(dispatch_get_main_queue(), ^{
-                        YouModSendError(LOC(@"CAPTIONS_FAILED"));
+                        HPlusSendError(LOC(@"CAPTIONS_FAILED"));
                     });
                     return;
                 }
                 
-                NSString *title = YouModTitleForPlayer(player);
+                NSString *title = HPlusTitleForPlayer(player);
                 NSString *filename = [NSString stringWithFormat:@"%@.%@", title, languageCode];
-                NSURL *tempURL = YouModUniqueFileURL(filename, @"vtt");
+                NSURL *tempURL = HPlusUniqueFileURL(filename, @"vtt");
                 
                 NSError *writeError = nil;
                 BOOL writeSuccess = [data writeToURL:tempURL options:NSDataWritingAtomic error:&writeError];
                 
                 dispatch_async(dispatch_get_main_queue(), ^{
                     if (writeSuccess) {
-                        YouModSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
-                        YouModShareFile(tempURL, presenter);
+                        HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
+                        HPlusShareFile(tempURL, presenter);
                     } else {
-                        YouModSendError(writeError.localizedDescription ?: LOC(@"CAPTIONS_FAILED"));
+                        HPlusSendError(writeError.localizedDescription ?: LOC(@"CAPTIONS_FAILED"));
                     }
                 });
             }] resume];
@@ -1906,32 +1906,32 @@ static void YouModShowCaptionsSheet(YTPlayerViewController *player, UIViewContro
     }
     
     if (items.count == 0) {
-        YouModSendError(LOC(@"NO_CAPTIONS_URL"));
+        HPlusSendError(LOC(@"NO_CAPTIONS_URL"));
         return;
     }
     
-    YouModPresentMenu(nil, items, presenter, sender);
+    HPlusPresentMenu(nil, items, presenter, sender);
 }
 
-static void YouModShowThumbnailSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
+static void HPlusShowThumbnailSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
     NSMutableArray *items = [NSMutableArray array];
 
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"SAVE_THUMBNAIL") subtitle:nil icon:YouModYTIconImage(57, NO, nil) handler:^{
-        YouModDownloadThumbnail(player, presenter);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_THUMBNAIL") subtitle:nil icon:HPlusYTIconImage(57, NO, nil) handler:^{
+        HPlusDownloadThumbnail(player, presenter);
     }]];
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"SHOW_THUMBNAIL") subtitle:nil icon:YouModYTIconImage(208, NO, nil) handler:^{
-        YouModShowThumbnailViewer(player, presenter);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SHOW_THUMBNAIL") subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
+        HPlusShowThumbnailViewer(player, presenter);
     }]];
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_THUMBNAIL") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModCopyThumbnail(player, presenter);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_THUMBNAIL") subtitle:nil icon:HPlusYTIconImage(250, NO, nil) handler:^{
+        HPlusCopyThumbnail(player, presenter);
     }]];
 
-    YouModPresentMenu(nil, items, presenter, sender);
+    HPlusPresentMenu(nil, items, presenter, sender);
 }
 
-static void YouModShowDownloadManager(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, BOOL isShorts) {
+static void HPlusShowDownloadManager(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, BOOL isShorts) {
     if (!player) {
-        YouModSendError(LOC(@"OPEN_VID_BEFORE"));
+        HPlusSendError(LOC(@"OPEN_VID_BEFORE"));
         return;
     }
     NSMutableArray *items = [NSMutableArray array];
@@ -1940,52 +1940,52 @@ static void YouModShowDownloadManager(YTPlayerViewController *player, UIViewCont
 
     if (!sgvid.isLivePlayback) {
         if (isShorts) {
-            [items addObject:[YouModMenuItem itemWithTitle:LOC(@"DOWNLOAD_SHORTS") subtitle:nil icon:YouModYTIconImage(769, NO, nil) handler:^{
-                YouModShowVideoQualitySheet(player, presenter, sender, YES);
+            [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"DOWNLOAD_SHORTS") subtitle:nil icon:HPlusYTIconImage(769, NO, nil) handler:^{
+                HPlusShowVideoQualitySheet(player, presenter, sender, YES);
             }]];
         } else {
-            [items addObject:[YouModMenuItem itemWithTitle:LOC(@"DOWNLOAD_VIDEO") subtitle:nil icon:YouModYTIconImage(658, NO, nil) handler:^{
-                YouModShowVideoQualitySheet(player, presenter, sender, NO);
+            [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"DOWNLOAD_VIDEO") subtitle:nil icon:HPlusYTIconImage(658, NO, nil) handler:^{
+                HPlusShowVideoQualitySheet(player, presenter, sender, NO);
             }]];
         }
-        [items addObject:[YouModMenuItem itemWithTitle:LOC(@"DOWNLOAD_AUDIO") subtitle:nil icon:YouModYTIconImage(21, NO, nil) handler:^{
-            YouModStartDownloadAudio(player, presenter, sender);
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"DOWNLOAD_AUDIO") subtitle:nil icon:HPlusYTIconImage(21, NO, nil) handler:^{
+            HPlusStartDownloadAudio(player, presenter, sender);
         }]];
-        [items addObject:[YouModMenuItem itemWithTitle:LOC(@"DOWNLOAD_CAPTIONS") subtitle:nil icon:YouModYTIconImage(50, NO, nil) handler:^{
-            YouModShowCaptionsSheet(player, presenter, sender);
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"DOWNLOAD_CAPTIONS") subtitle:nil icon:HPlusYTIconImage(50, NO, nil) handler:^{
+            HPlusShowCaptionsSheet(player, presenter, sender);
         }]];
     }
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"THUMBNAIL_OPTIONS") subtitle:nil icon:YouModYTIconImage(367, NO, nil) handler:^{
-        YouModShowThumbnailSheet(player, presenter, sender);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"THUMBNAIL_OPTIONS") subtitle:nil icon:HPlusYTIconImage(367, NO, nil) handler:^{
+        HPlusShowThumbnailSheet(player, presenter, sender);
     }]];
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_VID_INFO") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModShowCopyVideoInfoSheet(player, presenter, sender);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_VID_INFO") subtitle:nil icon:HPlusYTIconImage(250, NO, nil) handler:^{
+        HPlusShowCopyVideoInfoSheet(player, presenter, sender);
     }]];
-    YouModPresentMenu(player, items, presenter, sender);
+    HPlusPresentMenu(player, items, presenter, sender);
 }
 
 %hook YTPlayerViewController
 
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
-    YouModCurrentPlayerViewController = self;
+    HPlusCurrentPlayerViewController = self;
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
     %orig;
-    if (YouModCurrentPlayerViewController == self)
-        YouModCurrentPlayerViewController = nil;
+    if (HPlusCurrentPlayerViewController == self)
+        HPlusCurrentPlayerViewController = nil;
 }
 
 %end
 
-NSString *YouModGlobalAuthHeader = nil;
+NSString *HPlusGlobalAuthHeader = nil;
 
 %hook SSOAuthorization
 - (id)accessToken {
     id token = %orig;
     if ([token isKindOfClass:[NSString class]] && [(NSString *)token length] > 0) {
-        YouModGlobalAuthHeader = [NSString stringWithFormat:@"Bearer %@", token];
+        HPlusGlobalAuthHeader = [NSString stringWithFormat:@"Bearer %@", token];
     }
     return token;
 }
@@ -1995,7 +1995,7 @@ NSString *YouModGlobalAuthHeader = nil;
 - (id)accessToken {
     id token = %orig;
     if ([token isKindOfClass:[NSString class]] && [(NSString *)token length] > 0) {
-        YouModGlobalAuthHeader = [NSString stringWithFormat:@"Bearer %@", token];
+        HPlusGlobalAuthHeader = [NSString stringWithFormat:@"Bearer %@", token];
     }
     return token;
 }
@@ -2005,31 +2005,31 @@ NSString *YouModGlobalAuthHeader = nil;
 - (id)authToken {
     id token = %orig;
     if ([token isKindOfClass:[NSString class]] && [(NSString *)token length] > 0) {
-        YouModGlobalAuthHeader = [NSString stringWithFormat:@"Bearer %@", token];
+        HPlusGlobalAuthHeader = [NSString stringWithFormat:@"Bearer %@", token];
     }
     return token;
 }
 %end
 
-void YouModConfigureDownloadButton(_ASDisplayView *view) {
+void HPlusConfigureDownloadButton(_ASDisplayView *view) {
     if (!IS_ENABLED(DownloadManager)) return;
-    if (objc_getAssociatedObject(view, @selector(YouModDownloadButtonTapped:))) return;
+    if (objc_getAssociatedObject(view, @selector(HPlusDownloadButtonTapped:))) return;
 
     if ([view.accessibilityIdentifier isEqualToString:@"id.ui.add_to.offline.button"]) {
         view.userInteractionEnabled = YES;
-        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(YouModDownloadButtonTapped:)];
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(HPlusDownloadButtonTapped:)];
         tap.cancelsTouchesInView = YES;
         tap.delaysTouchesBegan = YES;
         tap.delaysTouchesEnded = YES;
         [view addGestureRecognizer:tap];
-        objc_setAssociatedObject(view, @selector(YouModDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(view, @selector(HPlusDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 }
 
-static void YouModShowTranslationDialog(NSString *text, UIViewController *presenter) {
+static void HPlusShowTranslationDialog(NSString *text, UIViewController *presenter) {
     if (!text || text.length == 0 || !presenter) return;
     
-    YouModTranslationViewController *vc = [[YouModTranslationViewController alloc] init];
+    HPlusTranslationViewController *vc = [[HPlusTranslationViewController alloc] init];
     vc.originalText = text;
     
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
@@ -2051,7 +2051,7 @@ static void YouModShowTranslationDialog(NSString *text, UIViewController *presen
     [presenter presentViewController:nav animated:YES completion:nil];
 }
 
-static NSString *YouModExtractCommentText(UIView *cellView) {
+static NSString *HPlusExtractCommentText(UIView *cellView) {
     if (!cellView) return @"";
 
     NSString *resultText = @"";
@@ -2091,7 +2091,7 @@ static NSString *YouModExtractCommentText(UIView *cellView) {
     return resultText;
 }
 
-static UIImage *YouModRenderViewToImage(_ASDisplayView *view) {
+static UIImage *HPlusRenderViewToImage(_ASDisplayView *view) {
     if (!view || view.bounds.size.width <= 0 || view.bounds.size.height <= 0) return nil;
     
     UIColor *realBgColor = isDarkMode(view) ? [%c(YTColor) black3] : [%c(YTColor) white1];  
@@ -2107,7 +2107,7 @@ static UIImage *YouModRenderViewToImage(_ASDisplayView *view) {
 }
 
 /*
-static UIImage *YouModExtractPostImage(UIView *cellView) {
+static UIImage *HPlusExtractPostImage(UIView *cellView) {
     NSMutableArray<UIView *> *queue = [NSMutableArray arrayWithObject:cellView];
     Class asDisplayClass = NSClassFromString(@"_ASDisplayView");
     Class imageZoomNodeClass = NSClassFromString(@"YTImageZoomNode");
@@ -2150,30 +2150,30 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
     if ([self.accessibilityIdentifier isEqualToString:@"id.ui.comment_cell"] && IS_ENABLED(DownloadComment)) {
         BOOL hasGesture = NO;
         for (UIGestureRecognizer *g in self.gestureRecognizers) {
-            if ([g.name isEqualToString:@"YouModCommentLongPress"]) {
+            if ([g.name isEqualToString:@"HPlusCommentLongPress"]) {
                 hasGesture = YES;
                 break;
             }
         }
         
         if (!hasGesture) {
-            UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(YouModHandleCommentLongPress:)];
-            longPress.name = @"YouModCommentLongPress";
+            UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusHandleCommentLongPress:)];
+            longPress.name = @"HPlusCommentLongPress";
             longPress.minimumPressDuration = 0.3;
             [self addGestureRecognizer:longPress];
         }
     } else if ([self.accessibilityIdentifier isEqualToString:@"id.ui.backstage.original_post"] && IS_ENABLED(DownloadPost)) {
         BOOL hasGesture = NO;
         for (UIGestureRecognizer *g in self.gestureRecognizers) {
-            if ([g.name isEqualToString:@"YouModPostLongPress"]) {
+            if ([g.name isEqualToString:@"HPlusPostLongPress"]) {
                 hasGesture = YES;
                 break;
             }
         }
         
         if (!hasGesture) {
-            UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(YouModHandlePostLongPress:)];
-            longPress.name = @"YouModPostLongPress";
+            UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusHandlePostLongPress:)];
+            longPress.name = @"HPlusPostLongPress";
             longPress.minimumPressDuration = 0.3;
             [self addGestureRecognizer:longPress];
         }
@@ -2181,106 +2181,106 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
 }
 
 %new
-- (void)YouModHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
+- (void)HPlusHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
 
     NSMutableArray *items = [NSMutableArray array];
-    NSString *commentText = YouModExtractCommentText(self);
+    NSString *commentText = HPlusExtractCommentText(self);
 
     if (commentText && commentText.length > 0) {
-        [items addObject:[YouModMenuItem itemWithTitle:LOC(@"TRANSLATE_COMMENT") subtitle:nil icon:YouModYTIconImage(897, NO, nil) handler:^{
-            UIViewController *presenter = YouModPresenterForSender(self, nil);
-            YouModShowTranslationDialog(commentText, presenter);
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"TRANSLATE_COMMENT") subtitle:nil icon:HPlusYTIconImage(897, NO, nil) handler:^{
+            UIViewController *presenter = HPlusPresenterForSender(self, nil);
+            HPlusShowTranslationDialog(commentText, presenter);
         }]];
 
-        [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_COMMENT_TEXT") subtitle:nil icon:YouModYTIconImage(243, NO, nil) handler:^{
-            YouModCopyTextToPasteboard(commentText, @"COPIED_TO_CLIPBOARD");
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_COMMENT_TEXT") subtitle:nil icon:HPlusYTIconImage(243, NO, nil) handler:^{
+            HPlusCopyTextToPasteboard(commentText, @"COPIED_TO_CLIPBOARD");
         }]];
     }
 
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"SAVE_COMMENT_IMAGE") subtitle:nil icon:YouModYTIconImage(367, NO, nil) handler:^{
-        UIImage *image = YouModRenderViewToImage(self);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_COMMENT_IMAGE") subtitle:nil icon:HPlusYTIconImage(367, NO, nil) handler:^{
+        UIImage *image = HPlusRenderViewToImage(self);
         if (image) {
-            UIViewController *p = YouModPresenterForSender(self, nil);
-            YouModHandlePostDownloadImage(image, p);
+            UIViewController *p = HPlusPresenterForSender(self, nil);
+            HPlusHandlePostDownloadImage(image, p);
         }
     }]];
 
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_COMMENT_IMAGE") subtitle:nil icon:YouModYTIconImage(208, NO, nil) handler:^{
-        UIImage *image = YouModRenderViewToImage(self);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_COMMENT_IMAGE") subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
+        UIImage *image = HPlusRenderViewToImage(self);
         if (image) {
-            YouModCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
+            HPlusCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
         }
     }]];
 
-    UIViewController *presenter = YouModPresenterForSender(self, nil);
+    UIViewController *presenter = HPlusPresenterForSender(self, nil);
     if (!presenter) return;
 
-    YouModPresentMenu(nil, items, presenter, self);
+    HPlusPresentMenu(nil, items, presenter, self);
 }
 
 %new
-- (void)YouModHandlePostLongPress:(UILongPressGestureRecognizer *)sender {
+- (void)HPlusHandlePostLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
 
     NSMutableArray *items = [NSMutableArray array];
-    NSString *commentText = YouModExtractCommentText(self);
+    NSString *commentText = HPlusExtractCommentText(self);
 
     if (commentText && commentText.length > 0) {
-        [items addObject:[YouModMenuItem itemWithTitle:LOC(@"TRANSLATE_POST") subtitle:nil icon:YouModYTIconImage(897, NO, nil) handler:^{
-            UIViewController *presenter = YouModPresenterForSender(self, nil);
-            YouModShowTranslationDialog(commentText, presenter);
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"TRANSLATE_POST") subtitle:nil icon:HPlusYTIconImage(897, NO, nil) handler:^{
+            UIViewController *presenter = HPlusPresenterForSender(self, nil);
+            HPlusShowTranslationDialog(commentText, presenter);
         }]];
 
-        [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_POST_TEXT") subtitle:nil icon:YouModYTIconImage(243, NO, nil) handler:^{
-            YouModCopyTextToPasteboard(commentText, @"COPIED_TO_CLIPBOARD");
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_POST_TEXT") subtitle:nil icon:HPlusYTIconImage(243, NO, nil) handler:^{
+            HPlusCopyTextToPasteboard(commentText, @"COPIED_TO_CLIPBOARD");
         }]];
     }
 
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"SAVE_POST_IMAGE") subtitle:nil icon:YouModYTIconImage(367, NO, nil) handler:^{
-        UIImage *image = YouModRenderViewToImage(self);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_POST_IMAGE") subtitle:nil icon:HPlusYTIconImage(367, NO, nil) handler:^{
+        UIImage *image = HPlusRenderViewToImage(self);
         if (image) {
-            UIViewController *p = YouModPresenterForSender(self, nil);
-            YouModHandlePostDownloadImage(image, p);
+            UIViewController *p = HPlusPresenterForSender(self, nil);
+            HPlusHandlePostDownloadImage(image, p);
         }
     }]];
 
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_POST_IMAGE") subtitle:nil icon:YouModYTIconImage(208, NO, nil) handler:^{
-        UIImage *image = YouModRenderViewToImage(self);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_POST_IMAGE") subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
+        UIImage *image = HPlusRenderViewToImage(self);
         if (image) {
-            YouModCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
+            HPlusCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
         }
     }]];
 
     /*
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"SAVE_CURRENT_IMAGE") subtitle:nil icon:YouModYTIconImage(367, YES, [UIColor systemPurpleColor]) handler:^{
-        UIImage *image = YouModExtractPostImage(self);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_CURRENT_IMAGE") subtitle:nil icon:HPlusYTIconImage(367, YES, [UIColor systemPurpleColor]) handler:^{
+        UIImage *image = HPlusExtractPostImage(self);
         if (image) {
             UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil);
-            YouModSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
+            HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
         }
     }]];
 
-    [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_CURRENT_IMAGE") subtitle:nil icon:YouModYTIconImage(208, YES, [UIColor systemPurpleColor]) handler:^{
-        UIImage *image = YouModExtractPostImage(self);
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_CURRENT_IMAGE") subtitle:nil icon:HPlusYTIconImage(208, YES, [UIColor systemPurpleColor]) handler:^{
+        UIImage *image = HPlusExtractPostImage(self);
         if (image) {
-            YouModCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
+            HPlusCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
         }
     }]];
     */
 
-    UIViewController *presenter = YouModPresenterForSender(self, nil);
+    UIViewController *presenter = HPlusPresenterForSender(self, nil);
     if (!presenter) return;
 
-    YouModPresentMenu(nil, items, presenter, self);
+    HPlusPresentMenu(nil, items, presenter, self);
 }
 
 %new
-- (void)YouModDownloadButtonTapped:(UITapGestureRecognizer *)sender {
+- (void)HPlusDownloadButtonTapped:(UITapGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateEnded) return;
-    UIViewController *presenter = YouModPresenterForSender(self, YouModCurrentPlayerViewController);
-    YTPlayerViewController *player = YouModPlayerFromViewController(presenter);
-    YouModShowDownloadManager(player, presenter, self, NO);
+    UIViewController *presenter = HPlusPresenterForSender(self, HPlusCurrentPlayerViewController);
+    YTPlayerViewController *player = HPlusPlayerFromViewController(presenter);
+    HPlusShowDownloadManager(player, presenter, self, NO);
 }
 
 %end
@@ -2299,7 +2299,7 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
         downloadBtn.tintColor = [UIColor whiteColor];
         downloadBtn.exclusiveTouch = YES;
         downloadBtn.tag = 1501;
-        [downloadBtn addTarget:self action:@selector(didTapYouModShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
+        [downloadBtn addTarget:self action:@selector(didTapHPlusShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
         [downloadBtn enableNewTouchFeedback];
         [self addSubview:downloadBtn];
     }
@@ -2323,11 +2323,11 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
 }
 
 %new
-- (void)didTapYouModShortsDownload:(YTQTMButton *)button {
+- (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
     YTShortsPlayerViewController *shortsPlayerView = (YTShortsPlayerViewController *)self._viewControllerForAncestor;
     YTPlayerViewController *player = (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
-    UIViewController *presenter = YouModPresenterForSender(button, player);
-    YouModShowDownloadManager(player, presenter, button, YES);
+    UIViewController *presenter = HPlusPresenterForSender(button, player);
+    HPlusShowDownloadManager(player, presenter, button, YES);
 }
 
 %end
@@ -2345,9 +2345,9 @@ static UIImage *YouModExtractPostImage(UIView *cellView) {
         return YMIsOverlayButtonEnabled(@"download.video");
     };
     download.onTap = ^(YTPlayerViewController *player, UIButton *button) {
-        UIViewController *presenter = YouModPresenterForSender(button, player ?: YouModCurrentPlayerViewController);
-        YTPlayerViewController *resolved = YouModPlayerFromViewController(presenter) ?: player ?: YouModCurrentPlayerViewController;
-        YouModShowDownloadManager(resolved, presenter, button, NO);
+        UIViewController *presenter = HPlusPresenterForSender(button, player ?: HPlusCurrentPlayerViewController);
+        YTPlayerViewController *resolved = HPlusPlayerFromViewController(presenter) ?: player ?: HPlusCurrentPlayerViewController;
+        HPlusShowDownloadManager(resolved, presenter, button, NO);
     };
     YMRegisterOverlayButton(download);
 }

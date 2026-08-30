@@ -23,7 +23,7 @@
         else if (type == 15) imageName = isSelected ? @"icons/minigame_selected" : @"icons/minigame";
         else if (type == 16) imageName = isSelected ? @"icons/fashion_selected" : @"icons/fashion";
         else if (type == 17) imageName = isSelected ? @"icons/learning_selected" : @"icons/learning";
-        YTAssetLoader *al = [[%c(YTAssetLoader) alloc] initWithBundle:YouModBundle()];
+        YTAssetLoader *al = [[%c(YTAssetLoader) alloc] initWithBundle:HPlusBundle()];
         return [al imageNamed:imageName];
     }
     return %orig;
@@ -265,7 +265,7 @@ static BOOL isGestureRegistered = NO;
                                                image:[UIImage systemImageNamed:@"link"]
                                           identifier:nil
                                              handler:^(__kindof UIAction * _Nonnull action) {
-            UIViewController *topVC = YouModTopViewController(nil);
+            UIViewController *topVC = HPlusTopViewController(nil);
             YMOpenLinkFromClipboard(topVC, YES);
         }];
         return [UIMenu menuWithTitle:@"" children:@[tabBarAction, openLinkAction]];
@@ -323,11 +323,11 @@ static BOOL isTabSelected = NO;
 - (void)appDidBecomeActive {
     %orig;
     if (IS_ENABLED(AutoOpenLink)) {
-        UIViewController *topVC = YouModTopViewController(nil);
+        UIViewController *topVC = HPlusTopViewController(nil);
         YMOpenLinkFromClipboard(topVC, NO);
     }
     if (IS_ENABLED(HideSubbar)) {
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"YouModReloadHeaderBar" object:nil];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"HPlusReloadHeaderBar" object:nil];
     }
 }
 %end

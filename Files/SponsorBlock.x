@@ -452,7 +452,7 @@ UIColor *SBColorFromHex(NSString *hexString) {
 
     if (IS_ENABLED(SBShowNotifications)) {
         useBackwardIconForButton = YES;
-        NSBundle *bundle = YouModBundle();
+        NSBundle *bundle = HPlusBundle();
         NSString *catName = [bundle localizedStringForKey:[NSString stringWithFormat:@"SB_CAT_%@", segment.category] value:segment.category table:nil];
         NSString *message = [NSString stringWithFormat:[bundle localizedStringForKey:@"SB_SKIPPED" value:@"%@ skipped" table:nil], catName];
         NSString *unskipTitle = [bundle localizedStringForKey:@"SB_UNSKIP" value:@"Unskip" table:nil];
@@ -483,7 +483,7 @@ UIColor *SBColorFromHex(NSString *hexString) {
     [self.sbSkippedSegments addObject:segment.UUID];
 
     useBackwardIconForButton = NO;
-    NSBundle *bundle = YouModBundle();
+    NSBundle *bundle = HPlusBundle();
     NSString *catName = [bundle localizedStringForKey:[NSString stringWithFormat:@"SB_CAT_%@", segment.category] value:segment.category table:nil];
     NSString *message = [NSString stringWithFormat:[bundle localizedStringForKey:@"SB_DETECTED" value:@"%@ detected" table:nil], catName];
 
@@ -519,7 +519,7 @@ UIColor *SBColorFromHex(NSString *hexString) {
             } else if (action == SBSegmentActionAsk) {
                 if (currentTime < seg.startTime) {
                     useBackwardIconForButton = NO;
-                    NSBundle *bundle = YouModBundle();
+                    NSBundle *bundle = HPlusBundle();
                     NSString *message = [bundle localizedStringForKey:@"SB_JUMP_TO_HIGHLIGHT" value:@"Highlight available. Jump to the point?" table:nil];
                     NSString *skipTitle = [bundle localizedStringForKey:@"SB_SKIP_NOW" value:@"Skip" table:nil];
 
@@ -553,7 +553,7 @@ UIColor *SBColorFromHex(NSString *hexString) {
 
             if (IS_ENABLED(SBShowNotifications)) {
                 useBackwardIconForButton = YES;
-                NSBundle *bundle = YouModBundle();
+                NSBundle *bundle = HPlusBundle();
                 NSString *message = [bundle localizedStringForKey:@"SB_JUMPED_TO_HIGHLIGHT" value:@"Jumped to highlight" table:nil];
                 NSString *unskipTitle = [bundle localizedStringForKey:@"SB_UNSKIP" value:@"Unskip" table:nil];
 

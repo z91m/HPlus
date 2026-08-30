@@ -1,10 +1,10 @@
 #import "Headers.h"
 
-static NSString *YouModUpdateSpeedLabel = @"YouModUpdateSpeedLabel";
+static NSString *HPlusUpdateSpeedLabel = @"HPlusUpdateSpeedLabel";
 static NSString *currentSpeedLabel = @"1x";
 static float currentPlaybackRate = 1.0;
 
-static NSString *YouModUpdateNotification = @"YouModUpdateNotification";
+static NSString *HPlusUpdateNotification = @"HPlusUpdateNotification";
 static NSString *currentQualityLabel = @"Auto";
 
 static NSString *speedLabel(float rate) {
@@ -19,7 +19,7 @@ static NSString *speedLabel(float rate) {
 static void didSelectRate(float rate) {
     currentPlaybackRate = rate;
     currentSpeedLabel = speedLabel(rate);
-    [[NSNotificationCenter defaultCenter] postNotificationName:YouModUpdateSpeedLabel object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:HPlusUpdateSpeedLabel object:nil];
 }
 
 @interface YTMainAppControlsOverlayView ()
@@ -374,25 +374,25 @@ static BOOL isRelatedVideosExpanded = NO;
 - (id)initWithDelegate:(id)delegate {
     self = %orig;
     [self updateSpeedButton:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateSpeedButton:) name:YouModUpdateSpeedLabel object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateQualityButton:) name:YouModUpdateNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateOverlayButtons:) name:@"YouModUpdateOverlayButtons" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateSpeedButton:) name:HPlusUpdateSpeedLabel object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateQualityButton:) name:HPlusUpdateNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateOverlayButtons:) name:@"HPlusUpdateOverlayButtons" object:nil];
     return self;
 }
 
 - (id)initWithDelegate:(id)delegate autoplaySwitchEnabled:(BOOL)autoplaySwitchEnabled {
     self = %orig;
     [self updateSpeedButton:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateSpeedButton:) name:YouModUpdateSpeedLabel object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateQualityButton:) name:YouModUpdateNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateOverlayButtons:) name:@"YouModUpdateOverlayButtons" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateSpeedButton:) name:HPlusUpdateSpeedLabel object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateQualityButton:) name:HPlusUpdateNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateOverlayButtons:) name:@"HPlusUpdateOverlayButtons" object:nil];
     return self;
 }
 
 - (void)dealloc {
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateSpeedLabel object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateNotification object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"YouModUpdateOverlayButtons" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:HPlusUpdateSpeedLabel object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:HPlusUpdateNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"HPlusUpdateOverlayButtons" object:nil];
     %orig;
 }
 
@@ -441,7 +441,7 @@ static BOOL isRelatedVideosExpanded = NO;
 }
 %end
 
-static void YouModShowShareNotification(NSString *message, BOOL success) {
+static void HPlusShowShareNotification(NSString *message, BOOL success) {
     UIView *parent = sbGetNotificationParent();
     if (success) {
         [SBSkipNotificationView showSuccessInView:parent message:message duration:3.0];
@@ -452,12 +452,12 @@ static void YouModShowShareNotification(NSString *message, BOOL success) {
 
 %hook YTPlayerViewController
 %new
-- (void)YouModShareButton:(UIView *)sourceView {
+- (void)HPlusShareButton:(UIView *)sourceView {
     if (!self.currentVideoID) {
-        YouModShowShareNotification(LOC(@"ERROR_VIDEOID"), NO);
+        HPlusShowShareNotification(LOC(@"ERROR_VIDEOID"), NO);
         return;
     } else if (self.isPlayingAd) {
-        YouModShowShareNotification(LOC(@"ERROR_ADS"), NO);
+        HPlusShowShareNotification(LOC(@"ERROR_ADS"), NO);
         return;
     }
 
@@ -468,14 +468,14 @@ static void YouModShowShareNotification(NSString *message, BOOL success) {
     UIViewController *presenter = (UIViewController *)[self activeVideoPlayerOverlay];
     YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:presenter];
 
-    YTActionSheetAction *copyURL = [%c(YTActionSheetAction) actionWithTitle:LOC(@"COPY_URL") iconImage:YouModYTIconImage(250, NO, nil) style:0 handler:^(__unused YTActionSheetAction *action) {
+    YTActionSheetAction *copyURL = [%c(YTActionSheetAction) actionWithTitle:LOC(@"COPY_URL") iconImage:HPlusYTIconImage(250, NO, nil) style:0 handler:^(__unused YTActionSheetAction *action) {
         UIPasteboard.generalPasteboard.string = videoURL;
-        YouModShowShareNotification(LOC(@"URL_COPIED"), YES);
+        HPlusShowShareNotification(LOC(@"URL_COPIED"), YES);
     }];
 
-    YTActionSheetAction *copyTimestamp = [%c(YTActionSheetAction) actionWithTitle:LOC(@"COPY_URL_TIMESTAMP") iconImage:YouModYTIconImage(250, NO, nil) style:0 handler:^(__unused YTActionSheetAction *action) {
+    YTActionSheetAction *copyTimestamp = [%c(YTActionSheetAction) actionWithTitle:LOC(@"COPY_URL_TIMESTAMP") iconImage:HPlusYTIconImage(250, NO, nil) style:0 handler:^(__unused YTActionSheetAction *action) {
         UIPasteboard.generalPasteboard.string = timestampURL;
-        YouModShowShareNotification(LOC(@"URL_TIMESTAMP_COPIED"), YES);
+        HPlusShowShareNotification(LOC(@"URL_TIMESTAMP_COPIED"), YES);
     }];
 
     [sheet addAction:copyURL];
@@ -484,13 +484,13 @@ static void YouModShowShareNotification(NSString *message, BOOL success) {
     [sheet presentFromView:sourceView animated:YES completion:nil];
 }
 %new
-- (void)YouModLoopButton {
+- (void)HPlusLoopButton {
     YTMainAppVideoPlayerOverlayViewController *playerOverlay = self.activeVideoPlayerOverlay;
     YTAutoplayAutonavController *autoplayController = [playerOverlay valueForKey:@"_autonavController"];
     BOOL isLoopEnabled = !IS_ENABLED(KeepLoopKey);
     [[NSUserDefaults standardUserDefaults] setBool:isLoopEnabled forKey:KeepLoopKey];
     [autoplayController setLoopMode:isLoopEnabled ? 2 : 0];
-    YouModShowShareNotification(LOC(isLoopEnabled ? @"LOOP_ENABLED" : @"LOOP_DISABLED"), YES);
+    HPlusShowShareNotification(LOC(isLoopEnabled ? @"LOOP_ENABLED" : @"LOOP_DISABLED"), YES);
 }
 - (void)setPlaybackRate:(float)rate {
     didSelectRate(rate);
@@ -534,7 +534,7 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
 
 - (void)singleVideo:(id)singleVideo didSelectVideoFormat:(MLFormat *)format {
     currentQualityLabel = getCompactQualityLabel(format);
-    [[NSNotificationCenter defaultCenter] postNotificationName:YouModUpdateNotification object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:HPlusUpdateNotification object:nil];
     %orig;
 }
 
@@ -544,7 +544,7 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
 
 - (void)singleVideo:(id)singleVideo didSelectVideoFormat:(MLFormat *)format {
     currentQualityLabel = getCompactQualityLabel(format);
-    [[NSNotificationCenter defaultCenter] postNotificationName:YouModUpdateNotification object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:HPlusUpdateNotification object:nil];
     %orig;
 }
 
@@ -616,7 +616,7 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
         return YMIsOverlayButtonEnabled(@"share.video");
     };
     share.onTap = ^(YTPlayerViewController *player, YTQTMButton *button) {
-        [player YouModShareButton:button];
+        [player HPlusShareButton:button];
     };
     YMRegisterOverlayButton(share);
     YMOverlayButtonSpec *loop = [[YMOverlayButtonSpec alloc] init];
@@ -630,7 +630,7 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
         return YMIsOverlayButtonEnabled(@"loop.video");
     };
     loop.onTap = ^(YTPlayerViewController *player, YTQTMButton *button) {
-        [player YouModLoopButton];
+        [player HPlusLoopButton];
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
         UIImage *newIcon = [UIImage systemImageNamed:IS_ENABLED(KeepLoopKey) ? @"repeat.1" : @"repeat" withConfiguration:config];
         [button setImage:newIcon forState:UIControlStateNormal];

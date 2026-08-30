@@ -79,221 +79,221 @@
 #import <YouTubeHeader/YTSearchableSettingsViewController.h>
 #import <YouTubeHeader/YTUIUtils.h>
 
-#define DownloadFix @"YouModDownloadFix"
-#define DownloadServerIndex @"YouModDownloadServerIndex"
-#define SABRDownload @"YouModSABRDownload"
-#define DownloadMethod @"YouModDownloadMethod" // index into the "Download method" picker
+#define DownloadFix @"HPlusDownloadFix"
+#define DownloadServerIndex @"HPlusDownloadServerIndex"
+#define SABRDownload @"HPlusSABRDownload"
+#define DownloadMethod @"HPlusDownloadMethod" // index into the "Download method" picker
 #define DownloadMethodDirect 0   // YouTube's built-in stream URLs
 #define DownloadMethodServer 1   // external server (triggerSilentDownload…)
 #define DownloadMethodOnDevice 2 // on-device SABR engine
 
 #define IS_ENABLED(k) [[NSUserDefaults standardUserDefaults] boolForKey:k]
 #define INTFORVAL(v) [[NSUserDefaults standardUserDefaults] integerForKey:v]
-#define FixPlaybackIssues @"YouModFixPlaybackIssues"
-#define MuteButton @"YouModMuteButton"
-#define SpeedButton @"YouModSpeedButton"
-#define ShareButton @"YouModShareButton"
-#define LoopButton @"YouModLoopButton"
-#define CaptionButton @"YouModCaptionButton"
-#define KeepMutedKey @"YouModKeepMutedKey"
-#define KeepLoopKey @"YouModKeepLoopKey"
-#define QualityButton @"YouModQualityButton"
-#define OverlayButtonOrder @"YouModOverlayButtonOrder"
-#define GlobalSpeedLocked @"YouModGlobalSpeedLocked"
-#define GlobalSavedNormalRate @"YouModGlobalSavedNormalRate"
+#define FixPlaybackIssues @"HPlusFixPlaybackIssues"
+#define MuteButton @"HPlusMuteButton"
+#define SpeedButton @"HPlusSpeedButton"
+#define ShareButton @"HPlusShareButton"
+#define LoopButton @"HPlusLoopButton"
+#define CaptionButton @"HPlusCaptionButton"
+#define KeepMutedKey @"HPlusKeepMutedKey"
+#define KeepLoopKey @"HPlusKeepLoopKey"
+#define QualityButton @"HPlusQualityButton"
+#define OverlayButtonOrder @"HPlusOverlayButtonOrder"
+#define GlobalSpeedLocked @"HPlusGlobalSpeedLocked"
+#define GlobalSavedNormalRate @"HPlusGlobalSavedNormalRate"
 // Downloading
-#define DownloadManager @"YouModDownloadManager"
-#define PostDownloadAction @"YouModPostDownloadAction"
+#define DownloadManager @"HPlusDownloadManager"
+#define PostDownloadAction @"HPlusPostDownloadAction"
 #define PostDownloadActionSaveToPhotos 0
 #define PostDownloadActionShare 1
 #define PostDownloadActionAsk 2
-#define AddDownloadToShorts @"YouModAddDownloadToShorts"
-#define AudioPreferIndex @"YouModAudioPreferIndex"
-#define DownloadComment @"YouModDownloadComment"
-#define DownloadPost @"YouModDownloadPost"
+#define AddDownloadToShorts @"HPlusAddDownloadToShorts"
+#define AudioPreferIndex @"HPlusAudioPreferIndex"
+#define DownloadComment @"HPlusDownloadComment"
+#define DownloadPost @"HPlusDownloadPost"
 // Cache
 #define AutoClearCache @"HPlusAutoClearCache"
 // Appearance
-#define OLEDTheme @"YouModEnablesOLEDTheme"
-#define OLEDKeyboard @"YouModEnablesOLEDKeyboard"
+#define OLEDTheme @"HPlusEnablesOLEDTheme"
+#define OLEDKeyboard @"HPlusEnablesOLEDKeyboard"
 // Navigation bar
-#define YTLogoIndex @"YouModYTLogoIndex"
-#define StickyNavBar @"YouModStickyNavBar"
-#define HideNoti @"YouModHideNotificationButton"
-#define HideSearch @"YouModHideSearchButton"
-#define HideVoiceSearch @"YouModHideVoiceSearchButton"
-#define HideCastButtonNav @"YouModHideCastButtonNavigationBar"
+#define YTLogoIndex @"HPlusYTLogoIndex"
+#define StickyNavBar @"HPlusStickyNavBar"
+#define HideNoti @"HPlusHideNotificationButton"
+#define HideSearch @"HPlusHideSearchButton"
+#define HideVoiceSearch @"HPlusHideVoiceSearchButton"
+#define HideCastButtonNav @"HPlusHideCastButtonNavigationBar"
 // Feed 
-#define HideSubbar @"YouModHideSubbar"
-#define HideHoriShelf @"YouModHideHoriShelf"
-#define HideGenMusicShelf @"YouModHideGenMusicShelf"
-#define HideFeedPost @"YouModHideFeedPost"
-#define HidePlayables @"YouModHidePlayables"
-#define HideShortsShelf @"YouModHideShortsShelf"
-#define KeepShortsSubscript @"YouModKeepShortsSubscript"
-#define HideSearchHis @"YouModHideSearchHistoryAndSuggestions"
-#define HideSurveys @"YouModHideSurveys"
-#define HideRelatedVideos @"YouModHideRelatedVideos"
-#define RemoveChannelCommunityButton @"YouModRemoveChannelCommunityButton"
-#define RemoveChannelSponsorAll @"YouModRemoveChannelSponsorAll"
+#define HideSubbar @"HPlusHideSubbar"
+#define HideHoriShelf @"HPlusHideHoriShelf"
+#define HideGenMusicShelf @"HPlusHideGenMusicShelf"
+#define HideFeedPost @"HPlusHideFeedPost"
+#define HidePlayables @"HPlusHidePlayables"
+#define HideShortsShelf @"HPlusHideShortsShelf"
+#define KeepShortsSubscript @"HPlusKeepShortsSubscript"
+#define HideSearchHis @"HPlusHideSearchHistoryAndSuggestions"
+#define HideSurveys @"HPlusHideSurveys"
+#define HideRelatedVideos @"HPlusHideRelatedVideos"
+#define RemoveChannelCommunityButton @"HPlusRemoveChannelCommunityButton"
+#define RemoveChannelSponsorAll @"HPlusRemoveChannelSponsorAll"
 // Player
-#define WifiQualityIndex @"YouModWifiQualityIndex"
-#define CellQualityIndex @"YouModCellQualityIndex"
-#define LowPowerQualityIndex @"YouModLowPowerQualityIndex"
-#define AudioTrack @"YouModAudioTrackSegment"
-#define AudioTrackLangIndex @"YouModAudioTrackLangIndex"
-#define NoDubbedAudioTrack @"YouModNoDubbedAudioTrack"
-#define CaptionTrack @"YouModCaptionTrack"
-#define CaptionTrackLangIndex @"YouModCaptionTrackLangIndex"
-#define DisablesCaptionTrack @"YouModDisablesCaptionTrack"
-#define AutoSpeedIndex @"YouModAutoSpeedIndex"
-#define HoldToSpeedIndex @"YouModHoldToSpeedIndex"
-#define HideAutoPlayToggle @"YouModHideAutoPlayToggle"
-#define HideCaptionsButton @"YouModHideCaptionsButton"
-#define HideCastButtonPlayer @"YouModHideCastButtonPlayer"
-#define HideNextAndPrevButtons @"YouModHideNextAndPrevButtons"
-#define ReplacePrevNextButtons @"YouModReplacePrevNextButtons"
-#define SkipBackwardEnabled @"YouModSkipBackwardEnabled"
-#define SkipForwardEnabled @"YouModSkipForwardEnabled"
-#define RewindSeconds @"YouModRewindSeconds"
-#define ForwardSeconds @"YouModForwardSeconds"
-#define RemoveDarkOverlay @"YouModRemoveDarkOverlay"
-#define RemoveAmbiant @"YouModRemoveAmbiantColors"
-#define HideEndScreenCards @"YouModHideEndScreenCards"
-#define HideSuggestedVideo @"YouModHideSuggestedVideoOnFinish"
-#define HidePaidPromoOverlay @"YouModHidePaidPromoOverlay"
-#define HideWaterMark @"YouModHideWaterMark"
-#define DisablesEngagementPanel @"YouModDisablesEngagementPanel"
-#define DontSnapToChapter @"YouModDontSnapToChapter"
-#define PauseOnOverlay @"YouModPauseOnOverlay"
-#define GestureControls @"YouModEnableGesturesControls"
-#define GestureActivationArea @"YouModGestureActivationArea"
-#define LeftSideGesture @"YouModLeftSideGesture"
-#define RightSideGesture @"YouModRightSideGesture"
-#define GestureHUD @"YouModGestureHUD"
-#define GestureHUDSize @"YouModGestureHUDSize"
-#define GestureHUDPosition @"YouModGestureHUDPosition"
-#define DisablesDoubleTap @"YouModDisablesDoubleTap"
-#define DisablesLongHold @"YouModDisablesLongHold"
-#define AutoExitFullScreen @"YouModAutoExitFullScreen"
-#define DisablesShowRemaining @"YouModDisablesShowRemainingTime"
-#define AlwaysShowRemaining @"YouModAlwaysShowRemainingTime"
-#define ShowExtraTimeRemaining @"YouModShowExtraTimeRemaining"
-#define Uses24HoursTime @"YouModUses24HoursTime"
-#define CopyWithTimestampOnPause @"YouModCopyWithTimestampOnPause"
-#define HideFullAction @"YouModHideFullScreenAction"
-#define HideFullvidTitle @"YouModHideFullscreenVideoTitle"
-#define StopAutoplayVideo @"YouModStopAutoplayVideo"
-#define HideContentWarning @"YouModHideContentWarning"
-#define AutoFullScreen @"YouModAutoFullScreen"
-#define PortFull @"YouModPortraitFullscreen"
-#define OldQualityPicker @"YouModUseOldQualityPicker"
-#define ExtraSpeed @"YouModAddExtraSpeed"
-#define ForceMiniPlayer @"YouModForceMiniPlayer"
-#define AlwaysShowSeekbar @"YouModAlwaysShowSeekbar"
-#define DisablesFreeZoom @"YouModDisablesFreeZoom"
-#define TapToSeek @"YouModTapToSeek"
-#define PauseTwoFingers @"YouModPauseTwoFingers"
-#define HideCommentsSection @"YouModHideCommentsSection"
-#define HideCommentsPreview @"YouModHideCommentsPreview"
-#define LockSpeed @"YouModLockSpeed"
-#define SeekOnOverlay @"YouModSeekOnOverlay"
-#define AutoDRCAudioIndex @"YouModAutoDRCAudioIndex"
-#define RemoveVideoLikeButton @"YouModRemoveVideoLikeButton"
-#define RemoveVideoDislikeButton @"YouModRemoveVideoDislikeButton"
-#define RemoveVideoShareButton @"YouModRemoveVideoShareButton"
-#define RemoveVideoSaveButton @"YouModRemoveVideoSaveButton"
-#define RemoveVideoDownloadButton @"YouModRemoveVideoDownloadButton"
-#define RemoveVideoClipButton @"YouModRemoveVideoClipButton"
-#define RemoveVideoRemixButton @"YouModRemoveVideoRemixButton"
-#define RemoveVideoLiveChatButton @"YouModRemoveVideoLiveChatButton"
-#define AutoFeedMute @"YouModAutoFeedMute"
+#define WifiQualityIndex @"HPlusWifiQualityIndex"
+#define CellQualityIndex @"HPlusCellQualityIndex"
+#define LowPowerQualityIndex @"HPlusLowPowerQualityIndex"
+#define AudioTrack @"HPlusAudioTrackSegment"
+#define AudioTrackLangIndex @"HPlusAudioTrackLangIndex"
+#define NoDubbedAudioTrack @"HPlusNoDubbedAudioTrack"
+#define CaptionTrack @"HPlusCaptionTrack"
+#define CaptionTrackLangIndex @"HPlusCaptionTrackLangIndex"
+#define DisablesCaptionTrack @"HPlusDisablesCaptionTrack"
+#define AutoSpeedIndex @"HPlusAutoSpeedIndex"
+#define HoldToSpeedIndex @"HPlusHoldToSpeedIndex"
+#define HideAutoPlayToggle @"HPlusHideAutoPlayToggle"
+#define HideCaptionsButton @"HPlusHideCaptionsButton"
+#define HideCastButtonPlayer @"HPlusHideCastButtonPlayer"
+#define HideNextAndPrevButtons @"HPlusHideNextAndPrevButtons"
+#define ReplacePrevNextButtons @"HPlusReplacePrevNextButtons"
+#define SkipBackwardEnabled @"HPlusSkipBackwardEnabled"
+#define SkipForwardEnabled @"HPlusSkipForwardEnabled"
+#define RewindSeconds @"HPlusRewindSeconds"
+#define ForwardSeconds @"HPlusForwardSeconds"
+#define RemoveDarkOverlay @"HPlusRemoveDarkOverlay"
+#define RemoveAmbiant @"HPlusRemoveAmbiantColors"
+#define HideEndScreenCards @"HPlusHideEndScreenCards"
+#define HideSuggestedVideo @"HPlusHideSuggestedVideoOnFinish"
+#define HidePaidPromoOverlay @"HPlusHidePaidPromoOverlay"
+#define HideWaterMark @"HPlusHideWaterMark"
+#define DisablesEngagementPanel @"HPlusDisablesEngagementPanel"
+#define DontSnapToChapter @"HPlusDontSnapToChapter"
+#define PauseOnOverlay @"HPlusPauseOnOverlay"
+#define GestureControls @"HPlusEnableGesturesControls"
+#define GestureActivationArea @"HPlusGestureActivationArea"
+#define LeftSideGesture @"HPlusLeftSideGesture"
+#define RightSideGesture @"HPlusRightSideGesture"
+#define GestureHUD @"HPlusGestureHUD"
+#define GestureHUDSize @"HPlusGestureHUDSize"
+#define GestureHUDPosition @"HPlusGestureHUDPosition"
+#define DisablesDoubleTap @"HPlusDisablesDoubleTap"
+#define DisablesLongHold @"HPlusDisablesLongHold"
+#define AutoExitFullScreen @"HPlusAutoExitFullScreen"
+#define DisablesShowRemaining @"HPlusDisablesShowRemainingTime"
+#define AlwaysShowRemaining @"HPlusAlwaysShowRemainingTime"
+#define ShowExtraTimeRemaining @"HPlusShowExtraTimeRemaining"
+#define Uses24HoursTime @"HPlusUses24HoursTime"
+#define CopyWithTimestampOnPause @"HPlusCopyWithTimestampOnPause"
+#define HideFullAction @"HPlusHideFullScreenAction"
+#define HideFullvidTitle @"HPlusHideFullscreenVideoTitle"
+#define StopAutoplayVideo @"HPlusStopAutoplayVideo"
+#define HideContentWarning @"HPlusHideContentWarning"
+#define AutoFullScreen @"HPlusAutoFullScreen"
+#define PortFull @"HPlusPortraitFullscreen"
+#define OldQualityPicker @"HPlusUseOldQualityPicker"
+#define ExtraSpeed @"HPlusAddExtraSpeed"
+#define ForceMiniPlayer @"HPlusForceMiniPlayer"
+#define AlwaysShowSeekbar @"HPlusAlwaysShowSeekbar"
+#define DisablesFreeZoom @"HPlusDisablesFreeZoom"
+#define TapToSeek @"HPlusTapToSeek"
+#define PauseTwoFingers @"HPlusPauseTwoFingers"
+#define HideCommentsSection @"HPlusHideCommentsSection"
+#define HideCommentsPreview @"HPlusHideCommentsPreview"
+#define LockSpeed @"HPlusLockSpeed"
+#define SeekOnOverlay @"HPlusSeekOnOverlay"
+#define AutoDRCAudioIndex @"HPlusAutoDRCAudioIndex"
+#define RemoveVideoLikeButton @"HPlusRemoveVideoLikeButton"
+#define RemoveVideoDislikeButton @"HPlusRemoveVideoDislikeButton"
+#define RemoveVideoShareButton @"HPlusRemoveVideoShareButton"
+#define RemoveVideoSaveButton @"HPlusRemoveVideoSaveButton"
+#define RemoveVideoDownloadButton @"HPlusRemoveVideoDownloadButton"
+#define RemoveVideoClipButton @"HPlusRemoveVideoClipButton"
+#define RemoveVideoRemixButton @"HPlusRemoveVideoRemixButton"
+#define RemoveVideoLiveChatButton @"HPlusRemoveVideoLiveChatButton"
+#define AutoFeedMute @"HPlusAutoFeedMute"
 // Shorts
-#define HideShortsTopbar @"YouModHideShortsTopbar"
-#define HideShortsSubbar @"YouModHideShortsSubbar"
-#define FullScreenShorts @"YouModFullScreenShorts"
-#define RemoveShortsLive @"YouModRemoveShortsLive"
-#define RemoveShortsPosts @"YouModRemoveShortsPosts"
-#define HideShortsProducts @"YouModHideShortsProducts"
-#define HideShortsRecbar @"YouModHideShortsRecbar"
-#define EnablesShortsQuality @"YouModEnablesShortsQuality"
-#define ShowShortsSeekbar @"YouModShowShortsSeekbar"
-#define ShortsActionIndex @"YouModMakeAShortsAction"
-#define ShortsOnly @"YouModShortsOnly"
-#define RemoveShortsLikeButton @"YouModRemoveShortsLikeButton"
-#define RemoveShortsCommentButton @"YouModRemoveShortsCommentButton"
-#define RemoveShortsShareButton @"YouModRemoveShortsShareButton"
-#define RemoveShortsRemixButton @"YouModRemoveShortsRemixButton"
-#define RemoveShortsSoundMetadataButton @"YouModRemoveShortsSoundMetadataButton"
-#define RemoveShortsPausedSubButton @"YouModRemoveShortsPausedSubButton"
-#define RemoveShortsPausedLiveButton @"YouModRemoveShortsPausedLiveButton"
-#define RemoveShortsPausedLensButton @"YouModRemoveShortsPausedLensButton"
-#define RemoveShortsPausedTrendsButton @"YouModRemoveShortsPausedTrendsButton"
-#define RemoveShortsDisclosure @"YouModRemoveShortsDisclosure"
+#define HideShortsTopbar @"HPlusHideShortsTopbar"
+#define HideShortsSubbar @"HPlusHideShortsSubbar"
+#define FullScreenShorts @"HPlusFullScreenShorts"
+#define RemoveShortsLive @"HPlusRemoveShortsLive"
+#define RemoveShortsPosts @"HPlusRemoveShortsPosts"
+#define HideShortsProducts @"HPlusHideShortsProducts"
+#define HideShortsRecbar @"HPlusHideShortsRecbar"
+#define EnablesShortsQuality @"HPlusEnablesShortsQuality"
+#define ShowShortsSeekbar @"HPlusShowShortsSeekbar"
+#define ShortsActionIndex @"HPlusMakeAShortsAction"
+#define ShortsOnly @"HPlusShortsOnly"
+#define RemoveShortsLikeButton @"HPlusRemoveShortsLikeButton"
+#define RemoveShortsCommentButton @"HPlusRemoveShortsCommentButton"
+#define RemoveShortsShareButton @"HPlusRemoveShortsShareButton"
+#define RemoveShortsRemixButton @"HPlusRemoveShortsRemixButton"
+#define RemoveShortsSoundMetadataButton @"HPlusRemoveShortsSoundMetadataButton"
+#define RemoveShortsPausedSubButton @"HPlusRemoveShortsPausedSubButton"
+#define RemoveShortsPausedLiveButton @"HPlusRemoveShortsPausedLiveButton"
+#define RemoveShortsPausedLensButton @"HPlusRemoveShortsPausedLensButton"
+#define RemoveShortsPausedTrendsButton @"HPlusRemoveShortsPausedTrendsButton"
+#define RemoveShortsDisclosure @"HPlusRemoveShortsDisclosure"
 #define RemoveShortsTitleButton @"HPlusRemoveShortsTitleButton"
 #define RemoveShortsSaveButton @"HPlusRemoveShortsSaveButton"
 // Tab bar
-#define DefaultTab @"YouModDefaultStartupTab"
-#define TabOrder @"YouModTabOrder"
-#define HideTabIndi @"YouModHideTabIndicators"
-#define HideTabLabels @"YouModHideTabLabels"
-#define UseFrostedTabBar @"YouModUseFrostedTabBar"
+#define DefaultTab @"HPlusDefaultStartupTab"
+#define TabOrder @"HPlusTabOrder"
+#define HideTabIndi @"HPlusHideTabIndicators"
+#define HideTabLabels @"HPlusHideTabLabels"
+#define UseFrostedTabBar @"HPlusUseFrostedTabBar"
 // Miscellaneous
-#define BackgroundPlayback @"YouModEnablesBackgroundPlayback"
-#define DisablesShortsPiP @"YouModTrytoDisablesShortsPiP"
-#define DisableHints @"YouModDisableHints"
-#define BlockUpgradeDialogs @"YouModBlockUpgradeDialogs"
-#define HideAreYouThereDialog @"YouModHideAreYouThereDialog"
-#define FixesSlowMiniPlayer @"YouModFixesSlowMiniPlayer"
-#define DisablesNewMiniPlayer @"YouModDisablesNewMiniPlayer"
-#define DisablesSnackBar @"YouModDisablesSnackBar"
-#define HideStartupAni @"YouModHideStartupAnimations"
-#define HideLikeDislikeVotes @"YouModHideLikeDislikeVotes"
-#define HideCommuGuide @"YouModHideCommuGuide"
-#define HideEngagementSubbar @"YouModHideEngagementSubbar"
-#define DisablesRTL @"YouModDisablesRTL"
-#define DeviceUIIndex @"YouModDeviceUIIndex"
-#define FloatingKeyboard @"YouModFloatingKeyboard"
-#define AutoOpenLink @"YouModAutoOpenLink"
-// #define CustomStartup @"YouModUseCustomVideoStartup"
+#define BackgroundPlayback @"HPlusEnablesBackgroundPlayback"
+#define DisablesShortsPiP @"HPlusTrytoDisablesShortsPiP"
+#define DisableHints @"HPlusDisableHints"
+#define BlockUpgradeDialogs @"HPlusBlockUpgradeDialogs"
+#define HideAreYouThereDialog @"HPlusHideAreYouThereDialog"
+#define FixesSlowMiniPlayer @"HPlusFixesSlowMiniPlayer"
+#define DisablesNewMiniPlayer @"HPlusDisablesNewMiniPlayer"
+#define DisablesSnackBar @"HPlusDisablesSnackBar"
+#define HideStartupAni @"HPlusHideStartupAnimations"
+#define HideLikeDislikeVotes @"HPlusHideLikeDislikeVotes"
+#define HideCommuGuide @"HPlusHideCommuGuide"
+#define HideEngagementSubbar @"HPlusHideEngagementSubbar"
+#define DisablesRTL @"HPlusDisablesRTL"
+#define DeviceUIIndex @"HPlusDeviceUIIndex"
+#define FloatingKeyboard @"HPlusFloatingKeyboard"
+#define AutoOpenLink @"HPlusAutoOpenLink"
+// #define CustomStartup @"HPlusUseCustomVideoStartup"
 // Flyout menu
-#define RemovePlayInNextQueueOption @"YouModRemovePlayInNextQueueOption"
-#define RemoveDownloadOption @"YouModRemoveDownloadOption"
-#define RemoveWatchLaterOption @"YouModRemoveWatchLaterOption"
-#define RemoveSaveOption @"YouModRemoveSaveOption"
-#define RemoveRemoveFromPlaylistOption @"YouModRemoveRemoveFromPlaylistOption"
-#define RemoveShareOption @"YouModRemoveShareOption"
-#define RemoveNotInterestedOption @"YouModRemoveNotInterestedOption"
-#define RemoveInfoOption @"YouModRemoveInfoOption"
-#define RemoveFilterOption @"YouModRemoveFilterOption"
-#define RemoveReportOption @"YouModRemoveReportOption"
-#define RemoveYouTubeMusicOption @"YouModRemoveYouTubeMusicOption"
-#define RemoveFeedBackOption @"YouModRemoveFeedBackOption"
-#define RemoveDontRecommendOption @"YouModRemoveDontRecommendOption"
-#define RemoveCastOption @"YouModRemoveCastOption"
-#define RemoveShuffleOption @"YouModRemoveShuffleOption"
-#define RemoveUnSubOption @"YouModRemoveUnSubOption"
-#define RemoveHideFromPlaylistOption @"YouModRemoveHideFromPlaylistOption"
-#define RemoveHelpOption @"YouModRemoveHelpOption"
-#define RemoveNotifyOption @"YouModRemoveNotifyOption"
-#define RemoveClearScreenOption @"YouModRemoveClearScreenOption"
-#define RemoveAddToLastQueueOption @"YouModRemoveAddToLastQueueOption"
+#define RemovePlayInNextQueueOption @"HPlusRemovePlayInNextQueueOption"
+#define RemoveDownloadOption @"HPlusRemoveDownloadOption"
+#define RemoveWatchLaterOption @"HPlusRemoveWatchLaterOption"
+#define RemoveSaveOption @"HPlusRemoveSaveOption"
+#define RemoveRemoveFromPlaylistOption @"HPlusRemoveRemoveFromPlaylistOption"
+#define RemoveShareOption @"HPlusRemoveShareOption"
+#define RemoveNotInterestedOption @"HPlusRemoveNotInterestedOption"
+#define RemoveInfoOption @"HPlusRemoveInfoOption"
+#define RemoveFilterOption @"HPlusRemoveFilterOption"
+#define RemoveReportOption @"HPlusRemoveReportOption"
+#define RemoveYouTubeMusicOption @"HPlusRemoveYouTubeMusicOption"
+#define RemoveFeedBackOption @"HPlusRemoveFeedBackOption"
+#define RemoveDontRecommendOption @"HPlusRemoveDontRecommendOption"
+#define RemoveCastOption @"HPlusRemoveCastOption"
+#define RemoveShuffleOption @"HPlusRemoveShuffleOption"
+#define RemoveUnSubOption @"HPlusRemoveUnSubOption"
+#define RemoveHideFromPlaylistOption @"HPlusRemoveHideFromPlaylistOption"
+#define RemoveHelpOption @"HPlusRemoveHelpOption"
+#define RemoveNotifyOption @"HPlusRemoveNotifyOption"
+#define RemoveClearScreenOption @"HPlusRemoveClearScreenOption"
+#define RemoveAddToLastQueueOption @"HPlusRemoveAddToLastQueueOption"
 // SponsorBlock
-#define SBEnabled @"YouModSBEnabled"
-#define SBShowButton @"YouModSBShowButton"
-#define SBShowNotifications @"YouModSBShowNotifications"
-#define SBAudioNotification @"YouModSBAudioNotification"
-#define SBSegmentsInPlayer @"YouModSBSegmentsInPlayer"
-#define SBSegmentsInFeed @"YouModSBSegmentsInFeed"
-#define SBSegmentsInMiniPlayer @"YouModSBSegmentsInMiniPlayer"
-#define SBShowDuration @"YouModSBShowDuration"
-#define SBMinDuration @"YouModSBMinDuration"
-#define SBSkipAlertDuration @"YouModSBSkipAlertDuration"
-#define SBUnskipAlertDuration @"YouModSBUnskipAlertDuration"
-#define SBButtonKey @"YouModSBButtonKey"
+#define SBEnabled @"HPlusSBEnabled"
+#define SBShowButton @"HPlusSBShowButton"
+#define SBShowNotifications @"HPlusSBShowNotifications"
+#define SBAudioNotification @"HPlusSBAudioNotification"
+#define SBSegmentsInPlayer @"HPlusSBSegmentsInPlayer"
+#define SBSegmentsInFeed @"HPlusSBSegmentsInFeed"
+#define SBSegmentsInMiniPlayer @"HPlusSBSegmentsInMiniPlayer"
+#define SBShowDuration @"HPlusSBShowDuration"
+#define SBMinDuration @"HPlusSBMinDuration"
+#define SBSkipAlertDuration @"HPlusSBSkipAlertDuration"
+#define SBUnskipAlertDuration @"HPlusSBUnskipAlertDuration"
+#define SBButtonKey @"HPlusSBButtonKey"
 
-#define SB_ACTION_KEY(cat) [NSString stringWithFormat:@"YouModSBAction_%@", cat]
-#define SB_COLOR_KEY(cat) [NSString stringWithFormat:@"YouModSBColor_%@", cat]
+#define SB_ACTION_KEY(cat) [NSString stringWithFormat:@"HPlusSBAction_%@", cat]
+#define SB_COLOR_KEY(cat) [NSString stringWithFormat:@"HPlusSBColor_%@", cat]
 
 #define FLOAT_FOR_KEY(k) [[NSUserDefaults standardUserDefaults] floatForKey:k]
 
@@ -309,7 +309,7 @@
 @interface YTIPageHeaderRenderer : GPBMessage
 @end
 
-@interface YTDefaultSheetController (YouMod)
+@interface YTDefaultSheetController (HPlus)
 + (instancetype)sheetControllerWithParentResponder:(id)parentResponder;
 - (void)addAction:(YTActionSheetAction *)action;
 - (void)presentFromView:(UIView *)view animated:(BOOL)animated completion:(void (^)(void))completion;
@@ -324,11 +324,11 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
     GestureSectionInvalid
 };
 
-@interface YTWatchController (YouMod)
+@interface YTWatchController (HPlus)
 - (void)reload;
 @end
 
-@interface YTPlayerOverlayProvider (YouMod)
+@interface YTPlayerOverlayProvider (HPlus)
 - (void)removePlayerOverlayWithIdentifier:(NSString *)identifier;
 @end
 
@@ -341,7 +341,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTPivotBarView : UIView
 @end
 
-@interface YTPivotBarItemView (YouMod) <UIContextMenuInteractionDelegate>
+@interface YTPivotBarItemView (HPlus) <UIContextMenuInteractionDelegate>
 @end
 
 @interface YTContextualWrapView : UIView
@@ -350,7 +350,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTShortsAdsPlayerViewController : YTReelPlayerViewController
 @end
 
-@interface YTIBrowseRequest (YouMod)
+@interface YTIBrowseRequest (HPlus)
 + (NSString *)browseIDForGamingDestination;
 + (NSString *)browseIDForSportsDestination;
 + (NSString *)browseIDForNotificationsInbox;
@@ -361,7 +361,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @property(readonly, nonatomic) YTIIcon *iconImage;
 @end
 
-@interface YTRightNavigationButtons (YouMod)
+@interface YTRightNavigationButtons (HPlus)
 @property (nonatomic, strong) YTQTMButton *notificationButton;
 @property (nonatomic, strong) YTQTMButton *searchButton;
 @end
@@ -373,13 +373,13 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTVideoFreeZoomOverlayView : UIView
 @end
 
-@interface YTMainAppVideoPlayerOverlayView (YouMod)
+@interface YTMainAppVideoPlayerOverlayView (HPlus)
 @property (nonatomic, weak, readwrite) YTMainAppVideoPlayerOverlayViewController *delegate;
 @property (nonatomic, strong) YTQTMButton *playbackRouteButton;
 - (YTVideoFreeZoomOverlayView *)videoFreeZoomOverlayView;
 @end
 
-@interface YTQTMButton (YouMod)
+@interface YTQTMButton (HPlus)
 - (void)enableNewTouchFeedback;
 @end
 
@@ -403,15 +403,15 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTPivotBarViewController : UIViewController
 - (void)selectItemWithPivotIdentifier:(id)pivotIndentifier;
-- (void)YouModReloadTabBar:(id)arg;
+- (void)HPlusReloadTabBar:(id)arg;
 @end
 
 @interface YTReelWatchPlaybackOverlayView : UIView <UIGestureRecognizerDelegate>
-@property (nonatomic, retain) UIPinchGestureRecognizer *YouModFullscreenGesture;
+@property (nonatomic, retain) UIPinchGestureRecognizer *HPlusFullscreenGesture;
 @end
 
-@interface YTReelContentView (YouMod) <UIGestureRecognizerDelegate>
-@property (nonatomic, retain) UILongPressGestureRecognizer *YouModExitShortsOnlyGesture;
+@interface YTReelContentView (HPlus) <UIGestureRecognizerDelegate>
+@property (nonatomic, retain) UILongPressGestureRecognizer *HPlusExitShortsOnlyGesture;
 - (YTReelWatchPlaybackOverlayView *)playbackOverlay;
 @end
 
@@ -426,42 +426,42 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (YTIFormattedString *)name;
 @end
 
-@interface YTPlayerViewController (YouMod) <UIGestureRecognizerDelegate>
-@property (nonatomic, retain) UIPanGestureRecognizer *YouModPanGesture;
-@property (nonatomic, retain) UITapGestureRecognizer *YouModTapGesture;
-@property (nonatomic, retain) UILabel *YouModGestureHUD;
+@interface YTPlayerViewController (HPlus) <UIGestureRecognizerDelegate>
+@property (nonatomic, retain) UIPanGestureRecognizer *HPlusPanGesture;
+@property (nonatomic, retain) UITapGestureRecognizer *HPlusTapGesture;
+@property (nonatomic, retain) UILabel *HPlusGestureHUD;
 @property (nonatomic, weak, readwrite) UIViewController *parentViewController;
 @property (nonatomic, assign, readonly) BOOL isInlinePlaybackActive;
 @property (nonatomic, assign, readonly) BOOL isPlayingAd;
-@property (nonatomic, strong) UIView *YouModSpeedToastView;
-@property (nonatomic, strong) UILabel *YouModSpeedToastLabel;
-@property (nonatomic, retain) UILongPressGestureRecognizer *YouModHoldGesture;
+@property (nonatomic, strong) UIView *HPlusSpeedToastView;
+@property (nonatomic, strong) UILabel *HPlusSpeedToastLabel;
+@property (nonatomic, retain) UILongPressGestureRecognizer *HPlusHoldGesture;
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer;
-- (void)YouModAutoFullscreen;
-- (void)YouModSetAutoSpeed;
+- (void)HPlusAutoFullscreen;
+- (void)HPlusSetAutoSpeed;
 - (void)setPlaybackRate:(float)rate;
 - (void)setActiveCaptionTrack:(MLInnerTubeCaptionTrack *)arg1 source:(NSInteger)arg2;
 - (void)setActiveCaptionTrack:(MLInnerTubeCaptionTrack *)arg;
 - (void)play;
 - (void)pause;
-- (void)YouModAutoMute;
-- (void)YouModAutoAudioTrack;
-- (void)YouModAutoCaptions;
-- (void)YouModLoopButton;
-- (void)YouModCaptionsHelper:(MLInnerTubeCaptionTrack *)arg;
-- (void)YouModShareButton:(UIView *)sourceView;
+- (void)HPlusAutoMute;
+- (void)HPlusAutoAudioTrack;
+- (void)HPlusAutoCaptions;
+- (void)HPlusLoopButton;
+- (void)HPlusCaptionsHelper:(MLInnerTubeCaptionTrack *)arg;
+- (void)HPlusShareButton:(UIView *)sourceView;
 - (NSInteger)playerState;
 - (YTPlayerResponse *)contentPlayerResponse;
 - (YTPlayerResponse *)playerResponse;
 - (id)audioTrackController;
-- (void)YouModHideSpeedToast;
-- (void)YouModShowSpeedToast:(CGFloat)speed isLocked:(BOOL)isLocked;
-- (void)YouModAutoDRCAudio;
+- (void)HPlusHideSpeedToast;
+- (void)HPlusShowSpeedToast:(CGFloat)speed isLocked:(BOOL)isLocked;
+- (void)HPlusAutoDRCAudio;
 - (void)setAudioTrack:(YTIAudioTrack *)arg1 source:(NSInteger)arg2;
 - (void)setAudioDRCEnabled:(BOOL)arg;
 @end
 
-@interface YTPlayerBarController (YouMod)
+@interface YTPlayerBarController (HPlus)
 - (void)didScrub:(UIPanGestureRecognizer *)gesture;
 @end
 
@@ -499,7 +499,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface SSOConfiguration : NSObject
 @end
 
-@interface ASDisplayNode (YouMod)
+@interface ASDisplayNode (HPlus)
 - (void)removeYogaChild:(id)arg;
 @end
 
@@ -520,15 +520,15 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (BOOL)isExpanded;
 @end
 
-@interface YTMainAppControlsOverlayView (YouMod)
+@interface YTMainAppControlsOverlayView (HPlus)
 - (YTMainAppVideoPlayerOverlayViewController *)eventsDelegate;
 @end
 
-@interface YTVideoQualitySwitchOriginalController (YouMod)
+@interface YTVideoQualitySwitchOriginalController (HPlus)
 @property (retain, nonatomic) YTVideoQualitySwitchRedesignedController *redesignedController;
 @end
 
-@interface UIView (YouMod)
+@interface UIView (HPlus)
 @property (nonatomic, assign, readonly) BOOL _mapkit_isDarkModeEnabled;
 - (UIViewController *)_viewControllerForAncestor;
 @end
@@ -551,24 +551,24 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (void)HPlusAutoClearCache;
 @end
 
-@interface YTInlinePlayerBarContainerView (YouMod)
+@interface YTInlinePlayerBarContainerView (HPlus)
 @property (nonatomic, strong) NSString *endTimeString;
 @end
 
 // Custom perferences logics
-@interface YouModPrefsManager : NSObject <UIDocumentPickerDelegate>
+@interface HPlusPrefsManager : NSObject <UIDocumentPickerDelegate>
 + (instancetype)sharedManager;
-- (void)exportYouModSettingsFromVC:(UIViewController *)vc;
-- (void)importYouModSettingsFromVC:(UIViewController *)vc;
-- (void)restoreYouModDefaults;
+- (void)exportHPlusSettingsFromVC:(UIViewController *)vc;
+- (void)importHPlusSettingsFromVC:(UIViewController *)vc;
+- (void)restoreHPlusDefaults;
 @end
 
-@interface YTIAudioTrack (YouMod)
+@interface YTIAudioTrack (HPlus)
 @property (nonatomic, assign, readwrite) BOOL isAutoDubbed;
 - (BOOL)hasId_p;
 @end
 
-@interface MLInnerTubeCaptionTrack (YouMod)
+@interface MLInnerTubeCaptionTrack (HPlus)
 - (NSString *)languageCode;
 - (NSString *)VSSID;
 @end
@@ -581,30 +581,30 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @end
 
 // Player Gestures - @bhackel (YTLitePlus)
-@interface YTMainAppVideoPlayerOverlayViewController (YouMod)
+@interface YTMainAppVideoPlayerOverlayViewController (HPlus)
 @property (nonatomic, assign) YTPlayerViewController *parentViewController;
 - (YTCaptionTrackSwitchController *)captionTrackController;
 - (NSString *)videoID;
 - (CGFloat)mediaTime;
 @end
 
-@interface YTSingleVideo (YouMod)
+@interface YTSingleVideo (HPlus)
 - (BOOL)isLivePlayback;
 @end
 
-@interface YTSingleVideoController (YouMod)
+@interface YTSingleVideoController (HPlus)
 - (CGFloat)totalMediaTime;
 - (void)setVideoFormatConstraint:(id)arg;
-- (void)YouModAutoQuality;
+- (void)HPlusAutoQuality;
 - (NSArray *)availableCaptionTracks;
 - (MLInnerTubeCaptionTrack *)activeCaptionTrack;
 @end
 
-@interface YTReelPlayerViewController (YouMod)
+@interface YTReelPlayerViewController (HPlus)
 - (void)reelContentViewRequestsAdvanceToNextVideo:(id)arg;
 - (void)reelContentViewRequestsPlayPauseToggle:(id)arg;
 - (id)audioTrackController;
-- (void)YouModAutoAudioTrack:(YTPlayerViewController *)pv;
+- (void)HPlusAutoAudioTrack:(YTPlayerViewController *)pv;
 @end
 
 @interface YTIPlayerCaptionsTrackListRenderer : GPBMessage
@@ -615,12 +615,12 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (YTIPlayerCaptionsTrackListRenderer *)playerCaptionsTracklistRenderer;
 @end
 
-@interface YTIPlayerResponse (YouMod)
+@interface YTIPlayerResponse (HPlus)
 - (YTIStreamingData *)streamingData;
 - (YTICaptionsSupportedRenderers *)captions;
 @end
 
-@interface YTIFormatStream (YouMod)
+@interface YTIFormatStream (HPlus)
 - (NSString *)mimeType;
 - (NSInteger)contentLength;
 - (NSUInteger)approxDurationMs;
@@ -630,11 +630,11 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (int)itag;
 @end
 
-@interface YTIFormattedString (YouMod)
+@interface YTIFormattedString (HPlus)
 - (NSString *)dropdownOptionTitle;
 @end
 
-@interface YTIVideoDetails (YouMod)
+@interface YTIVideoDetails (HPlus)
 - (NSString *)title;
 - (NSString *)author;
 - (NSString *)shortDescription;
@@ -707,7 +707,7 @@ extern UIView *sbGetNotificationParent(void);
 extern void sbUpdateOverlayInsetForPivotBar(void);
 extern void YMPresentTabOrderModally(id parentResponder);
 
-// The ordered set of SponsorBlock categories YouMod supports. Both the core
+// The ordered set of SponsorBlock categories HPlus supports. Both the core
 // (segment fetching / skipping) and the settings UI read from this single list,
 // so a category can never be fetchable without a control, or configurable
 // without being fetched.
@@ -753,7 +753,7 @@ extern void YMPushOverlayButtonOrder(id settingsVC, id parentResponder);
 
 // One row in the global settings-search results. A row renders its own cell and
 // (optionally) handles its own tap, so a single results table can host cells from
-// different settings pages (the generic YouMod pages and SponsorBlock) without the
+// different settings pages (the generic HPlus pages and SponsorBlock) without the
 // search controller knowing how any of them are built. searchText is what the query
 // is matched against (title + description). makeCell builds the live, editable
 // control; onSelect handles taps that need to present UI (e.g. the colour picker),
@@ -769,18 +769,18 @@ extern void YMPushOverlayButtonOrder(id settingsVC, id parentResponder);
 // colour circles), rendered by SponsorBlock's own cell builders so its settings are
 // editable inline in the global search. host adopts the rendering VC as a child so
 // the cells inherit the correct trait collection (light/dark). Defined in
-// SponsorBlockSettings.x; consumed by the search VC in YouModSettings.x.
+// SponsorBlockSettings.x; consumed by the search VC in HPlusSettings.x.
 extern NSArray<YMSearchRow *> *sbSearchRows(UIViewController *host);
 
-extern NSBundle *YouModBundle();
-extern UIImage *YouModYTIconImage(NSInteger iconType, BOOL useCustomColor, UIColor *customColor);
+extern NSBundle *HPlusBundle();
+extern UIImage *HPlusYTIconImage(NSInteger iconType, BOOL useCustomColor, UIColor *customColor);
 extern NSArray *getAllSystemLanguageTitles();
 extern NSArray *getAllSystemLanguageValues();
-extern UIViewController *YouModTopViewController(UIViewController *root);
+extern UIViewController *HPlusTopViewController(UIViewController *root);
 extern BOOL isDarkMode(UIView *view);
 extern BOOL isPad();
 
-#define LOC(x) [YouModBundle() localizedStringForKey:x value:nil table:nil]
+#define LOC(x) [HPlusBundle() localizedStringForKey:x value:nil table:nil]
 
 @interface YMDownloadProgressView : UIView
 @property (nonatomic, strong) UILabel *titleLabel;
@@ -806,19 +806,19 @@ extern BOOL isPad();
 - (void)sbRefreshMarkers:(NSArray<SBSegment *> *)segments;
 @end
 
-@interface YouModThumbnailViewController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate>
+@interface HPlusThumbnailViewController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate>
 @property (nonatomic, strong) UIImage *thumbnailImage;
 @property (nonatomic, strong) UIScrollView *scrollView;
 @property (nonatomic, strong) UIImageView *imageView;
 @end
 
-typedef NS_ENUM(NSInteger, YouModTranslationState) {
-    YouModTranslationStateLoading = 0,
-    YouModTranslationStateSuccess = 1,
-    YouModTranslationStateFailed = 2
+typedef NS_ENUM(NSInteger, HPlusTranslationState) {
+    HPlusTranslationStateLoading = 0,
+    HPlusTranslationStateSuccess = 1,
+    HPlusTranslationStateFailed = 2
 };
 
-@interface YouModTranslationViewController : UIViewController
+@interface HPlusTranslationViewController : UIViewController
 @property (nonatomic, copy) NSString *originalText;
 @property (nonatomic, strong) UILabel *langValueLabel;
 @property (nonatomic, strong) UIButton *reloadButton;
@@ -827,11 +827,11 @@ typedef NS_ENUM(NSInteger, YouModTranslationState) {
 @property (nonatomic, copy) NSString *selectedLangName;
 @property (nonatomic, strong) NSArray<NSString *> *languageTitles;
 @property (nonatomic, strong) NSArray<NSString *> *languageCodes;
-@property (nonatomic, assign) YouModTranslationState translationState;
+@property (nonatomic, assign) HPlusTranslationState translationState;
 - (void)performTranslation;
 @end
 
-@interface YouModLanguagePickerViewController : UIViewController <UITableViewDelegate, UITableViewDataSource, UIGestureRecognizerDelegate>
+@interface HPlusLanguagePickerViewController : UIViewController <UITableViewDelegate, UITableViewDataSource, UIGestureRecognizerDelegate>
 @property (nonatomic, copy) NSString *selectedLangCode;
 @property (nonatomic, copy) NSArray<NSString *> *titles;
 @property (nonatomic, copy) NSArray<NSString *> *codes;

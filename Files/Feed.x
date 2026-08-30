@@ -10,7 +10,7 @@
 - (id)initWithChildView:(id)arg1 headerView:(id)arg2 {
     self = %orig;
     if (self && IS_ENABLED(HideSubbar)) {
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(setNeedsLayout) name:@"YouModReloadHeaderBar" object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(setNeedsLayout) name:@"HPlusReloadHeaderBar" object:nil];
     }
     return self;
 }
@@ -44,7 +44,7 @@
 }
 %end
 
-static void YouModFilterChannelButtons(_ASDisplayView *self, NSString *iden) {
+static void HPlusFilterChannelButtons(_ASDisplayView *self, NSString *iden) {
     UIView *sup = self.superview;
     if ([sup isKindOfClass:%c(ASScrollView)]) {
         ASScrollView *scroll = (ASScrollView *)sup;
@@ -91,7 +91,7 @@ static void YouModFilterChannelButtons(_ASDisplayView *self, NSString *iden) {
         remove = YES;
     }
     if (remove) {
-        YouModFilterChannelButtons(self, iden);
+        HPlusFilterChannelButtons(self, iden);
     }
 }
 %end

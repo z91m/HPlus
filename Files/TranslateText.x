@@ -1,6 +1,6 @@
 #import "Headers.h"
 
-static void YouModTranslateText(NSString *text, NSString *targetLang, void (^completion)(NSString *translatedText, NSError *error)) {
+static void HPlusTranslateText(NSString *text, NSString *targetLang, void (^completion)(NSString *translatedText, NSError *error)) {
     if (!text || text.length == 0) {
         if (completion) completion(@"", nil);
         return;
@@ -36,13 +36,13 @@ static void YouModTranslateText(NSString *text, NSString *targetLang, void (^com
         } @catch (NSException *e) {}
         
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (completion) completion(nil, [NSError errorWithDomain:@"YouModTranslate" code:-1 userInfo:nil]);
+            if (completion) completion(nil, [NSError errorWithDomain:@"HPlusTranslate" code:-1 userInfo:nil]);
         });
     }];
     [task resume];
 }
 
-@implementation YouModLanguagePickerViewController
+@implementation HPlusLanguagePickerViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -203,7 +203,7 @@ static void YouModTranslateText(NSString *text, NSString *targetLang, void (^com
 
 @end
 
-@implementation YouModTranslationViewController
+@implementation HPlusTranslationViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -377,7 +377,7 @@ static void YouModTranslateText(NSString *text, NSString *targetLang, void (^com
 }
 
 - (void)copyTapped {
-    if (self.translationState == YouModTranslationStateSuccess && self.resultTextView.text.length > 0) {
+    if (self.translationState == HPlusTranslationStateSuccess && self.resultTextView.text.length > 0) {
         [UIPasteboard generalPasteboard].string = self.resultTextView.text;
         
         UIImpactFeedbackGenerator *feedback = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
@@ -389,7 +389,7 @@ static void YouModTranslateText(NSString *text, NSString *targetLang, void (^com
 }
 
 - (void)shareTapped:(id)sender {
-    if (self.translationState != YouModTranslationStateSuccess || self.resultTextView.text.length == 0) return;
+    if (self.translationState != HPlusTranslationStateSuccess || self.resultTextView.text.length == 0) return;
     
     UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:@[self.resultTextView.text] applicationActivities:nil];
     if (activityVC.popoverPresentationController) {
@@ -406,7 +406,7 @@ static void YouModTranslateText(NSString *text, NSString *targetLang, void (^com
 - (void)selectLanguageTapped:(UITapGestureRecognizer *)gesture {
     if (!self.languageTitles || self.languageTitles.count == 0) return;
     
-    YouModLanguagePickerViewController *pickerVC = [[YouModLanguagePickerViewController alloc] init];
+    HPlusLanguagePickerViewController *pickerVC = [[HPlusLanguagePickerViewController alloc] init];
     pickerVC.titles = self.languageTitles;
     pickerVC.codes = self.languageCodes;
     pickerVC.selectedLangCode = self.selectedLangCode;
@@ -427,23 +427,23 @@ static void YouModTranslateText(NSString *text, NSString *targetLang, void (^com
 }
 
 - (void)performTranslation {
-    self.translationState = YouModTranslationStateLoading;
+    self.translationState = HPlusTranslationStateLoading;
     self.reloadButton.hidden = YES;
     self.resultTextView.text = LOC(@"TRANSLATING");
     self.resultTextView.textColor = [UIColor systemPurpleColor];
     
     __weak typeof(self) weakSelf = self;
-    YouModTranslateText(self.originalText, self.selectedLangCode, ^(NSString *translatedText, NSError *error) {
+    HPlusTranslateText(self.originalText, self.selectedLangCode, ^(NSString *translatedText, NSError *error) {
         __strong typeof(weakSelf) strongSelf = weakSelf;
         if (!strongSelf) return;
         
         if (translatedText && translatedText.length > 0) {
-            strongSelf.translationState = YouModTranslationStateSuccess;
+            strongSelf.translationState = HPlusTranslationStateSuccess;
             strongSelf.resultTextView.text = translatedText;
             strongSelf.resultTextView.textColor = [UIColor labelColor];
             strongSelf.reloadButton.hidden = YES;
         } else {
-            strongSelf.translationState = YouModTranslationStateFailed;
+            strongSelf.translationState = HPlusTranslationStateFailed;
             strongSelf.resultTextView.text = LOC(@"TRANSLATE_FAILED");
             strongSelf.resultTextView.textColor = [UIColor systemRedColor];
             strongSelf.reloadButton.hidden = NO;

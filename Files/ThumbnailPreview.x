@@ -1,7 +1,7 @@
 #import <Photos/Photos.h>
 #import "Headers.h"
 
-@implementation YouModThumbnailViewController
+@implementation HPlusThumbnailViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];

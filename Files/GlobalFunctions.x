@@ -1,22 +1,22 @@
 #import "Headers.h"
 
-// YouMod's bundle (For localizations)
-NSBundle *YouModBundle() {
+// HPlus's bundle (For localizations)
+NSBundle *HPlusBundle() {
     static NSBundle *bundle = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        NSString *tweakBundlePath = [[NSBundle mainBundle] pathForResource:@"YouMod" ofType:@"bundle"];
+        NSString *tweakBundlePath = [[NSBundle mainBundle] pathForResource:@"HPlus" ofType:@"bundle"];
         if (tweakBundlePath) {
             bundle = [NSBundle bundleWithPath:tweakBundlePath];
         } else {
-            bundle = [NSBundle bundleWithPath:[NSString stringWithFormat:PS_ROOT_PATH_NS(@"/Library/Application Support/%@.bundle"), @"YouMod"]];
+            bundle = [NSBundle bundleWithPath:[NSString stringWithFormat:PS_ROOT_PATH_NS(@"/Library/Application Support/%@.bundle"), @"HPlus"]];
         }
     });
     return bundle;
 }
 
 // YouTube icon image (YTIIcon)
-UIImage *YouModYTIconImage(NSInteger iconType, BOOL useCustomColor, UIColor *customColor) {
+UIImage *HPlusYTIconImage(NSInteger iconType, BOOL useCustomColor, UIColor *customColor) {
     YTIIcon *icon = [%c(YTIIcon) new];
     icon.iconType = iconType;
     UIColor *targetColor = (useCustomColor && customColor) ? customColor : [UIColor labelColor];
@@ -66,7 +66,7 @@ NSArray *getAllSystemLanguageValues() {
 }
 
 // Get TopViewController
-UIViewController *YouModTopViewController(UIViewController *root) {
+UIViewController *HPlusTopViewController(UIViewController *root) {
     if (!root) {
         UIWindow *keyWindow = nil;
         for (UIWindow *window in UIApplication.sharedApplication.windows) {
@@ -79,9 +79,9 @@ UIViewController *YouModTopViewController(UIViewController *root) {
     }
     while (root.presentedViewController) root = root.presentedViewController;
     if ([root isKindOfClass:UINavigationController.class])
-        return YouModTopViewController(((UINavigationController *)root).topViewController);
+        return HPlusTopViewController(((UINavigationController *)root).topViewController);
     if ([root isKindOfClass:UITabBarController.class])
-        return YouModTopViewController(((UITabBarController *)root).selectedViewController);
+        return HPlusTopViewController(((UITabBarController *)root).selectedViewController);
     return root;
 }
 

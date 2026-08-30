@@ -4,7 +4,7 @@
 
 #define TweakName @"Hamad Plus"
 
-#define YMLOC(x) [YouModBundle() localizedStringForKey:x value:nil table:nil]
+#define YMLOC(x) [HPlusBundle() localizedStringForKey:x value:nil table:nil]
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
@@ -45,8 +45,8 @@ extern void YMPushOverlayButtonOrder(id settingsVC, id parentResponder);
 extern void YMRegisterSettingsGroup(NSString *title, NSArray<YMSettingsItem *> *items);
 extern void YMPushSettingsSearch(id settingsVC, id parentResponder);
 
-@interface YTSettingsSectionItemManager (YouMod)
-- (void)updateYouModSectionWithEntry:(id)entry;
+@interface YTSettingsSectionItemManager (HPlus)
+- (void)updateHPlusSectionWithEntry:(id)entry;
 - (void)updateSponsorBlockSectionWithEntry:(id)entry;
 @end
 
@@ -96,7 +96,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
 %hook YTSettingsSectionItemManager
 
 %new(v@:@)
-- (void)updateYouModSectionWithEntry:(id)entry {
+- (void)updateHPlusSectionWithEntry:(id)entry {
     NSMutableArray <YTSettingsSectionItem *> *sectionItems = [NSMutableArray array];
     Class YTSettingsSectionItemClass = %c(YTSettingsSectionItem);
     YTSettingsViewController *settingsViewController = [self valueForKey:@"_settingsViewControllerDelegate"];
@@ -128,7 +128,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         accessibilityIdentifier:nil
         detailTextBlock:nil
         selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/z91m/YouMod"]];
+            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/z91m/HPlus"]];
         }
     ];
     [sectionItems addObject:sourceCodes];
@@ -404,7 +404,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         // Build dynamic image list from enabled tabs (standard + custom)
         NSDictionary *tabYTIconMap = @{@"home": @(65), @"shorts": @(769), @"subscriptions": @(66), @"library": @(61)};
         NSDictionary *tabBundleIconMap = @{@"history": @"icons/history", @"gaming": @"icons/gaming", @"sports": @"icons/sports", @"notifications": @"icons/noti", @"news": @"icons/news", @"music": @"icons/music", @"watchlater": @"icons/watchlater", @"playlist": @"icons/playlist", @"like": @"icons/like", @"live": @"icons/live", @"post": @"icons/post", @"video": @"icons/video", @"movie": @"icons/movie", @"course": @"icons/course", @"minigame": @"icons/minigame", @"fashion": @"icons/fashion", @"learning": @"icons/learning"};
-        YTAssetLoader *assetLoader = [[%c(YTAssetLoader) alloc] initWithBundle:YouModBundle()];
+        YTAssetLoader *assetLoader = [[%c(YTAssetLoader) alloc] initWithBundle:HPlusBundle()];
 
         NSMutableArray<UIImage *> *defaultTabImages = [NSMutableArray array];
         NSArray *savedOrder = [[NSUserDefaults standardUserDefaults] arrayForKey:TabOrder];
@@ -415,7 +415,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
                 if ([tabID isEqualToString:@"create"]) continue;
                 NSNumber *ytIconType = tabYTIconMap[tabID];
                 if (ytIconType) {
-                    UIImage *img = YouModYTIconImage([ytIconType intValue], YES, [UIColor whiteColor]);
+                    UIImage *img = HPlusYTIconImage([ytIconType intValue], YES, [UIColor whiteColor]);
                     if (img) [defaultTabImages addObject:img];
                 } else {
                     NSString *bundleName = tabBundleIconMap[tabID];
@@ -432,7 +432,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         if (defaultTabImages.count == 0) {
             NSArray *fallbackIcons = @[@(65), @(769), @(66), @(61)];
             for (NSNumber *iconType in fallbackIcons) {
-                UIImage *img = YouModYTIconImage([iconType intValue], YES, [UIColor whiteColor]);
+                UIImage *img = HPlusYTIconImage([iconType intValue], YES, [UIColor whiteColor]);
                 if (img) [defaultTabImages addObject:img];
             }
         }
@@ -525,7 +525,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMAction(YMLOC(@"IMPORT"), YMLOC(@"IMPORT_DESC"), ^(UIViewController *vc) {
                 Class alertClass = NSClassFromString(@"YTAlertView");
                 YTAlertView *alertView = [alertClass confirmationDialogWithAction:^{
-                    [[YouModPrefsManager sharedManager] importYouModSettingsFromVC:vc];
+                    [[HPlusPrefsManager sharedManager] importHPlusSettingsFromVC:vc];
                 } actionTitle:YMLOC(@"YES")];
                 alertView.title = YMLOC(@"WARNING");
                 alertView.subtitle = YMLOC(@"OVERRIDE");
@@ -533,10 +533,10 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
                 [alertView show];
             }),
             YMAction(YMLOC(@"EXPORT"), YMLOC(@"EXPORT_DESC"), ^(UIViewController *vc) {
-                [[YouModPrefsManager sharedManager] exportYouModSettingsFromVC:vc];
+                [[HPlusPrefsManager sharedManager] exportHPlusSettingsFromVC:vc];
             }),
             YMAction(YMLOC(@"RESTORE"), YMLOC(@"RESTORE_DESC"), ^(UIViewController *vc) {
-                [[YouModPrefsManager sharedManager] restoreYouModDefaults];
+                [[HPlusPrefsManager sharedManager] restoreHPlusDefaults];
             }),
             YMHeader(YMLOC(@"CACHE")),
             YMAction(YMLOC(@"CLEARCACHE"), GetCacheSize(), ^(UIViewController *vc) {
@@ -618,7 +618,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
 
 - (void)updateSectionForCategory:(NSUInteger)category withEntry:(id)entry {
     if (category == TweakSection) {
-        [self updateYouModSectionWithEntry:entry];
+        [self updateHPlusSectionWithEntry:entry];
         return;
     }
     %orig;

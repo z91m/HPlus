@@ -25,19 +25,19 @@ static BOOL isWiFiConnected() {
     return !isCellular;
 }
 
-extern void YouModDownloadSetCurrentPlayer(YTPlayerViewController *player);
-extern YTPlayerViewController *YouModDownloadGetCurrentPlayer(void);
+extern void HPlusDownloadSetCurrentPlayer(YTPlayerViewController *player);
+extern YTPlayerViewController *HPlusDownloadGetCurrentPlayer(void);
 
 #pragma mark - Rewind / Fast-forward on iOS media controls
 
 // The user-chosen skip amount for each direction, in seconds. Zero means the
 // preference was never set, in which case the seek falls back to 10 seconds.
-static CGFloat YouModRewindSecondsValue(void) {
+static CGFloat HPlusRewindSecondsValue(void) {
     CGFloat s = FLOAT_FOR_KEY(RewindSeconds);
     return s > 0 ? s : 10.0;
 }
 
-static CGFloat YouModForwardSecondsValue(void) {
+static CGFloat HPlusForwardSecondsValue(void) {
     CGFloat s = FLOAT_FOR_KEY(ForwardSeconds);
     return s > 0 ? s : 10.0;
 }
@@ -49,8 +49,8 @@ static CGFloat YouModForwardSecondsValue(void) {
 // The seek runs on the main queue because MPRemoteCommand handlers may be invoked
 // off the main thread (notably from Bluetooth and CarPlay), while seekToTime: and
 // the player's time accessors are main-thread-only.
-static BOOL YouModSeekByInterval(CGFloat delta) {
-    YTPlayerViewController *player = YouModDownloadGetCurrentPlayer();
+static BOOL HPlusSeekByInterval(CGFloat delta) {
+    YTPlayerViewController *player = HPlusDownloadGetCurrentPlayer();
     if (!player || ![player respondsToSelector:@selector(seekToTime:)]) return NO;
     dispatch_async(dispatch_get_main_queue(), ^{
         CGFloat cur = [player currentVideoMediaTime];
@@ -65,8 +65,8 @@ static BOOL YouModSeekByInterval(CGFloat delta) {
 
 // Retained handler tokens for the two skip commands. A non-nil token marks a
 // command whose handler is already installed, so it is installed only once.
-static id gYouModRewindTarget = nil;
-static id gYouModForwardTarget = nil;
+static id gHPlusRewindTarget = nil;
+static id gHPlusForwardTarget = nil;
 
 // Points the system now-playing skip controls (lock screen, Bluetooth, Control
 // Center, CarPlay) at our per-direction seek. When enabled, the OS previous/next
@@ -80,7 +80,7 @@ static id gYouModForwardTarget = nil;
 // time, a changed preference always seeks by the new amount immediately; the
 // interval shown on the OS controls reflects the value captured the last time this
 // ran (video change or launch).
-static void YouModConfigureRemoteSkipCommands(void) {
+static void HPlusConfigureRemoteSkipCommands(void) {
     MPRemoteCommandCenter *cc = [MPRemoteCommandCenter sharedCommandCenter];
     BOOL back = IS_ENABLED(SkipBackwardEnabled);
     BOOL fwd = IS_ENABLED(SkipForwardEnabled);
@@ -90,25 +90,25 @@ static void YouModConfigureRemoteSkipCommands(void) {
     // on, fast-forward off) shows a skip-back control alongside the stock next
     // track button.
     cc.skipBackwardCommand.enabled = back;
-    cc.skipBackwardCommand.preferredIntervals = @[@(YouModRewindSecondsValue())];
+    cc.skipBackwardCommand.preferredIntervals = @[@(HPlusRewindSecondsValue())];
     cc.skipForwardCommand.enabled = fwd;
-    cc.skipForwardCommand.preferredIntervals = @[@(YouModForwardSecondsValue())];
+    cc.skipForwardCommand.preferredIntervals = @[@(HPlusForwardSecondsValue())];
     cc.previousTrackCommand.enabled = !back;
     cc.nextTrackCommand.enabled = !fwd;
 
-    if (!gYouModRewindTarget) {
-        gYouModRewindTarget = [cc.skipBackwardCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
-            return YouModSeekByInterval(-YouModRewindSecondsValue()) ? MPRemoteCommandHandlerStatusSuccess : MPRemoteCommandHandlerStatusNoSuchContent;
+    if (!gHPlusRewindTarget) {
+        gHPlusRewindTarget = [cc.skipBackwardCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
+            return HPlusSeekByInterval(-HPlusRewindSecondsValue()) ? MPRemoteCommandHandlerStatusSuccess : MPRemoteCommandHandlerStatusNoSuchContent;
         }];
     }
-    if (!gYouModForwardTarget) {
-        gYouModForwardTarget = [cc.skipForwardCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
-            return YouModSeekByInterval(YouModForwardSecondsValue()) ? MPRemoteCommandHandlerStatusSuccess : MPRemoteCommandHandlerStatusNoSuchContent;
+    if (!gHPlusForwardTarget) {
+        gHPlusForwardTarget = [cc.skipForwardCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
+            return HPlusSeekByInterval(HPlusForwardSecondsValue()) ? MPRemoteCommandHandlerStatusSuccess : MPRemoteCommandHandlerStatusNoSuchContent;
         }];
     }
 }
 
-static void YouModAddEndTime(YTPlayerViewController *self, YTSingleVideoController *video, YTSingleVideoTime *time) {
+static void HPlusAddEndTime(YTPlayerViewController *self, YTSingleVideoController *video, YTSingleVideoTime *time) {
     if (!IS_ENABLED(ShowExtraTimeRemaining) && !IS_ENABLED(SBShowDuration)) return;
 
     YTMainAppVideoPlayerOverlayViewController *con = [self activeVideoPlayerOverlay];
@@ -197,14 +197,14 @@ static void YouModAddEndTime(YTPlayerViewController *self, YTSingleVideoControll
             BOOL hasCustomTap = NO;
             for (UIGestureRecognizer *gesture in subview.gestureRecognizers) {
                 if ([gesture isKindOfClass:[UITapGestureRecognizer class]] && 
-                    [gesture.name isEqualToString:@"YouModTapToSeek"]) {
+                    [gesture.name isEqualToString:@"HPlusTapToSeek"]) {
                     hasCustomTap = YES;
                     break;
                 }
             }
             if (!hasCustomTap) {
-                UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleYouModScrubTap:)];
-                tap.name = @"YouModTapToSeek";
+                UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleHPlusScrubTap:)];
+                tap.name = @"HPlusTapToSeek";
                 [subview addGestureRecognizer:tap];
             }
             break;
@@ -212,7 +212,7 @@ static void YouModAddEndTime(YTPlayerViewController *self, YTSingleVideoControll
     }
 }
 %new
-- (void)handleYouModScrubTap:(UITapGestureRecognizer *)gesture {
+- (void)handleHPlusScrubTap:(UITapGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateEnded) {
         UIView *progressBar = nil;
 
@@ -426,14 +426,14 @@ static void YouModAddEndTime(YTPlayerViewController *self, YTSingleVideoControll
     YTSingleVideoController *sgvid = [self valueForKey:@"_currentSingleVideo"];
     YTPlayerView *playerview = [sgvid valueForKey:@"_playerView"];
     YTPlayerViewController *playerviewController = [playerview valueForKey:@"_playerViewDelegate"];
-    YouModDownloadSetCurrentPlayer(playerviewController);
-    YouModConfigureRemoteSkipCommands();
-    if (INTFORVAL(AutoDRCAudioIndex) != 0) [playerviewController YouModAutoDRCAudio];
-    if (INTFORVAL(AudioTrack) != 0) [playerviewController performSelector:@selector(YouModAutoAudioTrack) withObject:nil afterDelay:0.1];
-    if (YMIsOverlayButtonEnabled(@"mute.video")) [playerviewController YouModAutoMute];
-    if (IS_ENABLED(AutoFullScreen)) [playerviewController performSelector:@selector(YouModAutoFullscreen) withObject:nil afterDelay:0.4];
-    if (INTFORVAL(CaptionTrack) != 0) [playerviewController performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.2];
-    if (INTFORVAL(AutoSpeedIndex) != 0) [playerviewController YouModSetAutoSpeed];
+    HPlusDownloadSetCurrentPlayer(playerviewController);
+    HPlusConfigureRemoteSkipCommands();
+    if (INTFORVAL(AutoDRCAudioIndex) != 0) [playerviewController HPlusAutoDRCAudio];
+    if (INTFORVAL(AudioTrack) != 0) [playerviewController performSelector:@selector(HPlusAutoAudioTrack) withObject:nil afterDelay:0.1];
+    if (YMIsOverlayButtonEnabled(@"mute.video")) [playerviewController HPlusAutoMute];
+    if (IS_ENABLED(AutoFullScreen)) [playerviewController performSelector:@selector(HPlusAutoFullscreen) withObject:nil afterDelay:0.4];
+    if (INTFORVAL(CaptionTrack) != 0) [playerviewController performSelector:@selector(HPlusAutoCaptions) withObject:nil afterDelay:0.2];
+    if (INTFORVAL(AutoSpeedIndex) != 0) [playerviewController HPlusSetAutoSpeed];
 }
 %end
 
@@ -547,12 +547,12 @@ static void YouModAddEndTime(YTPlayerViewController *self, YTSingleVideoControll
 %end
 %end
 
-static NSArray *YouModHoldSpeedValues(void) {
+static NSArray *HPlusHoldSpeedValues(void) {
     return @[@0.0, @0.25, @0.5, @0.75, @1.0, @1.25, @1.5, @1.75, @2.0, @3.0, @4.0, @5.0, @7.5, @10.0];
 }
 
-static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
-    NSArray *values = YouModHoldSpeedValues();
+static CGFloat HPlusSpeedForHoldIndex(NSInteger index) {
+    NSArray *values = HPlusHoldSpeedValues();
     return [values[index] floatValue];
 }
 
@@ -583,11 +583,11 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
 - (void)playerItem:(id)arg1 hasSelectableVideoFormats:(id)arg2 {
     %orig;
     if (!arg2) return;
-    [self YouModAutoQuality];
+    [self HPlusAutoQuality];
 }
 
 %new
-- (void)YouModAutoQuality {
+- (void)HPlusAutoQuality {
     NSArray *videoFormats = self.selectableVideoFormats;
     // Return early if there aren't any video formats available
     // eg. Voice comments and others
@@ -700,21 +700,21 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
 - (void)watchController:(YTWatchController *)watchController didSetPlayerViewController:(YTPlayerViewController *)playerViewController {
     if (playerViewController) {
         YTPlayerView *pv = playerViewController.playerView;
-        if (!playerViewController.YouModPanGesture && (IS_ENABLED(GestureControls) || IS_ENABLED(SeekOnOverlay))) {
-            playerViewController.YouModPanGesture = [[UIPanGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHandlePanGesture:)];
-            playerViewController.YouModPanGesture.delegate = playerViewController;
-            [pv addGestureRecognizer:playerViewController.YouModPanGesture];
+        if (!playerViewController.HPlusPanGesture && (IS_ENABLED(GestureControls) || IS_ENABLED(SeekOnOverlay))) {
+            playerViewController.HPlusPanGesture = [[UIPanGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(HPlusHandlePanGesture:)];
+            playerViewController.HPlusPanGesture.delegate = playerViewController;
+            [pv addGestureRecognizer:playerViewController.HPlusPanGesture];
         }
-        if (!playerViewController.YouModTapGesture && IS_ENABLED(PauseTwoFingers)) {
-            playerViewController.YouModTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHandleTapGesture:)];
-            playerViewController.YouModTapGesture.numberOfTouchesRequired = 2;
-            playerViewController.YouModTapGesture.delegate = playerViewController;
-            [pv addGestureRecognizer:playerViewController.YouModTapGesture];
+        if (!playerViewController.HPlusTapGesture && IS_ENABLED(PauseTwoFingers)) {
+            playerViewController.HPlusTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(HPlusHandleTapGesture:)];
+            playerViewController.HPlusTapGesture.numberOfTouchesRequired = 2;
+            playerViewController.HPlusTapGesture.delegate = playerViewController;
+            [pv addGestureRecognizer:playerViewController.HPlusTapGesture];
         }
-        if (!playerViewController.YouModHoldGesture && INTFORVAL(HoldToSpeedIndex) != 0) {
-            playerViewController.YouModHoldGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHoldToSpeed:)];
-            playerViewController.YouModHoldGesture.minimumPressDuration = 0.4;
-            [pv addGestureRecognizer:playerViewController.YouModHoldGesture];   
+        if (!playerViewController.HPlusHoldGesture && INTFORVAL(HoldToSpeedIndex) != 0) {
+            playerViewController.HPlusHoldGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(HPlusHoldToSpeed:)];
+            playerViewController.HPlusHoldGesture.minimumPressDuration = 0.4;
+            [pv addGestureRecognizer:playerViewController.HPlusHoldGesture];   
         }
     }
     %orig;
@@ -762,16 +762,16 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 }
 
 %hook YTPlayerViewController
-%property (nonatomic, retain) UIPanGestureRecognizer *YouModPanGesture;
-%property (nonatomic, retain) UITapGestureRecognizer *YouModTapGesture;
-%property (nonatomic, retain) UILabel *YouModGestureHUD;
-%property (nonatomic, strong) UIView *YouModSpeedToastView;
-%property (nonatomic, strong) UILabel *YouModSpeedToastLabel;
-%property (nonatomic, retain) UILongPressGestureRecognizer *YouModHoldGesture;
+%property (nonatomic, retain) UIPanGestureRecognizer *HPlusPanGesture;
+%property (nonatomic, retain) UITapGestureRecognizer *HPlusTapGesture;
+%property (nonatomic, retain) UILabel *HPlusGestureHUD;
+%property (nonatomic, strong) UIView *HPlusSpeedToastView;
+%property (nonatomic, strong) UILabel *HPlusSpeedToastLabel;
+%property (nonatomic, retain) UILongPressGestureRecognizer *HPlusHoldGesture;
 %new
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
-    if (gestureRecognizer == self.YouModPanGesture) {
-        if (self.YouModHoldGesture && (self.YouModHoldGesture.state == UIGestureRecognizerStateBegan || self.YouModHoldGesture.state == UIGestureRecognizerStateChanged)) {
+    if (gestureRecognizer == self.HPlusPanGesture) {
+        if (self.HPlusHoldGesture && (self.HPlusHoldGesture.state == UIGestureRecognizerStateBegan || self.HPlusHoldGesture.state == UIGestureRecognizerStateChanged)) {
             return NO;
         }
 
@@ -815,8 +815,8 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
             return YES;
         }
     }
-    if (gestureRecognizer == self.YouModHoldGesture) {
-        if (self.YouModPanGesture && (self.YouModPanGesture.state == UIGestureRecognizerStateBegan || self.YouModPanGesture.state == UIGestureRecognizerStateChanged)) {
+    if (gestureRecognizer == self.HPlusHoldGesture) {
+        if (self.HPlusPanGesture && (self.HPlusPanGesture.state == UIGestureRecognizerStateBegan || self.HPlusPanGesture.state == UIGestureRecognizerStateChanged)) {
             return NO;
         }
         if (isRelatedVideosPanelEnabled(self)) return NO;
@@ -828,7 +828,7 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 }
 
 %new
-- (void)YouModHandlePanGesture:(UIPanGestureRecognizer *)panGestureRecognizer {
+- (void)HPlusHandlePanGesture:(UIPanGestureRecognizer *)panGestureRecognizer {
     // 0 = None, 1 = Vertical (Bright/Vol/Speed), 2 = Horizontal (Scrub)
     static int currentPanMode = 0; 
     
@@ -856,15 +856,15 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
     YTMainAppVideoPlayerOverlayViewController *ovcon = [self activeVideoPlayerOverlay];
 
     if (IS_ENABLED(GestureHUD)) {
-        if (!self.YouModGestureHUD) {
-            self.YouModGestureHUD = [[UILabel alloc] initWithFrame:CGRectZero];
-            self.YouModGestureHUD.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.5];
-            self.YouModGestureHUD.textColor = [UIColor colorWithWhite:1.0 alpha:0.75];
-            self.YouModGestureHUD.tintColor = [UIColor colorWithWhite:1.0 alpha:0.75];
-            self.YouModGestureHUD.textAlignment = NSTextAlignmentCenter;
-            self.YouModGestureHUD.layer.masksToBounds = YES;
-            self.YouModGestureHUD.alpha = 0.0;
-            [self.view addSubview:self.YouModGestureHUD];
+        if (!self.HPlusGestureHUD) {
+            self.HPlusGestureHUD = [[UILabel alloc] initWithFrame:CGRectZero];
+            self.HPlusGestureHUD.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.5];
+            self.HPlusGestureHUD.textColor = [UIColor colorWithWhite:1.0 alpha:0.75];
+            self.HPlusGestureHUD.tintColor = [UIColor colorWithWhite:1.0 alpha:0.75];
+            self.HPlusGestureHUD.textAlignment = NSTextAlignmentCenter;
+            self.HPlusGestureHUD.layer.masksToBounds = YES;
+            self.HPlusGestureHUD.alpha = 0.0;
+            [self.view addSubview:self.HPlusGestureHUD];
         }
     }
 
@@ -921,9 +921,9 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
                 CGFloat hudWidth = 74.0 + (sizeSetting * 10.0);
                 CGFloat hudHeight = 30.0 + (sizeSetting * 4.0);
                 
-                self.YouModGestureHUD.frame = CGRectMake(0, 0, hudWidth, hudHeight);
-                self.YouModGestureHUD.layer.cornerRadius = hudHeight / 2.0;
-                self.YouModGestureHUD.font = [UIFont boldSystemFontOfSize:fontSize];
+                self.HPlusGestureHUD.frame = CGRectMake(0, 0, hudWidth, hudHeight);
+                self.HPlusGestureHUD.layer.cornerRadius = hudHeight / 2.0;
+                self.HPlusGestureHUD.font = [UIFont boldSystemFontOfSize:fontSize];
 
                 int posSetting = [[NSUserDefaults standardUserDefaults] objectForKey:GestureHUDPosition] ? (int)[[NSUserDefaults standardUserDefaults] integerForKey:GestureHUDPosition] : 0;
                 CGFloat viewHeight = self.view.bounds.size.height;
@@ -931,8 +931,8 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
                 if (posSetting == 1) centerY = viewHeight / 2.0;
                 else if (posSetting == 2) centerY = viewHeight * 5.0 / 6.0;
 
-                [self.view bringSubviewToFront:self.YouModGestureHUD];
-                self.YouModGestureHUD.center = CGPointMake(activeWidth / 2, centerY);
+                [self.view bringSubviewToFront:self.HPlusGestureHUD];
+                self.HPlusGestureHUD.center = CGPointMake(activeWidth / 2, centerY);
             }
         }
     }
@@ -1011,16 +1011,16 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 
             if (IS_ENABLED(GestureHUD) && symbolName) {
                 NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
-                UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:self.YouModGestureHUD.font.pointSize - 1];
+                UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:self.HPlusGestureHUD.font.pointSize - 1];
                 UIImage *icon = [UIImage systemImageNamed:symbolName withConfiguration:config];
                 attachment.image = [icon imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-                CGFloat iconY = (self.YouModGestureHUD.font.capHeight - attachment.image.size.height) / 2.0;
+                CGFloat iconY = (self.HPlusGestureHUD.font.capHeight - attachment.image.size.height) / 2.0;
                 attachment.bounds = CGRectMake(0, iconY, attachment.image.size.width, attachment.image.size.height);
                 NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithAttributedString:[NSAttributedString attributedStringWithAttachment:attachment]];
-                NSAttributedString *textString = [[NSAttributedString alloc] initWithString:percentString attributes:@{NSFontAttributeName: self.YouModGestureHUD.font, NSForegroundColorAttributeName: self.YouModGestureHUD.textColor}];
+                NSAttributedString *textString = [[NSAttributedString alloc] initWithString:percentString attributes:@{NSFontAttributeName: self.HPlusGestureHUD.font, NSForegroundColorAttributeName: self.HPlusGestureHUD.textColor}];
                 [attributedString appendAttributedString:textString];
-                self.YouModGestureHUD.attributedText = attributedString;
-                self.YouModGestureHUD.alpha = 1.0;
+                self.HPlusGestureHUD.attributedText = attributedString;
+                self.HPlusGestureHUD.alpha = 1.0;
             }
         }
     } 
@@ -1034,7 +1034,7 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
         } else if (currentPanMode == 1) {
             if (IS_ENABLED(GestureHUD)) {
                 [UIView animateWithDuration:0.3 delay:0.5 options:UIViewAnimationOptionCurveEaseOut animations:^{
-                    self.YouModGestureHUD.alpha = 0.0;
+                    self.HPlusGestureHUD.alpha = 0.0;
                 } completion:nil];
             }
         }
@@ -1045,10 +1045,10 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModPanGesture && [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
+    if (gestureRecognizer == self.HPlusPanGesture && [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
         return YES;
     }
-    if (gestureRecognizer == self.YouModHoldGesture && ![otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
+    if (gestureRecognizer == self.HPlusHoldGesture && ![otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
         return YES;
     }
     return NO;
@@ -1056,10 +1056,10 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModPanGesture) {
+    if (gestureRecognizer == self.HPlusPanGesture) {
         return NO; 
     }
-    if (gestureRecognizer == self.YouModHoldGesture || otherGestureRecognizer == self.YouModHoldGesture) {
+    if (gestureRecognizer == self.HPlusHoldGesture || otherGestureRecognizer == self.HPlusHoldGesture) {
         if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] || [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
             return NO;
         }
@@ -1070,7 +1070,7 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 
 // Pause using Two fingers
 %new
-- (void)YouModHandleTapGesture:(UITapGestureRecognizer *)tapGestureRecognizer {
+- (void)HPlusHandleTapGesture:(UITapGestureRecognizer *)tapGestureRecognizer {
     if (isRelatedVideosPanelEnabled(self)) return;  
 
     CGPoint startLocation = [tapGestureRecognizer locationInView:self.view];
@@ -1087,19 +1087,19 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 }
 
 %new
-- (void)YouModAutoFullscreen {
+- (void)HPlusAutoFullscreen {
     YTWatchController *watchController = [self valueForKey:@"_UIDelegate"];
     [watchController showFullScreen];
 }
 
 %new
-- (void)YouModSetAutoSpeed {
-    if (self.YouModHoldGesture && (self.YouModHoldGesture.state == UIGestureRecognizerStateBegan || self.YouModHoldGesture.state == UIGestureRecognizerStateChanged)) {
+- (void)HPlusSetAutoSpeed {
+    if (self.HPlusHoldGesture && (self.HPlusHoldGesture.state == UIGestureRecognizerStateBegan || self.HPlusHoldGesture.state == UIGestureRecognizerStateChanged)) {
         return;
     }
     if (IS_ENABLED(GlobalSpeedLocked)) {
         NSInteger speedIndex = INTFORVAL(HoldToSpeedIndex);
-        CGFloat speed = YouModSpeedForHoldIndex(speedIndex);
+        CGFloat speed = HPlusSpeedForHoldIndex(speedIndex);
         [self setPlaybackRate:speed];
         return;
     }
@@ -1110,23 +1110,23 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 
 - (void)singleVideo:(YTSingleVideoController *)video currentVideoTimeDidChange:(YTSingleVideoTime *)time {
     %orig;
-    YouModAddEndTime(self, video, time);
+    HPlusAddEndTime(self, video, time);
 }
 
 - (void)potentiallyMutatedSingleVideo:(YTSingleVideoController *)video currentVideoTimeDidChange:(YTSingleVideoTime *)time {
     %orig;
-    YouModAddEndTime(self, video, time);
+    HPlusAddEndTime(self, video, time);
 }
 
 %new
-- (void)YouModAutoMute {
+- (void)HPlusAutoMute {
     YTSingleVideoController *sgvid = self.activeVideo;
     BOOL muted = [sgvid isMuted];
     [sgvid setMuted:[self isInlinePlaybackActive] ? muted : IS_ENABLED(KeepMutedKey)];
 }
 
 %new
-- (void)YouModAutoAudioTrack {
+- (void)HPlusAutoAudioTrack {
     NSInteger selectedIndex = INTFORVAL(AudioTrackLangIndex);
     NSArray *langCodes = getAllSystemLanguageValues();
     NSString *userTargetLang = langCodes[selectedIndex];
@@ -1172,7 +1172,7 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 }
 
 %new
-- (void)YouModAutoCaptions {
+- (void)HPlusAutoCaptions {
     YTSingleVideoController *sgvid = self.activeVideo;
     NSArray *allTracks = sgvid.availableCaptionTracks;
     if (!allTracks || allTracks.count == 0) return;
@@ -1184,7 +1184,7 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 
     if (INTFORVAL(CaptionTrack) == 1) {
         if (currentTrack != nil) {
-            [self YouModCaptionsHelper:nil];
+            [self HPlusCaptionsHelper:nil];
         }
         return;
     }
@@ -1197,19 +1197,19 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
     }
     if (matchedTrack && ([matchedTrack.VSSID hasPrefix:@"a."] || [matchedTrack.VSSID hasPrefix:@"ta."]) && IS_ENABLED(DisablesCaptionTrack)) {
         matchedTrack = nil;
-        [self YouModCaptionsHelper:nil];
+        [self HPlusCaptionsHelper:nil];
         return;
     } else if (!matchedTrack && IS_ENABLED(DisablesCaptionTrack)) {
-        [self YouModCaptionsHelper:nil];
+        [self HPlusCaptionsHelper:nil];
         return;
     }
     if (matchedTrack && matchedTrack != currentTrack) {
-        [self YouModCaptionsHelper:matchedTrack];
+        [self HPlusCaptionsHelper:matchedTrack];
     }
 }
 
 %new
-- (void)YouModCaptionsHelper:(MLInnerTubeCaptionTrack *)track {
+- (void)HPlusCaptionsHelper:(MLInnerTubeCaptionTrack *)track {
     if ([self respondsToSelector:@selector(setActiveCaptionTrack:source:)]) {
         [self setActiveCaptionTrack:track source:0];
     } else {
@@ -1217,35 +1217,35 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
     }
 }
 %new
-- (void)YouModHideSpeedToast {
+- (void)HPlusHideSpeedToast {
     [UIView animateWithDuration:0.2 animations:^{
-        self.YouModSpeedToastView.alpha = 0.0;
+        self.HPlusSpeedToastView.alpha = 0.0;
     }];
 }
 %new
-- (void)YouModShowSpeedToast:(CGFloat)speed isLocked:(BOOL)isLocked {
+- (void)HPlusShowSpeedToast:(CGFloat)speed isLocked:(BOOL)isLocked {
     UIColor *themeTextColor = [UIColor labelColor];
     UIColor *toastBgColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return (traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) ? 
             [UIColor colorWithWhite:0.1 alpha:0.95] : [UIColor colorWithWhite:0.95 alpha:0.95];
     }];
 
-    if (!self.YouModSpeedToastView) {
-        self.YouModSpeedToastView = [[UIView alloc] init];
-        self.YouModSpeedToastView.clipsToBounds = YES;
-        self.YouModSpeedToastView.alpha = 0.0;
+    if (!self.HPlusSpeedToastView) {
+        self.HPlusSpeedToastView = [[UIView alloc] init];
+        self.HPlusSpeedToastView.clipsToBounds = YES;
+        self.HPlusSpeedToastView.alpha = 0.0;
 
-        self.YouModSpeedToastLabel = [[UILabel alloc] init];
-        self.YouModSpeedToastLabel.textAlignment = NSTextAlignmentCenter;
-        self.YouModSpeedToastLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
-        self.YouModSpeedToastLabel.numberOfLines = 2;
-        [self.YouModSpeedToastView addSubview:self.YouModSpeedToastLabel];
+        self.HPlusSpeedToastLabel = [[UILabel alloc] init];
+        self.HPlusSpeedToastLabel.textAlignment = NSTextAlignmentCenter;
+        self.HPlusSpeedToastLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
+        self.HPlusSpeedToastLabel.numberOfLines = 2;
+        [self.HPlusSpeedToastView addSubview:self.HPlusSpeedToastLabel];
         
-        [self.playerView addSubview:self.YouModSpeedToastView];
+        [self.playerView addSubview:self.HPlusSpeedToastView];
     }
     
-    self.YouModSpeedToastView.backgroundColor = toastBgColor;
-    self.YouModSpeedToastLabel.textColor = themeTextColor;
+    self.HPlusSpeedToastView.backgroundColor = toastBgColor;
+    self.HPlusSpeedToastLabel.textColor = themeTextColor;
 
     NSTextAttachment *topAttachment = [[NSTextAttachment alloc] init];
     topAttachment.image = [[UIImage systemImageNamed:@"hare.fill"] imageWithTintColor:themeTextColor];
@@ -1280,7 +1280,7 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
     [attrString appendAttributedString:speedText];
     [attrString addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, attrString.length)];
     
-    self.YouModSpeedToastLabel.attributedText = attrString;
+    self.HPlusSpeedToastLabel.attributedText = attrString;
 
     CGFloat activeWidth = remainingOverlayWidth(self, self.playerView.bounds.size.width);
     CGFloat maxAvailableWidth = activeWidth * 0.8;
@@ -1300,21 +1300,21 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
     CGFloat calculatedWidth = textSize.width + paddingX;
     CGFloat toastWidth = fminf(fmaxf(calculatedWidth, toastHeight * 2.2), maxAvailableWidth + 24.0);
     
-    self.YouModSpeedToastView.frame = CGRectMake(0, 0, toastWidth, toastHeight);
-    self.YouModSpeedToastView.layer.cornerRadius = toastHeight / 2.0;
-    self.YouModSpeedToastLabel.frame = self.YouModSpeedToastView.bounds;
+    self.HPlusSpeedToastView.frame = CGRectMake(0, 0, toastWidth, toastHeight);
+    self.HPlusSpeedToastView.layer.cornerRadius = toastHeight / 2.0;
+    self.HPlusSpeedToastLabel.frame = self.HPlusSpeedToastView.bounds;
 
-    self.YouModSpeedToastView.center = CGPointMake(activeWidth / 2.0, 36.0);
-    self.YouModSpeedToastView.layer.zPosition = 999;
-    [self.playerView bringSubviewToFront:self.YouModSpeedToastView];
+    self.HPlusSpeedToastView.center = CGPointMake(activeWidth / 2.0, 36.0);
+    self.HPlusSpeedToastView.layer.zPosition = 999;
+    [self.playerView bringSubviewToFront:self.HPlusSpeedToastView];
 
     [UIView animateWithDuration:0.2 animations:^{
-        self.YouModSpeedToastView.alpha = 1.0;
+        self.HPlusSpeedToastView.alpha = 1.0;
     }];
 }
 
 %new
-- (void)YouModHoldToSpeed:(UILongPressGestureRecognizer *)gesture {
+- (void)HPlusHoldToSpeed:(UILongPressGestureRecognizer *)gesture {
     if (isRelatedVideosPanelEnabled(self)) return;
 
     CGPoint touchLocation = [gesture locationInView:self.view];
@@ -1322,7 +1322,7 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
     if (touchLocation.x > activeWidth) return;
 
     NSInteger speedIndex = INTFORVAL(HoldToSpeedIndex);
-    CGFloat speed = YouModSpeedForHoldIndex(speedIndex);
+    CGFloat speed = HPlusSpeedForHoldIndex(speedIndex);
     
     static CGPoint startLocation;
     static BOOL initialLockState;
@@ -1352,10 +1352,10 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
                 [defaults setFloat:savedNormal forKey:GlobalSavedNormalRate];
             }
             [self setPlaybackRate:speed];
-            [self YouModShowSpeedToast:speed isLocked:NO];
+            [self HPlusShowSpeedToast:speed isLocked:NO];
         } else {
             [self setPlaybackRate:speed];
-            [self YouModShowSpeedToast:speed isLocked:YES];
+            [self HPlusShowSpeedToast:speed isLocked:YES];
         }
     } else if (gesture.state == UIGestureRecognizerStateChanged) {
         if (!IS_ENABLED(LockSpeed)) return;
@@ -1381,7 +1381,7 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
             BOOL previewLockState = initialLockState ? !isPendingToggle : isPendingToggle;
             
             if (previewLockState) {
-                [self YouModShowSpeedToast:speed isLocked:YES];
+                [self HPlusShowSpeedToast:speed isLocked:YES];
             } else {
                 CGFloat toastSpeed;
                 if (initialLockState) {
@@ -1390,7 +1390,7 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
                 } else {
                     toastSpeed = speed;
                 }
-                [self YouModShowSpeedToast:toastSpeed isLocked:NO];
+                [self HPlusShowSpeedToast:toastSpeed isLocked:NO];
             }
         }
     } else if (gesture.state == UIGestureRecognizerStateEnded || 
@@ -1412,11 +1412,11 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
             [self setPlaybackRate:targetRate];
         }
         isPendingToggle = NO;
-        [self YouModHideSpeedToast];
+        [self HPlusHideSpeedToast];
     }
 }
 %new
-- (void)YouModAutoDRCAudio {
+- (void)HPlusAutoDRCAudio {
     BOOL value = NO;
     if (INTFORVAL(AutoDRCAudioIndex) == 1) {
         value = YES;
@@ -1426,7 +1426,7 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
 %end
 
 // Video buttons filtering
-static void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
+static void HPlusFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
     UIViewController *con = view._viewControllerForAncestor;
     if ([con isKindOfClass:%c(YTELMViewController)]) {
         _ASDisplayView *mainView = (_ASDisplayView *)view.superview;
@@ -1566,14 +1566,14 @@ static void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
         shouldFilter = YES;
     }
     if (shouldFilter) {
-        YouModFilterVideoButtons(self, iden);
+        HPlusFilterVideoButtons(self, iden);
     }
 }
 %end
 
 %ctor {
     %init;
-    YouModConfigureRemoteSkipCommands();
+    HPlusConfigureRemoteSkipCommands();
     if (IS_ENABLED(OldQualityPicker)) {
         %init(OldVideoQuality);
     }

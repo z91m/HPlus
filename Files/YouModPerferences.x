@@ -1,12 +1,12 @@
 #import "Headers.h"
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h> // For import
 
-#define Prefix @"YouMod"
+#define Prefix @"HPlus"
 
-@implementation YouModPrefsManager
+@implementation HPlusPrefsManager
 
 + (instancetype)sharedManager {
-    static YouModPrefsManager *shared = nil;
+    static HPlusPrefsManager *shared = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         shared = [[self alloc] init];
@@ -15,7 +15,7 @@
 }
 
 // Import
-- (void)importYouModSettingsFromVC:(UIViewController *)vc {
+- (void)importHPlusSettingsFromVC:(UIViewController *)vc {
     NSArray<UTType *> *types = @[UTTypePropertyList, UTTypeData];
 
     // Modern constructor for iOS 14+
@@ -62,7 +62,7 @@
             foundKeys = YES;
         }
     }
-    // Check if there's any YouMod key
+    // Check if there's any HPlus key
     if (!foundKeys) {
         YTAlertView *alertView = [%c(YTAlertView) infoDialog];
         alertView.title = LOC(@"ERROR");
@@ -86,7 +86,7 @@
 }
 
 // Export
-- (void)exportYouModSettingsFromVC:(UIViewController *)vc {
+- (void)exportHPlusSettingsFromVC:(UIViewController *)vc {
     NSDictionary *allSettings = [[NSUserDefaults standardUserDefaults] dictionaryRepresentation];
     NSMutableDictionary *youModOnly = [NSMutableDictionary dictionary];
     for (NSString *key in allSettings) {
@@ -102,7 +102,7 @@
         [alertView show];
         return;
     }
-    NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"YouMod_Preferences.plist"];
+    NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"HPlus_Preferences.plist"];
     NSURL *fileURL = [NSURL fileURLWithPath:tempPath];
     [youModOnly writeToURL:fileURL atomically:YES];
 
@@ -116,7 +116,7 @@
 }
 
 // Reset
-- (void)restoreYouModDefaults {
+- (void)restoreHPlusDefaults {
     YTAlertView *alertView = [%c(YTAlertView) confirmationDialogWithAction:^{
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
         for (NSString *key in [defaults dictionaryRepresentation]) {
