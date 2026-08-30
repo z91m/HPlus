@@ -1,4 +1,4 @@
-name: Build Hamad Plus
+name: Build HPlus
 on:
   push:
     branches: [ "main" ]
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build YouMod & Extract Dylibs
+    name: Build HPlus & Extract Dylibs
     runs-on: macos-latest
     permissions:
       contents: write
@@ -48,7 +48,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: theos
-          key: YouMod-26.5-SDK-${{ env.THEOS_COMMIT }}
+          key: HPlus-26.5-SDK-${{ env.THEOS_COMMIT }}
 
       - name: Setup Theos
         if: ${{ steps.cache-theos.outputs.cache-hit != 'true' }}
@@ -86,7 +86,7 @@ jobs:
         run: |
           cd YouMod
           VERSION=$(grep '^Version:' control | cut -d ' ' -f2)
-          echo "YOUMOD_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "HPLUS_VERSION=$VERSION" >> $GITHUB_ENV
           
           # البناء واستخراج الـ dylib الأول (arm64e)
           make clean package DEBUG=0 FINALPACKAGE=1
@@ -95,7 +95,7 @@ jobs:
           dpkg-deb -x "$DEB_FILE" temp_extracted
           FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
           if [ -n "$FOUND_DYLIB" ]; then
-            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.youmod_${VERSION}_iphoneos-arm64e.dylib"
+            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.hplus_${VERSION}_iphoneos-arm64e.dylib"
           fi
           rm -rf temp_extracted
           make clean
@@ -107,7 +107,7 @@ jobs:
           dpkg-deb -x "$DEB_FILE" temp_extracted
           FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
           if [ -n "$FOUND_DYLIB" ]; then
-            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.youmod_${VERSION}_iphoneos-arm64.dylib"
+            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.hplus_${VERSION}_iphoneos-arm64.dylib"
           fi
           rm -rf temp_extracted
           make clean
@@ -119,7 +119,7 @@ jobs:
           dpkg-deb -x "$DEB_FILE" temp_extracted
           FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
           if [ -n "$FOUND_DYLIB" ]; then
-            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.youmod_${VERSION}_iphoneos-arm.dylib"
+            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.hplus_${VERSION}_iphoneos-arm.dylib"
           fi
           rm -rf temp_extracted
           make clean
@@ -127,24 +127,24 @@ jobs:
           cd ..
           
           # ضغط ملفات المشروع مباشرة إلى المجلد الرئيسي
-          zip -r "${{ github.workspace }}/YouMod_Source_and_Project_${VERSION}.zip" YouMod -x "YouMod/.git/*"
+          zip -r "${{ github.workspace }}/HPlus_Source_and_Project_${VERSION}.zip" YouMod -x "YouMod/.git/*"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-         name: Hamad plus v${{ env.YOUMOD_VERSION }} Package & Dylibs
+         name: HPlus v${{ env.HPLUS_VERSION }} Package & Dylibs
          path: |
-           ${{ github.workspace }}/dylib.youmod_*.dylib
-           ${{ github.workspace }}/YouMod_Source_and_Project_*.zip
+           ${{ github.workspace }}/dylib.hplus_*.dylib
+           ${{ github.workspace }}/HPlus_Source_and_Project_*.zip
          if-no-files-found: error
          overwrite: true
 
       - name: Create a draft release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v${{ env.YOUMOD_VERSION }}
-          name: v${{ env.YOUMOD_VERSION }} 
+          tag_name: v${{ env.HPLUS_VERSION }}
+          name: v${{ env.HPLUS_VERSION }} 
           files: |
-            dylib.youmod_*.dylib
-            YouMod_Source_and_Project_*.zip
+            dylib.hplus_*.dylib
+            HPlus_Source_and_Project_*.zip
           draft: true
