@@ -69,6 +69,19 @@
 #import <YouTubeHeader/_ASCollectionViewCell.h>
 #import <YouTubeHeader/YTReelElementAsyncComponentView.h>
 
+#import <YouTubeHeader/YTReelHeader.h>
+#import <YouTubeHeader/YTReelHeaderDelegate.h>
+#import <YouTubeHeader/YTReelHeaderUpdater.h>
+#import <YouTubeHeader/YTReelHeaderUpdaterV2.h>
+#import <YouTubeHeader/YTReelBottomActionBarUpdater.h>
+#import <YouTubeHeader/YTReelBottomActionBarUpdaterProvider.h>
+#import <YouTubeHeader/YTReelWatchLikesControllerDelegate.h>
+#import <YouTubeHeader/YTAdsWebviewBookmarkService.h>
+#import <YouTubeHeader/YTAdsWebviewBookmarkStorageDelegate.h>
+#import <YouTubeHeader/YTShortsEditorHeaderViewDelegate.h>
+#import <YouTubeHeader/YTShortsEditorFooterViewDelegate.h>
+#import <YouTubeHeader/YTSlimVideoDetailsActionViewDelegate.h>
+
 // For Settings.x and SponsorBlockSettings.x
 #import <PSHeader/Misc.h>
 #import <YouTubeHeader/YTSettingsGroupData.h>
