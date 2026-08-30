@@ -423,7 +423,6 @@
 #import <YouTubeHeader/YTReelPlayerBottomButton.h>
 #import <YouTubeHeader/YTReelPlayerViewControllerSub.h>
 #import <YouTubeHeader/YTReelWatchLikesController.h>
-#import <YouTubeHeader/YTReelWatchPlaybackOverlayView.h>
 #import <YouTubeHeader/YTRendererForOfflineVideo.h>
 #import <YouTubeHeader/YTResponder.h>
 #import <YouTubeHeader/YTResponderEvent.h>
