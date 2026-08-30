@@ -1,7 +1,7 @@
 #import "Headers.h"
 
 // HPlus's bundle (For localizations)
-NSBundle *HPlusdBundle() {
+NSBundle *HPlusBundle() {
     static NSBundle *bundle = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -9,7 +9,7 @@ NSBundle *HPlusdBundle() {
         if (tweakBundlePath) {
             bundle = [NSBundle bundleWithPath:tweakBundlePath];
         } else {
-            bundle = [NSBundle bundleWithPath:[NSString stringWithFormat:(@"/Library/Application Support/%@.bundle"), @"HPlus"]];
+            bundle = [NSBundle bundleWithPath:[NSString stringWithFormat:PS_ROOT_PATH_NS(@"/Library/Application Support/%@.bundle"), @"HPlus"]];
         }
     });
     return bundle;
