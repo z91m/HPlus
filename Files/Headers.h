@@ -112,7 +112,7 @@
 #define DownloadComment @"YouModDownloadComment"
 #define DownloadPost @"YouModDownloadPost"
 // Cache
-#define AutoClearCache @"YouModAutoClearCache"
+#define AutoClearCache @"HPlusAutoClearCache"
 // Appearance
 #define OLEDTheme @"YouModEnablesOLEDTheme"
 #define OLEDKeyboard @"YouModEnablesOLEDKeyboard"
@@ -548,7 +548,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @end
 
 @interface YTAppDelegate : UIResponder
-- (void)YouModAutoClearCache;
+- (void)HPlusAutoClearCache;
 @end
 
 @interface YTInlinePlayerBarContainerView (YouMod)
