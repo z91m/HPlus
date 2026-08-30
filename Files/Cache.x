@@ -3,7 +3,7 @@
 // Auto clear cache
 %hook YTAppDelegate
 %new
-- (void)YouModAutoClearCache {
+- (void)HPlusAutoClearCache {
     NSString *cachePath = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
     [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
 }
@@ -12,7 +12,7 @@
     if (IS_ENABLED(AutoClearCache)) {
         // Clear cache on app launch
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            [self YouModAutoClearCache];
+            [self HPlusAutoClearCache];
         });
     }
     return result;
