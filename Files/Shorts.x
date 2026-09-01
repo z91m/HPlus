@@ -213,6 +213,10 @@ static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
     HPlusConfigureDownloadButton(self);
     NSString *iden = self.accessibilityIdentifier;
     if (!iden || iden.length == 0) return;
+    
+    // أضف الاستدعاء هنا لتجنب خطأ التوقف عن الترجمة
+    HPlusRemoveShortsTitleButton(self, iden);
+    
     NSDictionary *elements = @{
         @"product_sticker.main_target": @(IS_ENABLED(HideShortsProducts)),
         @"product_sticker.secondary_target": @(IS_ENABLED(HideShortsProducts)),
