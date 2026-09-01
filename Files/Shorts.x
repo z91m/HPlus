@@ -179,6 +179,12 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     ASDisplayNode *mainNode = maindpView.keepalive_node;
     [mainNode removeYogaChild:node];
     [maindpView removeFromSuperview];
+     break;
+                }
+            }
+            break;
+        }
+    }
 }
 static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
     if (!IS_ENABLED(RemoveShortsTitleButton)) return;
@@ -200,6 +206,9 @@ static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
         if ([iden containsString:target] || [iden isEqualToString:target]) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
+                    break;
+                }
+            }
             break;
         }
     }
