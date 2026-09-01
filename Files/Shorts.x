@@ -130,7 +130,7 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"YTShortsVideoTitleView": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
     for (NSString *button in buttonsList) {
