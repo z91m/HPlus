@@ -179,40 +179,33 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     ASDisplayNode *mainNode = maindpView.keepalive_node;
     [mainNode removeYogaChild:node];
     [maindpView removeFromSuperview];
-     break;
-                }
-            }
-            break;
-        }
-    }
 }
+
 static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
     if (!IS_ENABLED(RemoveShortsTitleButton)) return;
     if (!iden) return;
     
     NSArray *possibleIds = @[
-    @"id.shorts.description",
-    @"eml.shorts-description",
-    @"shorts_description",
-    @"reel.player.title.access",
-    @"id.shorts.video_title",
-    @"eml.shorts-video-title",
-    @"YTShortsVideoTitleView",
-    @"id.reels_smv_player_title_label",
-    @"YTReelTitleLabel",
+        @"id.shorts.description",
+        @"eml.shorts-description",
+        @"shorts_description",
+        @"reel.player.title.access",
+        @"id.shorts.video_title",
+        @"eml.shorts-video-title",
+        @"YTShortsVideoTitleView",
+        @"id.reels_smv_player_title_label",
+        @"YTReelTitleLabel",
     ];
     
     for (NSString *target in possibleIds) {
         if ([iden containsString:target] || [iden isEqualToString:target]) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
-                    break;
-                }
-            }
             break;
         }
     }
 }
+
 // _ASDisplayView filters
 %hook _ASDisplayView
 - (void)didMoveToWindow {
