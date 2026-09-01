@@ -68,7 +68,6 @@ static BOOL isFullscreenEnabled = NO;
     YTIAudioTrack *matchedTrack = nil;
 
     if (INTFORVAL(AudioTrack) == 1) {
-        // Loop for all tracks
         for (YTIAudioTrack *track in availableTracks) {
             if ([track.id_p hasSuffix:@".4"]) {
                 matchedTrack = track;
@@ -76,15 +75,12 @@ static BOOL isFullscreenEnabled = NO;
             }
         }
     } else if (INTFORVAL(AudioTrack) == 2) {
-        // Loop for all tracks
         for (YTIAudioTrack *track in availableTracks) {
             if ([track.id_p hasPrefix:userTargetLang]) {
                 matchedTrack = track;
                 break;
             }
         }
-
-        // Check if it's dubbed
         if (matchedTrack && [matchedTrack isAutoDubbed] && IS_ENABLED(NoDubbedAudioTrack)) matchedTrack = nil;
 
         if (!matchedTrack && IS_ENABLED(NoDubbedAudioTrack)) {
@@ -97,7 +93,6 @@ static BOOL isFullscreenEnabled = NO;
         }
     }
 
-    // If found, change to it
     if (matchedTrack) {
         [pv setAudioTrack:matchedTrack source:0];
     }
@@ -108,101 +103,111 @@ static BOOL isFullscreenEnabled = NO;
 - (void)didMoveToWindow {
     %orig;
     if (IS_ENABLED(HideShortsTopbar)) {
-        if (self.superview) {
-            [self removeFromSuperview];
-        }
+        if (self.superview) [self removeFromSuperview];
     } else if (IS_ENABLED(HideShortsSubbar)) {
         UIView *subbar = [self valueForKey:@"_pausedStateCarouselView"];
-        if (subbar && subbar.superview) {
-            [subbar removeFromSuperview];
-        }
+        if (subbar && subbar.superview) [subbar removeFromSuperview];
     }
 }
 %end
 
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
-static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
-    NSDictionary *buttonsList = @{
+// دالة موحدة ذكية ومرنة لفلترة وإزالة عناصر الشورتز بناءً على المعرف (Identifier)
+static void HPlusProcessShortsElement(_ASDisplayView *self, NSString *iden) {
+    if (!iden) return;
+
+    // قاموس مركزي يربط كل مُعرف بقاعدة التفعيل الخاصة به
+    NSDictionary *actionsConfig = @{
+        // أزرار التفاعل (Keepalive Node)
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
-        @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
-    };
-    for (NSString *button in buttonsList) {
-        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
-            _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
-            ASDisplayNode *node = mainView.keepalive_node;
-            for (_ASDisplayView *view in node.yogaChildren) {
-                if ([[view description] containsString:button]) {
-                    [node removeYogaChild:view];
-                    [self removeFromSuperview];
-                    break;
-                }
-            }
-            break;
-        }
-    }
-}
-
-static void HPlusFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden) {
-    NSDictionary *buttonsList = @{
+        @"id.reel_remix_button": @(IS_ENABLED(RemoveShortsRemixButton)),
+        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton)),
+        
+        // أزرار القائمة المؤقتة (Scroll Node)
         @"id.ui.shorts_paused_state.subscriptions_button": @(IS_ENABLED(RemoveShortsPausedSubButton)),
         @"id.ui.shorts_paused_state.live_button": @(IS_ENABLED(RemoveShortsPausedLiveButton)),
         @"id.ui.shorts_paused_state.lens_button": @(IS_ENABLED(RemoveShortsPausedLensButton)),
-        @"id.ui.shorts_paused_state.trends_button" : @(IS_ENABLED(RemoveShortsPausedTrendsButton))
+        @"id.ui.shorts_paused_state.trends_button": @(IS_ENABLED(RemoveShortsPausedTrendsButton)),
+        
+        // العناصر البسيطة والإضافية (إزالة مباشرة منSuperview)
+        @"product_sticker.main_target": @(IS_ENABLED(HideShortsProducts)),
+        @"product_sticker.secondary_target": @(IS_ENABLED(HideShortsProducts)),
+        @"id.elements.components.suggested_action": @(IS_ENABLED(HideShortsRecbar)),
+        @"eml.reel_sponsor_button": @(IS_ENABLED(RemoveChannelSponsorAll)),
+
+        // العناوين والنصوص (الإخفاء والتعطيل)
+        @"id.shorts.description": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"eml.shorts-description": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"shorts_description": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"reel.player.title.access": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"id.shorts.video_title": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"YTShortsVideoTitleView": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"YTReelTitleLabel": @(IS_ENABLED(RemoveShortsTitleButton))
     };
-    for (NSString *button in buttonsList) {
-        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
-            ASScrollView *mainView = (ASScrollView *)self.superview;
-            ASDisplayNode *node = mainView.scrollNode;
-            for (_ASDisplayView *view in node.yogaChildren) {
-                if ([[view description] containsString:button]) {
-                    [node removeYogaChild:view];
-                    [self removeFromSuperview];
-                    break;
-                }
-            }
-            break;
+
+    id isEnabledObj = actionsConfig[iden];
+    if (isEnabledObj && [isEnabledObj boolValue]) {
+        // 1. معالجة الإزالة المباشرة للـ Superview (المنتجات، الرعاة)
+        if ([iden isEqualToString:@"eml.reel_sponsor_button"]) {
+            [self.superview removeFromSuperview];
+            return;
         }
-    }
-}
+        if ([iden hasPrefix:@"product_sticker."] || [iden isEqualToString:@"id.elements.components.suggested_action"]) {
+            [self removeFromSuperview];
+            return;
+        }
 
-static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
-    if (![self.accessibilityIdentifier isEqualToString:@"eml.shorts-disclosures"] || !IS_ENABLED(RemoveShortsDisclosure)) return;
-    _ASDisplayView *dpView = (_ASDisplayView *)self.superview;
-    ASDisplayNode *node = dpView.keepalive_node;
-    _ASDisplayView *maindpView = (_ASDisplayView *)dpView.superview;
-    ASDisplayNode *mainNode = maindpView.keepalive_node;
-    [mainNode removeYogaChild:node];
-    [maindpView removeFromSuperview];
-}
-
-static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
-    if (!IS_ENABLED(RemoveShortsTitleButton)) return;
-    if (!iden) return;
-    
-    NSArray *possibleIds = @[
-        @"id.shorts.description",
-        @"eml.shorts-description",
-        @"shorts_description",
-        @"reel.player.title.access",
-        @"id.shorts.video_title",
-        @"eml.shorts-video-title",
-        @"YTShortsVideoTitleView",
-        @"id.reels_smv_player_title_label",
-        @"YTReelTitleLabel",
-    ];
-    
-    for (NSString *target in possibleIds) {
-        if ([iden containsString:target] || [iden isEqualToString:target]) {
+        // 2. معالجة العناوين والنصوص (الإخفاء)
+        NSArray *titleIds = @[
+            @"id.shorts.description", @"eml.shorts-description", @"shorts_description",
+            @"reel.player.title.access", @"id.shorts.video_title", @"eml.shorts-video-title",
+            @"YTShortsVideoTitleView", @"id.reels_smv_player_title_label", @"YTReelTitleLabel"
+        ];
+        if ([titleIds containsObject:iden]) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
-            break;
+            return;
         }
+
+        // 3. معالجة الأزرار عبر YogaKit (التفاعل أو القائمة المؤقتة)
+        BOOL isPausedHeader = [iden hasPrefix:@"id.ui.shorts_paused_state."];
+        id mainView = self.superview;
+        ASDisplayNode *node = nil;
+
+        if (isPausedHeader) {
+            ASScrollView *scrollView = (ASScrollView *)mainView;
+            node = scrollView.scrollNode;
+        } else {
+            _ASDisplayView *asView = (_ASDisplayView *)mainView;
+            node = asView.keepalive_node;
+        }
+
+        if (node) {
+            for (_ASDisplayView *view in node.yogaChildren) {
+                if ([[view description] containsString:iden]) {
+                    [node removeYogaChild:view];
+                    [self removeFromSuperview];
+                    return;
+                }
+            }
+        }
+    }
+
+    // 4. معالجة خاصة للإفصاحات (Disclosure) لعدم اعتمادها على مفتاح مباشر في القاموس
+    if ([self.accessibilityIdentifier isEqualToString:@"eml.shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
+        _ASDisplayView *dpView = (_ASDisplayView *)self.superview;
+        ASDisplayNode *node = dpView.keepalive_node;
+        _ASDisplayView *maindpView = (_ASDisplayView *)dpView.superview;
+        ASDisplayNode *mainNode = maindpView.keepalive_node;
+        [mainNode removeYogaChild:node];
+        [maindpView removeFromSuperview];
     }
 }
 
@@ -211,28 +216,7 @@ static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
 - (void)didMoveToWindow {
     %orig;
     HPlusConfigureDownloadButton(self);
-    NSString *iden = self.accessibilityIdentifier;
-    if (!iden || iden.length == 0) return;
-    
-    
-    NSDictionary *elements = @{
-        @"product_sticker.main_target": @(IS_ENABLED(HideShortsProducts)),
-        @"product_sticker.secondary_target": @(IS_ENABLED(HideShortsProducts)),
-        @"id.elements.components.suggested_action": @(IS_ENABLED(HideShortsRecbar))
-    };
-    if ([elements[iden] boolValue]) {
-        [self removeFromSuperview];
-        return;
-    }
-    if ([iden isEqualToString:@"eml.reel_sponsor_button"] && IS_ENABLED(RemoveChannelSponsorAll)) {
-        [self.superview removeFromSuperview];
-        return;
-    }
-    
-    HPlusRemoveShortsTitleButton(self, iden);
-    HPlusFilterShortsButtons(self, iden);
-    HPlusFilterShortsPausedHeader(self, iden);
-    HPlusFilterShortsDisclosure(self, iden);
+    HPlusProcessShortsElement(self, self.accessibilityIdentifier);
 }
 %end
 
@@ -264,27 +248,20 @@ static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
     if (gesture.scale > 1.0) {
         if (!isTabBarHidden) {
             [appVC performSelector:@selector(hidePivotBar)];
-            [UIView animateWithDuration:0.3 animations:^{
-                self.alpha = 0;
-            }];
+            [UIView animateWithDuration:0.3 animations:^{ self.alpha = 0; }];
             isFullscreenEnabled = YES;
         }
     } else if (gesture.scale < 1.0) {
         if (isTabBarHidden) {
             [appVC performSelector:@selector(showPivotBar)];
-            [UIView animateWithDuration:0.3 animations:^{
-                self.alpha = 1;
-            }];
+            [UIView animateWithDuration:0.3 animations:^{ self.alpha = 1; }];
             isFullscreenEnabled = NO;
         }
     }
 }
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.HPlusFullscreenGesture) {
-        return YES;
-    }
-    return NO;
+    return gestureRecognizer == self.HPlusFullscreenGesture;
 }
 %end
 
@@ -310,22 +287,14 @@ static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
     [SBSkipNotificationView showSuccessInView:parent message:LOC(@"SHORTS_ONLY_DISABLED") duration:3.0];
 
     [[[[self valueForKey:@"_parentResponder"] valueForKey:@"_delegate"] valueForKey:@"_pivotBarProvider"] performSelector:@selector(showPivotBar)];
-    [UIView animateWithDuration:0.3 animations:^{
-        self.playbackOverlay.alpha = 1;
-    }];
+    [UIView animateWithDuration:0.3 animations:^{ self.playbackOverlay.alpha = 1; }];
 }
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.HPlusExitShortsOnlyGesture && [otherGestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
-        return YES;
-    }
-    return NO;
+    return gestureRecognizer == self.HPlusExitShortsOnlyGesture && [otherGestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]];
 }
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.HPlusExitShortsOnlyGesture) {
-        return NO;
-    }
-    return YES;
+    return gestureRecognizer != self.HPlusExitShortsOnlyGesture;
 }
 %end
