@@ -130,7 +130,6 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
     for (NSString *button in buttonsList) {
@@ -181,7 +180,30 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     [mainNode removeYogaChild:node];
     [maindpView removeFromSuperview];
 }
-
+static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
+    if (!IS_ENABLED(RemoveShortsTitleButton)) return;
+    if (!iden) return;
+    
+    NSArray *possibleIds = @[
+    @"id.shorts.description",
+    @"eml.shorts-description",
+    @"shorts_description",
+    @"reel.player.title.access",
+    @"id.shorts.video_title",
+    @"eml.shorts-video-title",
+    @"YTShortsVideoTitleView",
+    @"id.reels_smv_player_title_label",
+    @"YTReelTitleLabel",
+    ];
+    
+    for (NSString *target in possibleIds) {
+        if ([iden containsString:target] || [iden isEqualToString:target]) {
+            self.hidden = YES;
+            self.userInteractionEnabled = NO;
+            break;
+        }
+    }
+}
 // _ASDisplayView filters
 %hook _ASDisplayView
 - (void)didMoveToWindow {
