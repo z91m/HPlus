@@ -118,7 +118,7 @@ static void HPlusProcessShortsElement(_ASDisplayView *self, NSString *iden) {
     if (!iden) return;
 
     // 1. معالجة النصوص والعناوين بالبحث الجزئي الفوري (مرتبط بزر الإعدادات HideShortsTitleButton أو RemoveShortsTitleButton)
-    if (IS_ENABLED(HideShortsTitleButton)) {
+    if (IS_ENABLED(RemoveShortsTitleButton)) {
         if ([iden containsString:@"description"] || 
             [iden containsString:@"title"] || 
             [iden containsString:@"reel.player"] || 
