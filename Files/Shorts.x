@@ -1,7 +1,12 @@
-static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSString *iden) {
+#import "Headers.h"
+
+%hook _ASDisplayView
+
+%new
+- (void)HPlusProcessShortsElementAutomatically:(NSString *)iden {
     if (!iden || iden.length == 0) return;
 
-    // 1. التعامل التلقائي مع النصوص والعناوين والوصف
+    // 1. التعامل مع النصوص والعناوين والوصف
     if ([iden containsString:@"description"] || 
         [iden containsString:@"title"] || 
         [iden containsString:@"reel.player"] || 
@@ -14,7 +19,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         return;
     }
 
-    // 2. ارتباط الفيديو المرتبط (Related Video Link)
+    // 2. ارتباط الفيديو المرتبط
     if ([iden containsString:@"related_video"] || [iden containsString:@"reel_metadata"]) {
         if (IS_ENABLED(RemoveShortsRelatedVideo)) {
             self.hidden = YES;
@@ -24,7 +29,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         }
     }
 
-    // 3. اسم القناة / الحساب وزر الاشتراك (Channel Name & Subscribe)
+    // 3. اسم القناة / الحساب وزر الاشتراك
     if ([iden containsString:@"channel_name"] || [iden containsString:@"owner"] || [iden containsString:@"subscribe"] || [iden containsString:@"author"]) {
         if (IS_ENABLED(RemoveShortsChannelName)) {
             self.hidden = YES;
@@ -34,7 +39,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         }
     }
 
-    // 4. شريط الصوت / الأغنية (Audio / Sound Track)
+    // 4. شريط الصوت / الأغنية
     if ([iden containsString:@"audio"] || [iden containsString:@"sound"] || [iden containsString:@"track"] || [iden containsString:@"music"]) {
         if (IS_ENABLED(RemoveShortsSoundButton)) {
             self.hidden = YES;
@@ -62,7 +67,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
 
         if (shouldRemove) {
             id mainView = self.superview;
-            ASDisplayNode *node = [(_ASDisplayView *)mainView keepalive_node];
+            ASDisplayNode *node = [self keepalive_node];
             if (node) {
                 for (_ASDisplayView *view in node.yogaChildren) {
                     if ([[view description] containsString:iden]) {
@@ -85,8 +90,9 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         else if ([iden containsString:@"trends"] && IS_ENABLED(RemoveShortsPausedTrendsButton)) shouldRemove = YES;
 
         if (shouldRemove) {
-            ASScrollView *scrollView = (ASScrollView *)self.superview;
-            ASDisplayNode *node = scrollView.scrollNode;
+            id mainView = self.superview;
+            ASScrollView *scrollView = (ASScrollView *)mainView;
+            ASDisplayNode *node = [scrollView scrollNode];
             if (node) {
                 for (_ASDisplayView *view in node.yogaChildren) {
                     if ([[view description] containsString:iden]) {
@@ -106,7 +112,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         return;
     }
     if ([iden containsString:@"suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
-        [self removeFromSuperview];
+        [self removeFromSuperview].superview ? [self.superview removeFromSuperview] : [self removeFromSuperview];
         return;
     }
     if ([iden containsString:@"reel_sponsor_button"] && IS_ENABLED(RemoveChannelSponsorAll)) {
@@ -117,18 +123,19 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
     // 8. الإفصاحات (Disclosures)
     if ([iden containsString:@"shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
         _ASDisplayView *dpView = (_ASDisplayView *)self.superview;
-        ASDisplayNode *node = dpView.keepalive_node;
+        ASDisplayNode *node = [dpView keepalive_node];
         _ASDisplayView *maindpView = (_ASDisplayView *)dpView.superview;
-        ASDisplayNode *mainNode = maindpView.keepalive_node;
+        ASDisplayNode *mainNode = [maindpView keepalive_node];
         [mainNode removeYogaChild:node];
         [maindpView removeFromSuperview];
         return;
     }
 }
-// نقطة الحقن العامة لالتقاط العناصر تلقائياً مع تحديثات يوتيوب
-%hook _ASDisplayView
+
 - (void)didMoveToWindow {
     %orig;
-    HPlusProcessShortsElementAutomatically(self, self.accessibilityIdentifier);
+    HPlusConfigureDownloadButton(self);
+    [self HPlusProcessShortsElementAutomatically:self.accessibilityIdentifier];
 }
+
 %end
