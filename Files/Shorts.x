@@ -1,14 +1,27 @@
 #import "Headers.h"
 
-// دالة ذكية تلقائية بالكامل تبحث وتتعامل مع العناصر دون الحاجة لقوائم أو دوال مسبقة
-static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSString *iden) {
-    if (!iden || iden.length == 0) return;
+@interface _ASDisplayView (HPlusShorts)
+- (void)HPlusProcessShortsElementAutomatically:(NSString *)iden;
+@end
 
-    // 1. التعامل التلقائي مع النصوص والعناوين والوصف   // 1. التعامل التلقائي مع النصوص والعناوين والوصف
-    if ([iden containsString:@"description"] || 
-        [iden containsString:@"title"] || 
-        [iden containsString:@"reel.player"] || 
-        [iden containsString:@"YTReelTitle"]) {
+%hook _ASDisplayView
+
+%new
+- (void)HPlusProcessShortsElementAutomatically:(NSString *)iden {
+    // جمع كافة المعرفات والنصوص المتاحة للعنصر لفحصها بدقة
+    NSString *identifier = iden ?: @"";
+    NSString *label = self.accessibilityLabel ?: @"";
+    NSString *desc = [self description] ?: @"";
+    
+    // دمج النصوص للبحث الشامل
+    NSString *fullContext = [NSString stringWithFormat:@"%@ %@ %@", identifier, label, desc];
+    if (fullContext.length == 0) return;
+
+    // 1. التعامل التلقائي مع النصوص والعناوين والوصف
+    if ([identifier containsString:@"description"] || 
+        [identifier containsString:@"title"] || 
+        [identifier containsString:@"reel.player"] || 
+        [identifier containsString:@"YTReelTitle"]) {
         if (IS_ENABLED(RemoveShortsTitleButton)) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
@@ -17,8 +30,8 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         return;
     }
 
-    // 2. ارتباط الفيديو المرتبط (Related Video Link)
-    if ([iden containsString:@"related_video"] || [iden containsString:@"reel_metadata"]) {
+    // 2. ارتباط الفيديو المرتبط (Related Video Link) - بحث أشمل
+    if ([fullContext containsString:@"related_video"] || [fullContext containsString:@"reel_metadata"] || [fullContext containsString:@"related-video"]) {
         if (IS_ENABLED(RemoveShortsRelatedVideo)) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
@@ -27,8 +40,8 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         }
     }
 
-    // 3. اسم القناة / الحساب وزر الاشتراك (Channel Name & Subscribe)
-    if ([iden containsString:@"channel_name"] || [iden containsString:@"owner"] || [iden containsString:@"subscribe"] || [iden containsString:@"author"]) {
+    // 3. اسم القناة / الحساب وزر الاشتراك (Channel Name & Subscribe) - بحث أشمل
+    if ([fullContext containsString:@"channel_name"] || [fullContext containsString:@"owner"] || [fullContext containsString:@"subscribe"] || [fullContext containsString:@"author"]) {
         if (IS_ENABLED(RemoveShortsChannelName)) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
@@ -37,8 +50,8 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         }
     }
 
-    // 4. شريط الصوت / الأغنية (Audio / Sound Track)
-    if ([iden containsString:@"audio"] || [iden containsString:@"sound"] || [iden containsString:@"track"] || [iden containsString:@"music"]) {
+    // 4. شريط الصوت / الأغنية (Audio / Sound Track) - بحث أشمل
+    if ([fullContext containsString:@"audio"] || [fullContext containsString:@"sound"] || [fullContext containsString:@"track"] || [fullContext containsString:@"music"]) {
         if (IS_ENABLED(RemoveShortsSoundButton)) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
@@ -48,26 +61,26 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
     }
 
     // 5. أزرار التفاعل (لايك، تعليق، مشاركة، حفظ، ريمكس...)
-    if ([iden containsString:@"reel_like"] || 
-        [iden containsString:@"reel_comment"] || 
-        [iden containsString:@"reel_share"] || 
-        [iden containsString:@"reel_save"] || 
-        [iden containsString:@"reel_remix"] || 
-        [iden containsString:@"reel_pivot"]) {
+    if ([identifier containsString:@"reel_like"] || 
+        [identifier containsString:@"reel_comment"] || 
+        [identifier containsString:@"reel_share"] || 
+        [identifier containsString:@"reel_save"] || 
+        [identifier containsString:@"reel_remix"] || 
+        [identifier containsString:@"reel_pivot"]) {
         
         BOOL shouldRemove = NO;
-        if ([iden containsString:@"like"] && IS_ENABLED(RemoveShortsLikeButton)) shouldRemove = YES;
-        else if ([iden containsString:@"comment"] && IS_ENABLED(RemoveShortsCommentButton)) shouldRemove = YES;
-        else if ([iden containsString:@"share"] && IS_ENABLED(RemoveShortsShareButton)) shouldRemove = YES;
-        else if ([iden containsString:@"save"] && IS_ENABLED(RemoveShortsSaveButton)) shouldRemove = YES;
-        else if ([iden containsString:@"remix"] && IS_ENABLED(RemoveShortsRemixButton)) shouldRemove = YES;
-        else if ([iden containsString:@"pivot"] && IS_ENABLED(RemoveShortsSoundMetadataButton)) shouldRemove = YES;
+        if ([identifier containsString:@"like"] && IS_ENABLED(RemoveShortsLikeButton)) shouldRemove = YES;
+        else if ([identifier containsString:@"comment"] && IS_ENABLED(RemoveShortsCommentButton)) shouldRemove = YES;
+        else if ([identifier containsString:@"share"] && IS_ENABLED(RemoveShortsShareButton)) shouldRemove = YES;
+        else if ([identifier containsString:@"save"] && IS_ENABLED(RemoveShortsSaveButton)) shouldRemove = YES;
+        else if ([identifier containsString:@"remix"] && IS_ENABLED(RemoveShortsRemixButton)) shouldRemove = YES;
+        else if ([identifier containsString:@"pivot"] && IS_ENABLED(RemoveShortsSoundMetadataButton)) shouldRemove = YES;
 
         if (shouldRemove) {
             ASDisplayNode *node = [self keepalive_node];
             if (node) {
                 for (_ASDisplayView *view in node.yogaChildren) {
-                    if ([[view description] containsString:iden]) {
+                    if ([[[view description] stringByAppendingString:view.accessibilityLabel ?: @""] containsString:identifier]) {
                         [node removeYogaChild:view];
                         [self removeFromSuperview];
                         break;
@@ -79,19 +92,19 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
     }
 
     // 6. القائمة المؤقتة للشورتز (Paused State)
-    if ([iden containsString:@"shorts_paused_state"]) {
+    if ([identifier containsString:@"shorts_paused_state"]) {
         BOOL shouldRemove = NO;
-        if ([iden containsString:@"subscriptions"] && IS_ENABLED(RemoveShortsPausedSubButton)) shouldRemove = YES;
-        else if ([iden containsString:@"live"] && IS_ENABLED(RemoveShortsPausedLiveButton)) shouldRemove = YES;
-        else if ([iden containsString:@"lens"] && IS_ENABLED(RemoveShortsPausedLensButton)) shouldRemove = YES;
-        else if ([iden containsString:@"trends"] && IS_ENABLED(RemoveShortsPausedTrendsButton)) shouldRemove = YES;
+        if ([identifier containsString:@"subscriptions"] && IS_ENABLED(RemoveShortsPausedSubButton)) shouldRemove = YES;
+        else if ([identifier containsString:@"live"] && IS_ENABLED(RemoveShortsPausedLiveButton)) shouldRemove = YES;
+        else if ([identifier containsString:@"lens"] && IS_ENABLED(RemoveShortsPausedLensButton)) shouldRemove = YES;
+        else if ([identifier containsString:@"trends"] && IS_ENABLED(RemoveShortsPausedTrendsButton)) shouldRemove = YES;
 
         if (shouldRemove) {
             ASScrollView *scrollView = (ASScrollView *)self.superview;
             ASDisplayNode *node = [scrollView scrollNode];
             if (node) {
                 for (_ASDisplayView *view in node.yogaChildren) {
-                    if ([[view description] containsString:iden]) {
+                    if ([[[view description] stringByAppendingString:view.accessibilityLabel ?: @""] containsString:identifier]) {
                         [node removeYogaChild:view];
                         [self removeFromSuperview];
                         break;
@@ -103,11 +116,11 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
     }
 
     // 7. المنتجات والإعلانات والرعاة
-    if ([iden containsString:@"product_sticker"] && IS_ENABLED(HideShortsProducts)) {
+    if ([identifier containsString:@"product_sticker"] && IS_ENABLED(HideShortsProducts)) {
         [self removeFromSuperview];
         return;
     }
-    if ([iden containsString:@"suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
+    if ([identifier containsString:@"suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
         if (self.superview) {
             [self.superview removeFromSuperview];
         } else {
@@ -115,13 +128,13 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         }
         return;
     }
-    if ([iden containsString:@"reel_sponsor_button"] && IS_ENABLED(RemoveChannelSponsorAll)) {
+    if ([identifier containsString:@"reel_sponsor_button"] && IS_ENABLED(RemoveChannelSponsorAll)) {
         [self.superview removeFromSuperview];
         return;
     }
 
     // 8. الإفصاحات (Disclosures)
-    if ([iden containsString:@"shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
+    if ([identifier containsString:@"shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
         _ASDisplayView *dpView = (_ASDisplayView *)self.superview;
         ASDisplayNode *node = [dpView keepalive_node];
         _ASDisplayView *maindpView = (_ASDisplayView *)dpView.superview;
