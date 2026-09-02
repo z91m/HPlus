@@ -1,5 +1,8 @@
 #import "Headers.h"
 
+// إعلان مسبق للدالة الخارجية إن وجدت في ملف آخر
+extern void HPlusConfigureDownloadButton(id self);
+
 %hook _ASDisplayView
 
 %new
@@ -66,7 +69,6 @@
         else if ([iden containsString:@"pivot"] && IS_ENABLED(RemoveShortsSoundMetadataButton)) shouldRemove = YES;
 
         if (shouldRemove) {
-            id mainView = self.superview;
             ASDisplayNode *node = [self keepalive_node];
             if (node) {
                 for (_ASDisplayView *view in node.yogaChildren) {
@@ -90,8 +92,7 @@
         else if ([iden containsString:@"trends"] && IS_ENABLED(RemoveShortsPausedTrendsButton)) shouldRemove = YES;
 
         if (shouldRemove) {
-            id mainView = self.superview;
-            ASScrollView *scrollView = (ASScrollView *)mainView;
+            ASScrollView *scrollView = (ASScrollView *)self.superview;
             ASDisplayNode *node = [scrollView scrollNode];
             if (node) {
                 for (_ASDisplayView *view in node.yogaChildren) {
@@ -112,7 +113,11 @@
         return;
     }
     if ([iden containsString:@"suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
-        [self removeFromSuperview].superview ? [self.superview removeFromSuperview] : [self removeFromSuperview];
+        if (self.superview) {
+            [self.superview removeFromSuperview];
+        } else {
+            [self removeFromSuperview];
+        }
         return;
     }
     if ([iden containsString:@"reel_sponsor_button"] && IS_ENABLED(RemoveChannelSponsorAll)) {
@@ -135,7 +140,9 @@
 - (void)didMoveToWindow {
     %orig;
     HPlusConfigureDownloadButton(self);
-    [self HPlusProcessShortsElementAutomatically:self.accessibilityIdentifier];
+    if ([self respondsToSelector:@selector(HPlusProcessShortsElementAutomatically:)]) {
+        [self HPlusProcessShortsElementAutomatically:self.accessibilityIdentifier];
+    }
 }
 
 %end
