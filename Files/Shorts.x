@@ -18,7 +18,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
     }
 
     // 2. ارتباط الفيديو المرتبط (Related Video Link)
-    if ([iden containsString:@"related_video"] || [iden containsString:@"reel_metadata"] || [iden containsString:@"pivot_button"] || [iden containsString:@"metadata"]) {
+    if ([iden containsString:@"related_video"] || [iden containsString:@"reel_metadata"]) {
         if (IS_ENABLED(RemoveShortsRelatedVideo)) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
@@ -37,7 +37,17 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         }
     }
 
-    // 4. التعامل التلقائي مع أزرار التفاعل (لايك، تعليق، مشاركة، حفظ، ريمكس، صوت...)
+    // 4. شريط الصوت / الأغنية (Audio / Sound Track)
+    if ([iden containsString:@"audio"] || [iden containsString:@"sound"] || [iden containsString:@"track"] || [iden containsString:@"music"]) {
+        if (IS_ENABLED(RemoveShortsSoundButton)) {
+            self.hidden = YES;
+            self.userInteractionEnabled = NO;
+            self.alpha = 0.0;
+            return;
+        }
+    }
+
+    // 5. التعامل التلقائي مع أزرار التفاعل (لايك، تعليق، مشاركة، حفظ، ريمكس...)
     if ([iden containsString:@"reel_like"] || 
         [iden containsString:@"reel_comment"] || 
         [iden containsString:@"reel_share"] || 
@@ -45,7 +55,6 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         [iden containsString:@"reel_remix"] || 
         [iden containsString:@"reel_pivot"]) {
         
-        // فحص ذكي لتحديد الزر المرتبط بناءً على محتوى المعرف
         BOOL shouldRemove = NO;
         if ([iden containsString:@"like"] && IS_ENABLED(RemoveShortsLikeButton)) shouldRemove = YES;
         else if ([iden containsString:@"comment"] && IS_ENABLED(RemoveShortsCommentButton)) shouldRemove = YES;
@@ -70,7 +79,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         return;
     }
 
-    // 5. التعامل التلقائي مع القائمة المؤقتة للشورتز (Paused State)
+    // 6. التعامل التلقائي مع القائمة المؤقتة للشورتز (Paused State)
     if ([iden containsString:@"shorts_paused_state"]) {
         BOOL shouldRemove = NO;
         if ([iden containsString:@"subscriptions"] && IS_ENABLED(RemoveShortsPausedSubButton)) shouldRemove = YES;
@@ -94,7 +103,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         return;
     }
 
-    // 6. التعامل التلقائي مع المنتجات والإعلانات والرعاة
+    // 7. التعامل التلقائي مع المنتجات والإعلانات والرعاة
     if ([iden containsString:@"product_sticker"] && IS_ENABLED(HideShortsProducts)) {
         [self removeFromSuperview];
         return;
@@ -108,7 +117,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         return;
     }
 
-    // 7. الإفصاحات (Disclosures)
+    // 8. الإفصاحات (Disclosures)
     if ([iden containsString:@"shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
         _ASDisplayView *dpView = (_ASDisplayView *)self.superview;
         ASDisplayNode *node = dpView.keepalive_node;
