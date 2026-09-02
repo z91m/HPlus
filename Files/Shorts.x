@@ -1,6 +1,3 @@
-#import "Headers.h"
-
-// دالة ذكية تلقائية بالكامل تبحث وتتعامل مع العناصر دون الحاجة لقوائم أو دوال مسبقة
 static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSString *iden) {
     if (!iden || iden.length == 0) return;
 
@@ -47,7 +44,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         }
     }
 
-    // 5. التعامل التلقائي مع أزرار التفاعل (لايك، تعليق، مشاركة، حفظ، ريمكس...)
+    // 5. أزرار التفاعل (لايك، تعليق، مشاركة، حفظ، ريمكس...)
     if ([iden containsString:@"reel_like"] || 
         [iden containsString:@"reel_comment"] || 
         [iden containsString:@"reel_share"] || 
@@ -79,7 +76,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         return;
     }
 
-    // 6. التعامل التلقائي مع القائمة المؤقتة للشورتز (Paused State)
+    // 6. القائمة المؤقتة للشورتز (Paused State)
     if ([iden containsString:@"shorts_paused_state"]) {
         BOOL shouldRemove = NO;
         if ([iden containsString:@"subscriptions"] && IS_ENABLED(RemoveShortsPausedSubButton)) shouldRemove = YES;
@@ -103,7 +100,7 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         return;
     }
 
-    // 7. التعامل التلقائي مع المنتجات والإعلانات والرعاة
+    // 7. المنتجات والإعلانات والرعاة
     if ([iden containsString:@"product_sticker"] && IS_ENABLED(HideShortsProducts)) {
         [self removeFromSuperview];
         return;
@@ -128,7 +125,6 @@ static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSStrin
         return;
     }
 }
-
 // نقطة الحقن العامة لالتقاط العناصر تلقائياً مع تحديثات يوتيوب
 %hook _ASDisplayView
 - (void)didMoveToWindow {
