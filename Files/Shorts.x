@@ -117,8 +117,8 @@ extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 static void HPlusProcessShortsElement(_ASDisplayView *self, NSString *iden) {
     if (!iden) return;
 
-    // 1. معالجة النصوص والعناوين بالبحث الجزئي الفوري لتجاوز أي مشاكل في هيكل العرض
-    if (IS_ENABLED(RemoveShortsTitleButton)) {
+    // 1. معالجة النصوص والعناوين بالبحث الجزئي الفوري (مرتبط بزر الإعدادات HideShortsTitleButton أو RemoveShortsTitleButton)
+    if (IS_ENABLED(HideShortsTitleButton)) {
         if ([iden containsString:@"description"] || 
             [iden containsString:@"title"] || 
             [iden containsString:@"reel.player"] || 
