@@ -232,6 +232,8 @@
 #define RemoveShortsDisclosure @"HPlusRemoveShortsDisclosure"
 #define RemoveShortsTitleButton @"HPlusRemoveShortsTitleButton"
 #define RemoveShortsSaveButton @"HPlusRemoveShortsSaveButton"
+#define RemoveShortsRelatedVideo @"HPlusRemoveShortsRelatedVideo"
+#define RemoveShortsChannelName @"HPlusRemoveShortsChannelName"
 // Tab bar
 #define DefaultTab @"HPlusDefaultStartupTab"
 #define TabOrder @"HPlusTabOrder"
