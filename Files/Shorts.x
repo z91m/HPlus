@@ -1,5 +1,9 @@
 #import "Headers.h"
 
+@interface _ASDisplayView (HPlusShorts)
+- (void)HPlusProcessShortsElementAutomatically:(NSString *)iden;
+@end
+
 %hook _ASDisplayView
 
 %new
@@ -136,9 +140,7 @@
 
 - (void)didMoveToWindow {
     %orig;
-    if ([self respondsToSelector:@selector(HPlusProcessShortsElementAutomatically:)]) {
-        [self HPlusProcessShortsElementAutomatically:self.accessibilityIdentifier];
-    }
+    [self HPlusProcessShortsElementAutomatically:self.accessibilityIdentifier];
 }
 
 %end
