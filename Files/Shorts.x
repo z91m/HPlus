@@ -117,6 +117,19 @@ extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 static void HPlusProcessShortsElement(_ASDisplayView *self, NSString *iden) {
     if (!iden) return;
 
+    // 1. معالجة النصوص والعناوين بالبحث الجزئي الفوري لتجاوز أي مشاكل في هيكل العرض
+    if (IS_ENABLED(RemoveShortsTitleButton)) {
+        if ([iden containsString:@"description"] || 
+            [iden containsString:@"title"] || 
+            [iden containsString:@"reel.player"] || 
+            [iden containsString:@"YTReelTitle"]) {
+            self.hidden = YES;
+            self.userInteractionEnabled = NO;
+            self.alpha = 0.0;
+            return;
+        }
+    }
+
     // قاموس مركزي يربط كل مُعرف بقاعدة التفعيل الخاصة به
     NSDictionary *actionsConfig = @{
         // أزرار التفاعل (Keepalive Node)
@@ -138,18 +151,7 @@ static void HPlusProcessShortsElement(_ASDisplayView *self, NSString *iden) {
         @"product_sticker.main_target": @(IS_ENABLED(HideShortsProducts)),
         @"product_sticker.secondary_target": @(IS_ENABLED(HideShortsProducts)),
         @"id.elements.components.suggested_action": @(IS_ENABLED(HideShortsRecbar)),
-        @"eml.reel_sponsor_button": @(IS_ENABLED(RemoveChannelSponsorAll)),
-
-        // العناوين والنصوص (الإخفاء والتعطيل)
-        @"id.shorts.description": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"eml.shorts-description": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"shorts_description": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"reel.player.title.access": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"id.shorts.video_title": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"YTShortsVideoTitleView": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"YTReelTitleLabel": @(IS_ENABLED(RemoveShortsTitleButton))
+        @"eml.reel_sponsor_button": @(IS_ENABLED(RemoveChannelSponsorAll))
     };
 
     id isEnabledObj = actionsConfig[iden];
@@ -164,19 +166,7 @@ static void HPlusProcessShortsElement(_ASDisplayView *self, NSString *iden) {
             return;
         }
 
-        // 2. معالجة العناوين والنصوص (الإخفاء)
-        NSArray *titleIds = @[
-            @"id.shorts.description", @"eml.shorts-description", @"shorts_description",
-            @"reel.player.title.access", @"id.shorts.video_title", @"eml.shorts-video-title",
-            @"YTShortsVideoTitleView", @"id.reels_smv_player_title_label", @"YTReelTitleLabel"
-        ];
-        if ([titleIds containsObject:iden]) {
-            self.hidden = YES;
-            self.userInteractionEnabled = NO;
-            return;
-        }
-
-        // 3. معالجة الأزرار عبر YogaKit (التفاعل أو القائمة المؤقتة)
+        // 2. معالجة الأزرار عبر YogaKit (التفاعل أو القائمة المؤقتة)
         BOOL isPausedHeader = [iden hasPrefix:@"id.ui.shorts_paused_state."];
         id mainView = self.superview;
         ASDisplayNode *node = nil;
@@ -200,7 +190,7 @@ static void HPlusProcessShortsElement(_ASDisplayView *self, NSString *iden) {
         }
     }
 
-    // 4. معالجة خاصة للإفصاحات (Disclosure) لعدم اعتمادها على مفتاح مباشر في القاموس
+    // 3. معالجة خاصة للإفصاحات (Disclosure) لعدم اعتمادها على مفتاح مباشر في القاموس
     if ([self.accessibilityIdentifier isEqualToString:@"eml.shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
         _ASDisplayView *dpView = (_ASDisplayView *)self.superview;
         ASDisplayNode *node = dpView.keepalive_node;
