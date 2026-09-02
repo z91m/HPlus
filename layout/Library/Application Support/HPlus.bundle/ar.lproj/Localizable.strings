@@ -409,6 +409,10 @@
 "SHORTS_FULLSCREEN_DESC" = "إدارة ظهور الطبقة العلوية بإيماءات القرص للداخل والخارج، لعرض Shorts في وضع ملء الشاشة.";
 "HIDE_SHORTS_DESCRIPTION" = "إخفاء وصف الشورت";
 "HIDE_SHORTS_DESCRIPTION_DESC" = "إخفاء نص وصف الفيديو في مشغل الشورتات";
+"REMOVE_SHORTS_RELATED_VIDEO" = "إخفاء ارتباط الفيديو";
+"REMOVE_SHORTS_RELATED_VIDEO_DESC" = "إخفاء شريط ارتباط الفيديو الطويلة في مشغل الشورتات";
+"REMOVE_SHORTS_CHANNEL_NAME" = "إخفاء اسم القناة";
+"REMOVE_SHORTS_CHANNEL_NAME_DESC" = "إخفاء اسم القناة وزر الاشتراك في مشغل الشورتات";
 
 "TABBAR" = "شريط التبويبات";
 "DEFAULT_TAB" = "تبويب البدء الافتراضي";
