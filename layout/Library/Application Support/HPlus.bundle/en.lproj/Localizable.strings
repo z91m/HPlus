@@ -409,6 +409,10 @@
 "SHORTS_FULLSCREEN_DESC" = "Manages visibility of the overlay with pinch in and pinch out gestures, displaying Shorts in fullscreen mode.";
 "HIDE_SHORTS_DESCRIPTION" = "Hide Shorts Description";
 "HIDE_SHORTS_DESCRIPTION_DESC" = "Hide the video description text in Shorts player";
+"REMOVE_SHORTS_RELATED_VIDEO" = "Hide Related Video";
+"REMOVE_SHORTS_RELATED_VIDEO_DESC" = "Hide the related long video link bar in the Shorts player";
+"REMOVE_SHORTS_CHANNEL_NAME" = "Hide Channel Name";
+"REMOVE_SHORTS_CHANNEL_NAME_DESC" = "Hide the channel name and subscribe button in the Shorts player";
 
 "TABBAR" = "Tab bar";
 "DEFAULT_TAB" = "Default startup tab";
