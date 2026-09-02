@@ -1,15 +1,7 @@
-#import "Headers.h"
-
-// إعلان مسبق للدالة الخارجية إن وجدت في ملف آخر
-extern void HPlusConfigureDownloadButton(id self);
-
-%hook _ASDisplayView
-
-%new
-- (void)HPlusProcessShortsElementAutomatically:(NSString *)iden {
+static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSString *iden) {
     if (!iden || iden.length == 0) return;
 
-    // 1. التعامل مع النصوص والعناوين والوصف
+    // 1. التعامل التلقائي مع النصوص والعناوين والوصف
     if ([iden containsString:@"description"] || 
         [iden containsString:@"title"] || 
         [iden containsString:@"reel.player"] || 
@@ -22,7 +14,7 @@ extern void HPlusConfigureDownloadButton(id self);
         return;
     }
 
-    // 2. ارتباط الفيديو المرتبط
+    // 2. ارتباط الفيديو المرتبط (Related Video Link)
     if ([iden containsString:@"related_video"] || [iden containsString:@"reel_metadata"]) {
         if (IS_ENABLED(RemoveShortsRelatedVideo)) {
             self.hidden = YES;
@@ -32,7 +24,7 @@ extern void HPlusConfigureDownloadButton(id self);
         }
     }
 
-    // 3. اسم القناة / الحساب وزر الاشتراك
+    // 3. اسم القناة / الحساب وزر الاشتراك (Channel Name & Subscribe)
     if ([iden containsString:@"channel_name"] || [iden containsString:@"owner"] || [iden containsString:@"subscribe"] || [iden containsString:@"author"]) {
         if (IS_ENABLED(RemoveShortsChannelName)) {
             self.hidden = YES;
@@ -42,7 +34,7 @@ extern void HPlusConfigureDownloadButton(id self);
         }
     }
 
-    // 4. شريط الصوت / الأغنية
+    // 4. شريط الصوت / الأغنية (Audio / Sound Track)
     if ([iden containsString:@"audio"] || [iden containsString:@"sound"] || [iden containsString:@"track"] || [iden containsString:@"music"]) {
         if (IS_ENABLED(RemoveShortsSoundButton)) {
             self.hidden = YES;
@@ -69,7 +61,8 @@ extern void HPlusConfigureDownloadButton(id self);
         else if ([iden containsString:@"pivot"] && IS_ENABLED(RemoveShortsSoundMetadataButton)) shouldRemove = YES;
 
         if (shouldRemove) {
-            ASDisplayNode *node = [self keepalive_node];
+            id mainView = self.superview;
+            ASDisplayNode *node = [(_ASDisplayView *)mainView keepalive_node];
             if (node) {
                 for (_ASDisplayView *view in node.yogaChildren) {
                     if ([[view description] containsString:iden]) {
@@ -93,7 +86,7 @@ extern void HPlusConfigureDownloadButton(id self);
 
         if (shouldRemove) {
             ASScrollView *scrollView = (ASScrollView *)self.superview;
-            ASDisplayNode *node = [scrollView scrollNode];
+            ASDisplayNode *node = scrollView.scrollNode;
             if (node) {
                 for (_ASDisplayView *view in node.yogaChildren) {
                     if ([[view description] containsString:iden]) {
@@ -113,11 +106,7 @@ extern void HPlusConfigureDownloadButton(id self);
         return;
     }
     if ([iden containsString:@"suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
-        if (self.superview) {
-            [self.superview removeFromSuperview];
-        } else {
-            [self removeFromSuperview];
-        }
+        [self removeFromSuperview];
         return;
     }
     if ([iden containsString:@"reel_sponsor_button"] && IS_ENABLED(RemoveChannelSponsorAll)) {
@@ -128,21 +117,19 @@ extern void HPlusConfigureDownloadButton(id self);
     // 8. الإفصاحات (Disclosures)
     if ([iden containsString:@"shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
         _ASDisplayView *dpView = (_ASDisplayView *)self.superview;
-        ASDisplayNode *node = [dpView keepalive_node];
+        ASDisplayNode *node = dpView.keepalive_node;
         _ASDisplayView *maindpView = (_ASDisplayView *)dpView.superview;
-        ASDisplayNode *mainNode = [maindpView keepalive_node];
+        ASDisplayNode *mainNode = maindpView.keepalive_node;
         [mainNode removeYogaChild:node];
         [maindpView removeFromSuperview];
         return;
     }
 }
 
+// نقطة الحقن العامة لالتقاط العناصر تلقائياً مع تحديثات يوتيوب
+%hook _ASDisplayView
 - (void)didMoveToWindow {
     %orig;
-    HPlusConfigureDownloadButton(self);
-    if ([self respondsToSelector:@selector(HPlusProcessShortsElementAutomatically:)]) {
-        [self HPlusProcessShortsElementAutomatically:self.accessibilityIdentifier];
-    }
+    HPlusProcessShortsElementAutomatically(self, self.accessibilityIdentifier);
 }
-
 %end
