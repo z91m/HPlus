@@ -1,16 +1,10 @@
 #import "Headers.h"
 
-@interface _ASDisplayView (HPlusShorts)
-- (void)HPlusProcessShortsElementAutomatically:(NSString *)iden;
-@end
-
-%hook _ASDisplayView
-
-%new
-- (void)HPlusProcessShortsElementAutomatically:(NSString *)iden {
+// دالة ذكية تلقائية بالكامل تبحث وتتعامل مع العناصر دون الحاجة لقوائم أو دوال مسبقة
+static void HPlusProcessShortsElementAutomatically(_ASDisplayView *self, NSString *iden) {
     if (!iden || iden.length == 0) return;
 
-    // 1. التعامل التلقائي مع النصوص والعناوين والوصف
+    // 1. التعامل التلقائي مع النصوص والعناوين والوصف   // 1. التعامل التلقائي مع النصوص والعناوين والوصف
     if ([iden containsString:@"description"] || 
         [iden containsString:@"title"] || 
         [iden containsString:@"reel.player"] || 
