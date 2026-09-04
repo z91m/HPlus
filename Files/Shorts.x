@@ -181,26 +181,25 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     [maindpView removeFromSuperview];
 }
 
-static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
-    if (!IS_ENABLED(RemoveShortsTitleButton)) return;
-    if (!iden) return;
+static void HPlusFilterShortsTextElements(UIView *self, NSString *iden) {
+    NSDictionary *textElementsList = @{
+        @"id.channel.reel.avatar": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"id.reels_smv_player_video_link": @(IS_ENABLED(RemoveShortsVideoLink)),
+        @"id.reels_smv_player_sound_link": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsTitleButton))
+    };
     
-    NSArray *possibleIds = @[
-        @"id.shorts.description",
-        @"eml.shorts-description",
-        @"shorts_description",
-        @"reel.player.title.access",
-        @"id.shorts.video_title",
-        @"eml.shorts-video-title",
-        @"YTShortsVideoTitleView",
-        @"id.reels_smv_player_title_label",
-        @"id.channel.reel.avatar",
-    ];
-    
-    for (NSString *target in possibleIds) {
-        if ([iden containsString:target] || [iden isEqualToString:target]) {
+    for (NSString *element in textElementsList) {
+        if (([iden isEqualToString:element] || [iden containsString:element]) && [textElementsList[element] boolValue]) {
+            // إخفاء العنصر
             self.hidden = YES;
             self.userInteractionEnabled = NO;
+            self.alpha = 0;
+            
+            // محاولة إزالة العنصر من superview
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self removeFromSuperview];
+            });
             break;
         }
     }
@@ -228,7 +227,7 @@ static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
         return;
     }
     
-    HPlusRemoveShortsTitleButton(self, iden);
+    HPlusFilterShortsTextElements(self, iden);
     HPlusFilterShortsButtons(self, iden);
     HPlusFilterShortsPausedHeader(self, iden);
     HPlusFilterShortsDisclosure(self, iden);
