@@ -182,7 +182,7 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
 }
 
 static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
-    NSDictionary *possibleIds = @{
+    NSArray *possibleIds = @{
         @"YTReelTitleLabel" : @(IS_ENABLED(RemoveShortsTitleButton)),
 
     ];
