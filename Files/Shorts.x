@@ -123,21 +123,24 @@ static BOOL isFullscreenEnabled = NO;
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
-    NSArray *possibleIds = @[
+    NSDictionary *buttonsList = @{
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"id.channel.reel.avatar_button" : @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
-    for (NSString *target in possibleIds) {
-        if ([iden containsString:target] || [iden isEqualToString:target]) {
-            self.hidden = YES;
-            self.userInteractionEnabled = NO;
-            break;
+    for (NSString *button in buttonsList) {
+        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
+            _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
+            ASDisplayNode *node = mainView.keepalive_node;
+            for (_ASDisplayView *view in node.yogaChildren) {
+                if ([[view description] containsString:button]) {
+                    [node removeYogaChild:view];
+                    [self removeFromSuperview];
+                    break;
                 }
             }
             break;
@@ -183,7 +186,15 @@ static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
     if (!iden) return;
     
     NSArray *possibleIds = @[
+        @"id.shorts.description",
+        @"eml.shorts-description",
+        @"shorts_description",
+        @"reel.player.title.access",
+        @"id.shorts.video_title",
+        @"eml.shorts-video-title",
+        @"YTShortsVideoTitleView",
         @"id.reels_smv_player_title_label",
+        @"id.channel.reel.avatar",
     ];
     
     for (NSString *target in possibleIds) {
