@@ -133,15 +133,11 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.channel.reel.avatar_button" : @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
-    for (NSString *button in buttonsList) {
-        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
-            _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
-            ASDisplayNode *node = mainView.keepalive_node;
-            for (_ASDisplayView *view in node.yogaChildren) {
-                if ([[view description] containsString:button]) {
-                    [node removeYogaChild:view];
-                    [self removeFromSuperview];
-                    break;
+    for (NSString *target in buttonsList) {
+        if ([iden containsString:target] || [iden isEqualToString:target]) {
+            self.hidden = YES;
+            self.userInteractionEnabled = NO;
+            break;
                 }
             }
             break;
