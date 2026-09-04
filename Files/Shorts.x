@@ -123,7 +123,7 @@ static BOOL isFullscreenEnabled = NO;
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
-    NSDictionary *buttonsList = @{
+    NSDictionary *possibleIds = @{
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
@@ -133,7 +133,7 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.channel.reel.avatar_button" : @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
-    for (NSString *target in buttonsList) {
+    for (NSString *target in possibleIds) {
         if ([iden containsString:target] || [iden isEqualToString:target]) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
