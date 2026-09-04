@@ -148,15 +148,10 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_title_label_button": @(IS_ENABLED(RemoveShortsTitleButton)),
         
         // أزرار إضافية من دالة HPlusRemoveShortsTitleButton
-        @"id.shorts.description": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"eml.shorts-description": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"shorts_description": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"reel.player.title.access": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"id.shorts.video_title": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"YTShortsVideoTitleView": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"YTReelTitleLabel": @(IS_ENABLED(RemoveShortsTitleButton))
+        @"Shorts_Related_Video": @(IS_ENABLED(RemoveShortsRelatedVideo)),
+        @"ReelChannelBarData": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"Shorts_Sound": @(IS_ENABLED(RemoveShortsSoundButton)),
+
     };
     
     for (NSString *button in buttonsList) {
