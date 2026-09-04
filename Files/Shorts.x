@@ -1,10 +1,8 @@
 #import "Headers.h"
 
-// Forward Declarations للدوال
+// Forward Declarations للدوال المستخدمة فقط
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden);
-static void HPlusFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden);
 static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden);
-static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden);
 
 // Enables shorts quality - works best with YTClassicVideoQuality
 %hook YTHotConfig
@@ -168,17 +166,6 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
             break;
         }
     }
-}
-
-// دالة HPlusRemoveShortsTitleButton (إن كانت لا تزال مطلوبة)
-static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
-    // هذه الدالة تم دمجها في HPlusFilterShortsButtons
-    // يمكن تركها فارغة أو إزالتها تماماً
-}
-
-// دالة HPlusFilterShortsPausedHeader (تم دمجها في HPlusFilterShortsButtons)
-static void HPlusFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden) {
-    // تم دمجها في HPlusFilterShortsButtons
 }
 
 // دالة HPlusFilterShortsDisclosure منفصلة لأنها تستخدم منطق مختلف
