@@ -184,7 +184,7 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
 static void HPlusFilterShortsTextElements(UIView *self, NSString *iden) {
     NSDictionary *textElementsList = @{
         @"id.channel.reel.avatar": @(IS_ENABLED(RemoveShortsChannelName)),
-        @"id.reels_smv_player_video_link": @(IS_ENABLED(RemoveShortsVideoLink)),
+        @"id.reels_smv_player_video_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
         @"id.reels_smv_player_sound_link": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsTitleButton))
     };
