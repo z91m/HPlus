@@ -124,13 +124,17 @@ extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
 static void HPlusLogIdentifiers(UIView *self, NSString *iden) {
     if (iden && iden.length > 0) {
-        if ([iden containsString:@"reel"] || [iden containsString:@"shorts"] || [iden containsString:@"smv"]) {
-            NSLog(@"[HPlus Debug] Identifier: %@", iden);
+        if ([iden containsString:@"button"] || [iden containsString:@"link"]) {
+            static NSString *lastLoggedIden = nil;
+            if (![lastLoggedIden isEqualToString:iden]) {
+                lastLoggedIden = [iden copy];
+                
+                UIView *parent = sbGetNotificationParent();
+                if (parent) {
+                    [SBSkipNotificationView showSuccessInView:parent message:[NSString stringWithFormat:@"Button ID: %@", iden] duration:3.0];
+                }
+            }
         }
-    }
-    NSString *desc = [self description];
-    if ([desc containsString:@"reel"] || [desc containsString:@"shorts"]) {
-        NSLog(@"[HPlus Debug] View Description: %@", desc);
     }
 }
 
@@ -230,7 +234,7 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
     %orig;
     HPlusConfigureDownloadButton(self);
     
-    // طباعة المعرفات لأغراض الفحص والتشخيص
+    // عرض معرفات الأزرار والروابط فقط على شكل تنبيهات
     HPlusLogIdentifiers(self, self.accessibilityIdentifier);
 
     NSString *iden = self.accessibilityIdentifier;
