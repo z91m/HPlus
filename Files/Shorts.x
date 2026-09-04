@@ -1,5 +1,11 @@
 #import "Headers.h"
 
+// Forward Declarations للدوال
+static void HPlusFilterShortsButtons(UIView *self, NSString *iden);
+static void HPlusFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden);
+static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden);
+static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden);
+
 // Enables shorts quality - works best with YTClassicVideoQuality
 %hook YTHotConfig
 - (BOOL)enableOmitAdvancedMenuInShortsVideoQualityPicker { return IS_ENABLED(EnablesShortsQuality) ? YES : %orig; }
@@ -122,6 +128,7 @@ static BOOL isFullscreenEnabled = NO;
 
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
+// الدالة الموحدة لتصفية الأزرار
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
     NSDictionary *buttonsList = @{
         // أزرار الـ Shorts العادية
@@ -158,14 +165,31 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         if (([iden containsString:button] || [iden isEqualToString:button]) && [buttonsList[button] boolValue]) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
-            
-            // اختياري: إخفاء من الـ Yoga Layout
-            if ([self respondsToSelector:@selector(yoga)]) {
-                self.yoga.display = YGDisplayNone;
-            }
             break;
         }
     }
+}
+
+// دالة HPlusRemoveShortsTitleButton (إن كانت لا تزال مطلوبة)
+static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
+    // هذه الدالة تم دمجها في HPlusFilterShortsButtons
+    // يمكن تركها فارغة أو إزالتها تماماً
+}
+
+// دالة HPlusFilterShortsPausedHeader (تم دمجها في HPlusFilterShortsButtons)
+static void HPlusFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden) {
+    // تم دمجها في HPlusFilterShortsButtons
+}
+
+// دالة HPlusFilterShortsDisclosure منفصلة لأنها تستخدم منطق مختلف
+static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
+    if (![self.accessibilityIdentifier isEqualToString:@"eml.shorts-disclosures"] || !IS_ENABLED(RemoveShortsDisclosure)) return;
+    _ASDisplayView *dpView = (_ASDisplayView *)self.superview;
+    ASDisplayNode *node = dpView.keepalive_node;
+    _ASDisplayView *maindpView = (_ASDisplayView *)dpView.superview;
+    ASDisplayNode *mainNode = maindpView.keepalive_node;
+    [mainNode removeYogaChild:node];
+    [maindpView removeFromSuperview];
 }
 
 // _ASDisplayView filters
@@ -175,9 +199,6 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
     HPlusConfigureDownloadButton(self);
     NSString *iden = self.accessibilityIdentifier;
     if (!iden || iden.length == 0) return;
-    
-    // أضف الاستدعاء هنا لتجنب خطأ التوقف عن الترجمة
-    HPlusRemoveShortsTitleButton(self, iden);
     
     NSDictionary *elements = @{
         @"product_sticker.main_target": @(IS_ENABLED(HideShortsProducts)),
@@ -194,7 +215,6 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
     }
     
     HPlusFilterShortsButtons(self, iden);
-    HPlusFilterShortsPausedHeader(self, iden);
     HPlusFilterShortsDisclosure(self, iden);
 }
 %end
