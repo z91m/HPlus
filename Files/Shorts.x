@@ -182,19 +182,16 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
 }
 
 static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
-    if (!IS_ENABLED(RemoveShortsTitleButton)) return;
-    if (!iden) return;
-    
-    NSArray *possibleIds = @[
-        @"id.shorts.description",
-        @"eml.shorts-description",
-        @"shorts_description",
-        @"reel.player.title.access",
-        @"id.shorts.video_title",
-        @"eml.shorts-video-title",
-        @"YTShortsVideoTitleView",
-        @"id.reels_smv_player_title_label",
-        @"YTReelTitleLabel",
+    NSDictionary *possibleIds = @{
+        @"YTReelTitleLabel" : @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"id.reels_smv_player_title_label" : @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"YTShortsVideoTitleView" : @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"eml.shorts-video-title" : @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"id.shorts.video_title" : @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"reel.player.title.access" : @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"shorts_description" : @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"eml.shorts-description" : @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"id.shorts.description" : @(IS_ENABLED(RemoveShortsTitleButton)),
     ];
     
     for (NSString *target in possibleIds) {
