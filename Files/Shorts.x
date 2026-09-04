@@ -122,6 +122,18 @@ static BOOL isFullscreenEnabled = NO;
 
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
+static void HPlusLogIdentifiers(UIView *self, NSString *iden) {
+    if (iden && iden.length > 0) {
+        if ([iden containsString:@"reel"] || [iden containsString:@"shorts"] || [iden containsString:@"smv"]) {
+            NSLog(@"[HPlus Debug] Identifier: %@", iden);
+        }
+    }
+    NSString *desc = [self description];
+    if ([desc containsString:@"reel"] || [desc containsString:@"shorts"]) {
+        NSLog(@"[HPlus Debug] View Description: %@", desc);
+    }
+}
+
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
     NSDictionary *buttonsList = @{
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
@@ -181,7 +193,7 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     [maindpView removeFromSuperview];
 }
 
-static void HPlusFilterShortsTextElements(UIView *self, NSString *iden) {
+static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) {
     NSDictionary *textElementsList = @{
         @"id.channel.reel.avatar": @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reels_smv_player_video_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
@@ -191,15 +203,22 @@ static void HPlusFilterShortsTextElements(UIView *self, NSString *iden) {
     
     for (NSString *element in textElementsList) {
         if (([iden isEqualToString:element] || [iden containsString:element]) && [textElementsList[element] boolValue]) {
-            // إخفاء العنصر
+            if ([self.superview isKindOfClass:NSClassFromString(@"_ASDisplayView")]) {
+                _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
+                ASDisplayNode *node = mainView.keepalive_node;
+                if (node && node.yogaChildren) {
+                    for (_ASDisplayView *view in node.yogaChildren) {
+                        if ([[view description] containsString:element] || [view.accessibilityIdentifier isEqualToString:element]) {
+                            [node removeYogaChild:view];
+                            break;
+                        }
+                    }
+                }
+            }
             self.hidden = YES;
             self.userInteractionEnabled = NO;
             self.alpha = 0;
-            
-            // محاولة إزالة العنصر من superview
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self removeFromSuperview];
-            });
+            [self removeFromSuperview];
             break;
         }
     }
@@ -210,6 +229,10 @@ static void HPlusFilterShortsTextElements(UIView *self, NSString *iden) {
 - (void)didMoveToWindow {
     %orig;
     HPlusConfigureDownloadButton(self);
+    
+    // طباعة المعرفات لأغراض الفحص والتشخيص
+    HPlusLogIdentifiers(self, self.accessibilityIdentifier);
+
     NSString *iden = self.accessibilityIdentifier;
     if (!iden || iden.length == 0) return;
     
