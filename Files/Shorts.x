@@ -130,6 +130,7 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
+        @"id.channel.reel.avatar_button" : @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
     for (NSString *button in buttonsList) {
@@ -186,15 +187,7 @@ static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
     if (!iden) return;
     
     NSArray *possibleIds = @[
-        @"id.shorts.description",
-        @"eml.shorts-description",
-        @"shorts_description",
-        @"reel.player.title.access",
-        @"id.shorts.video_title",
-        @"eml.shorts-video-title",
-        @"YTShortsVideoTitleView",
         @"id.reels_smv_player_title_label",
-        @"YTReelTitleLabel",
     ];
     
     for (NSString *target in possibleIds) {
