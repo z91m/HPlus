@@ -1,9 +1,5 @@
 #import "Headers.h"
 
-// Forward Declarations للدوال المستخدمة فقط
-static void HPlusFilterShortsButtons(UIView *self, NSString *iden);
-static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden);
-
 // Enables shorts quality - works best with YTClassicVideoQuality
 %hook YTHotConfig
 - (BOOL)enableOmitAdvancedMenuInShortsVideoQualityPicker { return IS_ENABLED(EnablesShortsQuality) ? YES : %orig; }
@@ -126,44 +122,55 @@ static BOOL isFullscreenEnabled = NO;
 
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
-// الدالة الموحدة لتصفية الأزرار
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
     NSDictionary *buttonsList = @{
-        // أزرار الـ Shorts العادية
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
-        @"id.reel_remix_button": @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton)),
-        
-        // أزرار الـ Paused Header
-        @"id.ui.shorts_paused_state.subscriptions_button": @(IS_ENABLED(RemoveShortsPausedSubButton)),
-        @"id.ui.shorts_paused_state.live_button": @(IS_ENABLED(RemoveShortsPausedLiveButton)),
-        @"id.ui.shorts_paused_state.lens_button": @(IS_ENABLED(RemoveShortsPausedLensButton)),
-        @"id.ui.shorts_paused_state.trends_button": @(IS_ENABLED(RemoveShortsPausedTrendsButton)),
-        
-        // زر العنوان
-        @"id.reel_title_label_button": @(IS_ENABLED(RemoveShortsTitleButton)),
-        
-        // أزرار إضافية من دالة HPlusRemoveShortsTitleButton
-        @"Shorts_Related_Video": @(IS_ENABLED(RemoveShortsRelatedVideo)),
-        @"ReelChannelBarData": @(IS_ENABLED(RemoveShortsChannelName)),
-        @"Shorts_Sound": @(IS_ENABLED(RemoveShortsSoundButton)),
-
+        @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
+        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
-    
     for (NSString *button in buttonsList) {
-        if (([iden containsString:button] || [iden isEqualToString:button]) && [buttonsList[button] boolValue]) {
-            self.hidden = YES;
-            self.userInteractionEnabled = NO;
+        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
+            _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
+            ASDisplayNode *node = mainView.keepalive_node;
+            for (_ASDisplayView *view in node.yogaChildren) {
+                if ([[view description] containsString:button]) {
+                    [node removeYogaChild:view];
+                    [self removeFromSuperview];
+                    break;
+                }
+            }
             break;
         }
     }
 }
 
-// دالة HPlusFilterShortsDisclosure منفصلة لأنها تستخدم منطق مختلف
+static void HPlusFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden) {
+    NSDictionary *buttonsList = @{
+        @"id.ui.shorts_paused_state.subscriptions_button": @(IS_ENABLED(RemoveShortsPausedSubButton)),
+        @"id.ui.shorts_paused_state.live_button": @(IS_ENABLED(RemoveShortsPausedLiveButton)),
+        @"id.ui.shorts_paused_state.lens_button": @(IS_ENABLED(RemoveShortsPausedLensButton)),
+        @"id.ui.shorts_paused_state.trends_button" : @(IS_ENABLED(RemoveShortsPausedTrendsButton))
+    };
+    for (NSString *button in buttonsList) {
+        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
+            ASScrollView *mainView = (ASScrollView *)self.superview;
+            ASDisplayNode *node = mainView.scrollNode;
+            for (_ASDisplayView *view in node.yogaChildren) {
+                if ([[view description] containsString:button]) {
+                    [node removeYogaChild:view];
+                    [self removeFromSuperview];
+                    break;
+                }
+            }
+            break;
+        }
+    }
+}
+
 static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     if (![self.accessibilityIdentifier isEqualToString:@"eml.shorts-disclosures"] || !IS_ENABLED(RemoveShortsDisclosure)) return;
     _ASDisplayView *dpView = (_ASDisplayView *)self.superview;
@@ -174,6 +181,31 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     [maindpView removeFromSuperview];
 }
 
+static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
+    if (!IS_ENABLED(RemoveShortsTitleButton)) return;
+    if (!iden) return;
+    
+    NSArray *possibleIds = @[
+        @"id.shorts.description",
+        @"eml.shorts-description",
+        @"shorts_description",
+        @"reel.player.title.access",
+        @"id.shorts.video_title",
+        @"eml.shorts-video-title",
+        @"YTShortsVideoTitleView",
+        @"id.reels_smv_player_title_label",
+        @"YTReelTitleLabel",
+    ];
+    
+    for (NSString *target in possibleIds) {
+        if ([iden containsString:target] || [iden isEqualToString:target]) {
+            self.hidden = YES;
+            self.userInteractionEnabled = NO;
+            break;
+        }
+    }
+}
+
 // _ASDisplayView filters
 %hook _ASDisplayView
 - (void)didMoveToWindow {
@@ -181,6 +213,9 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     HPlusConfigureDownloadButton(self);
     NSString *iden = self.accessibilityIdentifier;
     if (!iden || iden.length == 0) return;
+    
+    // أضف الاستدعاء هنا لتجنب خطأ التوقف عن الترجمة
+    HPlusRemoveShortsTitleButton(self, iden);
     
     NSDictionary *elements = @{
         @"product_sticker.main_target": @(IS_ENABLED(HideShortsProducts)),
@@ -197,6 +232,7 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     }
     
     HPlusFilterShortsButtons(self, iden);
+    HPlusFilterShortsPausedHeader(self, iden);
     HPlusFilterShortsDisclosure(self, iden);
 }
 %end
