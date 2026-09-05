@@ -208,23 +208,11 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
     }
 }
 
-@interface _ASDisplayView (HPlusInspect)
-@property (nonatomic, retain) UILongPressGestureRecognizer *HPlusInspectGesture;
-@end
-
+// _ASDisplayView filters
 %hook _ASDisplayView
-%property (nonatomic, retain) UILongPressGestureRecognizer *HPlusInspectGesture;
-
 - (void)didMoveToWindow {
     %orig;
     HPlusConfigureDownloadButton(self);
-    
-    if (!self.HPlusInspectGesture) {
-        self.HPlusInspectGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusHandleInspectGesture:)];
-        self.HPlusInspectGesture.minimumPressDuration = 0.8;
-        [self addGestureRecognizer:self.HPlusInspectGesture];
-    }
-
     NSString *iden = self.accessibilityIdentifier;
     if (!iden || iden.length == 0) return;
     
@@ -242,62 +230,10 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
         return;
     }
     
-    HPlusFilterShortsTextElements(self, iden);
+    HPlusRemoveShortsTitleButton(self, iden);
     HPlusFilterShortsButtons(self, iden);
     HPlusFilterShortsPausedHeader(self, iden);
     HPlusFilterShortsDisclosure(self, iden);
-}
-
-%new
-- (void)HPlusHandleInspectGesture:(UILongPressGestureRecognizer *)gesture {
-    if (gesture.state == UIGestureRecognizerStateBegan) {
-        __block NSString *foundId = self.accessibilityIdentifier;
-        
-        __block void (^findIdRecursive)(id) = nil;
-        __weak void (^weakFindIdRecursive)(id) = ^(id nodeOrChild) {
-            void (^strongFindIdRecursive)(id) = weakFindIdRecursive;
-            if (foundId && foundId.length > 0) return;
-            
-            if ([nodeOrChild respondsToSelector:@selector(accessibilityIdentifier)]) {
-                NSString *ident = [nodeOrChild accessibilityIdentifier];
-                if (ident && ident.length > 0) {
-                    foundId = ident;
-                    return;
-                }
-            }
-            
-            ASDisplayNode *node = nil;
-            if ([nodeOrChild isKindOfClass:[_ASDisplayView class]]) {
-                node = ((_ASDisplayView *)nodeOrChild).keepalive_node;
-            } else if ([nodeOrChild isKindOfClass:[ASDisplayNode class]]) {
-                node = (ASDisplayNode *)nodeOrChild;
-            }
-            
-            if (node && node.yogaChildren) {
-                for (id child in node.yogaChildren) {
-                    strongFindIdRecursive(child);
-                    if (foundId && foundId.length > 0) return;
-                }
-            }
-            
-            if ([nodeOrChild respondsToSelector:@selector(subviews)]) {
-                for (UIView *sub in [nodeOrChild subviews]) {
-                    strongFindIdRecursive(sub);
-                    if (foundId && foundId.length > 0) return;
-                }
-            }
-        };
-        findIdRecursive = weakFindIdRecursive;
-        
-        findIdRecursive(self);
-        
-        NSString *resultMessage = foundId && foundId.length > 0 ? [NSString stringWithFormat:@"ID: %@", foundId] : [NSString stringWithFormat:@"Desc: %@", [[self description] length] > 50 ? [[self description] substringToIndex:50] : [self description]];
-        
-        UIView *parent = sbGetNotificationParent();
-        if (parent) {
-            [SBSkipNotificationView showSuccessInView:parent message:resultMessage duration:3.0];
-        }
-    }
 }
 %end
 
