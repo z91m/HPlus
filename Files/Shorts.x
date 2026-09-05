@@ -253,7 +253,7 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
     if (gesture.state == UIGestureRecognizerStateBegan) {
         __block NSString *foundId = self.accessibilityIdentifier;
         
-        void (^findIdRecursive)(id) = ^(id nodeOrChild) {
+        __block void (^findIdRecursive)(id) = ^(id nodeOrChild) {
             if (foundId && foundId.length > 0) return;
             
             if ([nodeOrChild respondsToSelector:@selector(accessibilityIdentifier)]) {
