@@ -253,7 +253,9 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
     if (gesture.state == UIGestureRecognizerStateBegan) {
         __block NSString *foundId = self.accessibilityIdentifier;
         
-        __block void (^findIdRecursive)(id) = ^(id nodeOrChild) {
+        __block void (^findIdRecursive)(id) = nil;
+        __weak void (^weakFindIdRecursive)(id) = ^(id nodeOrChild) {
+            void (^strongFindIdRecursive)(id) = weakFindIdRecursive;
             if (foundId && foundId.length > 0) return;
             
             if ([nodeOrChild respondsToSelector:@selector(accessibilityIdentifier)]) {
@@ -273,18 +275,19 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
             
             if (node && node.yogaChildren) {
                 for (id child in node.yogaChildren) {
-                    findIdRecursive(child);
+                    strongFindIdRecursive(child);
                     if (foundId && foundId.length > 0) return;
                 }
             }
             
             if ([nodeOrChild respondsToSelector:@selector(subviews)]) {
                 for (UIView *sub in [nodeOrChild subviews]) {
-                    findIdRecursive(sub);
+                    strongFindIdRecursive(sub);
                     if (foundId && foundId.length > 0) return;
                 }
             }
         };
+        findIdRecursive = weakFindIdRecursive;
         
         findIdRecursive(self);
         
