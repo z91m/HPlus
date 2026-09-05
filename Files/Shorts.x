@@ -122,22 +122,6 @@ static BOOL isFullscreenEnabled = NO;
 
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
-static void HPlusLogIdentifiers(UIView *self, NSString *iden) {
-    if (iden && iden.length > 0) {
-        if ([iden containsString:@"button"] || [iden containsString:@"link"]) {
-            static NSString *lastLoggedIden = nil;
-            if (![lastLoggedIden isEqualToString:iden]) {
-                lastLoggedIden = [iden copy];
-                
-                UIView *parent = sbGetNotificationParent();
-                if (parent) {
-                    [SBSkipNotificationView showSuccessInView:parent message:[NSString stringWithFormat:@"Button ID: %@", iden] duration:3.0];
-                }
-            }
-        }
-    }
-}
-
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
     NSDictionary *buttonsList = @{
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
@@ -230,12 +214,18 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
 
 // _ASDisplayView filters
 %hook _ASDisplayView
+%property (nonatomic, retain) UILongPressGestureRecognizer *HPlusInspectGesture;
+
 - (void)didMoveToWindow {
     %orig;
     HPlusConfigureDownloadButton(self);
     
-    // عرض معرفات الأزرار والروابط فقط على شكل تنبيهات
-    HPlusLogIdentifiers(self, self.accessibilityIdentifier);
+    // إضافة إيماءة الضغط المطول لفحص العنصر وعرض معرفه
+    if (!self.HPlusInspectGesture) {
+        self.HPlusInspectGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusHandleInspectGesture:)];
+        self.HPlusInspectGesture.minimumPressDuration = 0.8;
+        [self addGestureRecognizer:self.HPlusInspectGesture];
+    }
 
     NSString *iden = self.accessibilityIdentifier;
     if (!iden || iden.length == 0) return;
@@ -258,6 +248,27 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
     HPlusFilterShortsButtons(self, iden);
     HPlusFilterShortsPausedHeader(self, iden);
     HPlusFilterShortsDisclosure(self, iden);
+}
+
+%new
+- (void)HPlusHandleInspectGesture:(UILongPressGestureRecognizer *)gesture {
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        NSString *iden = self.accessibilityIdentifier;
+        NSString *desc = [self description];
+        
+        NSString *resultMessage = @"";
+        if (iden && iden.length > 0) {
+            resultMessage = [NSString stringWithFormat:@"ID: %@", iden];
+        } else {
+            // استخراج أول جزء من الوصف إذا لم يكن هناك معرف مباشر
+            resultMessage = [NSString stringWithFormat:@"Desc: %@", desc.length > 50 ? [desc substringToIndex:50] : desc];
+        }
+        
+        UIView *parent = sbGetNotificationParent();
+        if (parent) {
+            [SBSkipNotificationView showSuccessInView:parent message:resultMessage duration:3.0];
+        }
+    }
 }
 %end
 
