@@ -68,7 +68,6 @@ static BOOL isFullscreenEnabled = NO;
     YTIAudioTrack *matchedTrack = nil;
 
     if (INTFORVAL(AudioTrack) == 1) {
-        // Loop for all tracks
         for (YTIAudioTrack *track in availableTracks) {
             if ([track.id_p hasSuffix:@".4"]) {
                 matchedTrack = track;
@@ -76,7 +75,6 @@ static BOOL isFullscreenEnabled = NO;
             }
         }
     } else if (INTFORVAL(AudioTrack) == 2) {
-        // Loop for all tracks
         for (YTIAudioTrack *track in availableTracks) {
             if ([track.id_p hasPrefix:userTargetLang]) {
                 matchedTrack = track;
@@ -84,7 +82,6 @@ static BOOL isFullscreenEnabled = NO;
             }
         }
 
-        // Check if it's dubbed
         if (matchedTrack && [matchedTrack isAutoDubbed] && IS_ENABLED(NoDubbedAudioTrack)) matchedTrack = nil;
 
         if (!matchedTrack && IS_ENABLED(NoDubbedAudioTrack)) {
@@ -97,7 +94,6 @@ static BOOL isFullscreenEnabled = NO;
         }
     }
 
-    // If found, change to it
     if (matchedTrack) {
         [pv setAudioTrack:matchedTrack source:0];
     }
@@ -216,7 +212,6 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
 @property (nonatomic, retain) UILongPressGestureRecognizer *HPlusInspectGesture;
 @end
 
-// _ASDisplayView filters
 %hook _ASDisplayView
 %property (nonatomic, retain) UILongPressGestureRecognizer *HPlusInspectGesture;
 
@@ -224,7 +219,6 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
     %orig;
     HPlusConfigureDownloadButton(self);
     
-    // إضافة إيماءة الضغط المطول لفحص العنصر وعرض معرفه
     if (!self.HPlusInspectGesture) {
         self.HPlusInspectGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusHandleInspectGesture:)];
         self.HPlusInspectGesture.minimumPressDuration = 0.8;
@@ -258,14 +252,20 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
 - (void)HPlusHandleInspectGesture:(UILongPressGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateBegan) {
         NSString *iden = self.accessibilityIdentifier;
-        NSString *desc = [self description];
         
-        NSString *resultMessage = @"";
-        if (iden && iden.length > 0) {
-            resultMessage = [NSString stringWithFormat:@"ID: %@", iden];
-        } else {
-            resultMessage = [NSString stringWithFormat:@"Desc: %@", desc.length > 50 ? [desc substringToIndex:50] : desc];
+        if (!iden || iden.length == 0) {
+            ASDisplayNode *node = self.keepalive_node;
+            if (node && node.yogaChildren) {
+                for (id subview in node.yogaChildren) {
+                    if ([subview respondsToSelector:@selector(accessibilityIdentifier)] && [subview accessibilityIdentifier]) {
+                        iden = [subview accessibilityIdentifier];
+                        break;
+                    }
+                }
+            }
         }
+        
+        NSString *resultMessage = iden && iden.length > 0 ? [NSString stringWithFormat:@"ID: %@", iden] : [NSString stringWithFormat:@"Desc: %@", [[self description] length] > 50 ? [[self description] substringToIndex:50] : [self description]];
         
         UIView *parent = sbGetNotificationParent();
         if (parent) {
@@ -366,15 +366,5 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
         return NO;
     }
     return YES;
-}
-%end
-
-%hook UIView
-- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    %orig;
-    NSString *ident = self.accessibilityIdentifier;
-    if (ident && ident.length > 0) {
-        NSLog(@"Found ID: %@", ident);
-    }
 }
 %end
