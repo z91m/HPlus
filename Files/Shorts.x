@@ -126,6 +126,9 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
+        @"id.reel_channel": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
+        @"id.reel_sound_metadata": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
     for (NSString *button in buttonsList) {
@@ -177,32 +180,26 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     [maindpView removeFromSuperview];
 }
 
-static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) {
-    NSDictionary *textElementsList = @{
-        @"decorated-avatar-id": @(IS_ENABLED(RemoveShortsChannelName)),
-        @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
-        @"id.reels_smv_player_sound_link": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsTitleButton))
-    };
+static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
+    if (!IS_ENABLED(RemoveShortsTitleButton)) return;
+    if (!iden) return;
     
-    for (NSString *element in textElementsList) {
-        if (([iden isEqualToString:element] || [iden containsString:element]) && [textElementsList[element] boolValue]) {
-            if ([self.superview isKindOfClass:NSClassFromString(@"_ASDisplayView")]) {
-                _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
-                ASDisplayNode *node = mainView.keepalive_node;
-                if (node && node.yogaChildren) {
-                    for (_ASDisplayView *view in node.yogaChildren) {
-                        if ([[view description] containsString:element] || [view.accessibilityIdentifier isEqualToString:element]) {
-                            [node removeYogaChild:view];
-                            break;
-                        }
-                    }
-                }
-            }
+    NSArray *possibleIds = @[
+        @"id.shorts.description",
+        @"eml.shorts-description",
+        @"shorts_description",
+        @"reel.player.title.access",
+        @"id.shorts.video_title",
+        @"eml.shorts-video-title",
+        @"YTShortsVideoTitleView",
+        @"id.reels_smv_player_title_label",
+        @"YTReelTitleLabel",
+    ];
+    
+    for (NSString *target in possibleIds) {
+        if ([iden containsString:target] || [iden isEqualToString:target]) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
-            self.alpha = 0;
-            [self removeFromSuperview];
             break;
         }
     }
@@ -230,7 +227,7 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
         return;
     }
     
-    HPlusFilterShortsTextElements(self, iden);
+    HPlusRemoveShortsTitleButton(self, iden);
     HPlusFilterShortsButtons(self, iden);
     HPlusFilterShortsPausedHeader(self, iden);
     HPlusFilterShortsDisclosure(self, iden);
