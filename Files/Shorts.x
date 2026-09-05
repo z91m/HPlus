@@ -230,7 +230,7 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
         return;
     }
     
-    HPlusRemoveShortsTitleButton(self, iden);
+    HPlusFilterShortsTextElements(self, iden);
     HPlusFilterShortsButtons(self, iden);
     HPlusFilterShortsPausedHeader(self, iden);
     HPlusFilterShortsDisclosure(self, iden);
