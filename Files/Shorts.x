@@ -212,6 +212,10 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
     }
 }
 
+@interface _ASDisplayView (HPlusInspect)
+@property (nonatomic, retain) UILongPressGestureRecognizer *HPlusInspectGesture;
+@end
+
 // _ASDisplayView filters
 %hook _ASDisplayView
 %property (nonatomic, retain) UILongPressGestureRecognizer *HPlusInspectGesture;
@@ -260,7 +264,6 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
         if (iden && iden.length > 0) {
             resultMessage = [NSString stringWithFormat:@"ID: %@", iden];
         } else {
-            // استخراج أول جزء من الوصف إذا لم يكن هناك معرف مباشر
             resultMessage = [NSString stringWithFormat:@"Desc: %@", desc.length > 50 ? [desc substringToIndex:50] : desc];
         }
         
