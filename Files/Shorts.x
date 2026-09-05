@@ -251,21 +251,44 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
 %new
 - (void)HPlusHandleInspectGesture:(UILongPressGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateBegan) {
-        NSString *iden = self.accessibilityIdentifier;
+        __block NSString *foundId = self.accessibilityIdentifier;
         
-        if (!iden || iden.length == 0) {
-            ASDisplayNode *node = self.keepalive_node;
-            if (node && node.yogaChildren) {
-                for (id subview in node.yogaChildren) {
-                    if ([subview respondsToSelector:@selector(accessibilityIdentifier)] && [subview accessibilityIdentifier]) {
-                        iden = [subview accessibilityIdentifier];
-                        break;
-                    }
+        void (^findIdRecursive)(id) = ^(id nodeOrChild) {
+            if (foundId && foundId.length > 0) return;
+            
+            if ([nodeOrChild respondsToSelector:@selector(accessibilityIdentifier)]) {
+                NSString *ident = [nodeOrChild accessibilityIdentifier];
+                if (ident && ident.length > 0) {
+                    foundId = ident;
+                    return;
                 }
             }
-        }
+            
+            ASDisplayNode *node = nil;
+            if ([nodeOrChild isKindOfClass:[_ASDisplayView class]]) {
+                node = ((_ASDisplayView *)nodeOrChild).keepalive_node;
+            } else if ([nodeOrChild isKindOfClass:[ASDisplayNode class]]) {
+                node = (ASDisplayNode *)nodeOrChild;
+            }
+            
+            if (node && node.yogaChildren) {
+                for (id child in node.yogaChildren) {
+                    findIdRecursive(child);
+                    if (foundId && foundId.length > 0) return;
+                }
+            }
+            
+            if ([nodeOrChild respondsToSelector:@selector(subviews)]) {
+                for (UIView *sub in [nodeOrChild subviews]) {
+                    findIdRecursive(sub);
+                    if (foundId && foundId.length > 0) return;
+                }
+            }
+        };
         
-        NSString *resultMessage = iden && iden.length > 0 ? [NSString stringWithFormat:@"ID: %@", iden] : [NSString stringWithFormat:@"Desc: %@", [[self description] length] > 50 ? [[self description] substringToIndex:50] : [self description]];
+        findIdRecursive(self);
+        
+        NSString *resultMessage = foundId && foundId.length > 0 ? [NSString stringWithFormat:@"ID: %@", foundId] : [NSString stringWithFormat:@"Desc: %@", [[self description] length] > 50 ? [[self description] substringToIndex:50] : [self description]];
         
         UIView *parent = sbGetNotificationParent();
         if (parent) {
