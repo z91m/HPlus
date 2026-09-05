@@ -368,3 +368,13 @@ static void HPlusFilterShortsTextElements(_ASDisplayView *self, NSString *iden) 
     return YES;
 }
 %end
+
+%hook UIView
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    %orig;
+    NSString *ident = self.accessibilityIdentifier;
+    if (ident && ident.length > 0) {
+        NSLog(@"Found ID: %@", ident);
+    }
+}
+%end
