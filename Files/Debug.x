@@ -107,7 +107,7 @@ static char kHPlusGestureKey;
 - (UIViewController *)topViewController {
     UIViewController *topVC = nil;
     
-    // البحث في جميع النوافذ عن النافذة الرئيسية
+    // البحث في جميع النوافذ
     for (UIWindow *window in [UIApplication sharedApplication].windows) {
         if (window.isKeyWindow && !window.hidden && window.rootViewController) {
             topVC = window.rootViewController;
@@ -115,11 +115,32 @@ static char kHPlusGestureKey;
         }
     }
     
-    // إذا لم نجد، استخدم keyWindow
+    // إذا لم نجد، نبحث في Scenes (iOS 13+)
     if (!topVC) {
-        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-        if (keyWindow && keyWindow.rootViewController) {
-            topVC = keyWindow.rootViewController;
+        if (@available(iOS 13.0, *)) {
+            NSSet *connectedScenes = [UIApplication sharedApplication].connectedScenes;
+            for (UIScene *scene in connectedScenes) {
+                if ([scene isKindOfClass:[UIWindowScene class]]) {
+                    UIWindowScene *windowScene = (UIWindowScene *)scene;
+                    for (UIWindow *window in windowScene.windows) {
+                        if (window.isKeyWindow && window.rootViewController) {
+                            topVC = window.rootViewController;
+                            break;
+                        }
+                    }
+                    if (topVC) break;
+                }
+            }
+        }
+    }
+    
+    // إذا لم نجد، نستخدم أول نافذة متاحة
+    if (!topVC) {
+        for (UIWindow *window in [UIApplication sharedApplication].windows) {
+            if (!window.hidden && window.rootViewController) {
+                topVC = window.rootViewController;
+                break;
+            }
         }
     }
     
