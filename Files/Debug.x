@@ -10,7 +10,6 @@
 
 - (void)didMoveToWindow {
     %orig;
-    // التحقق من عدم وجود إيماءة مطولة مضافة مسبقاً لتجنب التكرار
     BOOL hasLongPress = NO;
     for (UIGestureRecognizer *recognizer in self.gestureRecognizers) {
         if ([recognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
@@ -19,7 +18,6 @@
         }
     }
     
-    // إضافة النقر المطول لكل الـ Views في التطبيق لضمان شمولية الفحص
     if (!hasLongPress) {
         UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:[HPlusDebugHelper sharedInstance] action:@selector(handleLongPress:)];
         [self addGestureRecognizer:longPress];
@@ -41,19 +39,27 @@
 
 - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateBegan) {
-        UIView *view = sender.view;
-        NSString *className = NSStringFromClass([view class]);
-        NSString *identifier = view.accessibilityIdentifier;
+        UIView *containerView = sender.view;
+        CGPoint point = [sender locationInView:containerView];
         
-        // استخراج النص تلقائياً إذا كان العنصر يحتوي على نص (مثل UILabel أو ما شابه)
-        NSString *extractedText = nil;
-        if ([view respondsToSelector:@selector(text)] && [[(id)view text] isKindOfClass:[NSString class]]) {
-            extractedText = [(id)view text];
-        } else if ([view respondsToSelector:@selector(attributedText)] && [[(id)view attributedText] string]) {
-            extractedText = [[(id)view attributedText] string];
+        // استخدام Hit-Testing للعثور على أصغر وأدق عنصر تحته الإصبع مباشرة
+        UIView *targetView = [containerView hitTest:point withEvent:nil];
+        if (!targetView) {
+            targetView = containerView;
         }
         
-        // تجهيز الرسالة لتظهر في التنبيه
+        NSString *className = NSStringFromClass([targetView class]);
+        NSString *identifier = targetView.accessibilityIdentifier;
+        NSString *extractedText = nil;
+        
+        // استخراج النص إذا كان العنصر يحتوي على نص (مثل UILabel أو زر نصي)
+        if ([targetView respondsToSelector:@selector(text)] && [[(id)targetView text] isKindOfClass:[NSString class]]) {
+            extractedText = [(id)targetView text];
+        } else if ([targetView respondsToSelector:@selector(attributedText)] && [[(id)targetView attributedText] string]) {
+            extractedText = [[(id)targetView attributedText] string];
+        }
+        
+        // تجهيز بيانات العرض في التنبيه
         NSMutableString *message = [NSMutableString stringWithFormat:@"Class: %@\n", className];
         if (identifier && identifier.length > 0) {
             [message appendFormat:@"ID: %@\n", identifier];
@@ -62,7 +68,6 @@
         }
         
         if (extractedText && extractedText.length > 0) {
-            // تقليص النص لو كان طويلاً جداً
             if (extractedText.length > 100) {
                 extractedText = [extractedText substringToIndex:100];
             }
@@ -71,7 +76,7 @@
         
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"HPlus Inspector" message:message preferredStyle:UIAlertControllerStyleAlert];
         
-        [alert addAction:[UIAlertAction actionWithTitle:@"Copy ID/Info" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [alert addAction:[UIAlertAction actionWithTitle:@"Copy Info" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             [UIPasteboard generalPasteboard].string = identifier.length > 0 ? identifier : (extractedText.length > 0 ? extractedText : className);
         }]];
         
