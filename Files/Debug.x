@@ -1,4 +1,10 @@
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+
+@interface HPlusDebugHelper : NSObject
++ (instancetype)sharedInstance;
+- (void)handleLongPress:(UILongPressGestureRecognizer *)sender;
+@end
 
 %hook UIView
 
@@ -27,18 +33,12 @@
 
 %end
 
-// كلاس مساعد لإدارة حدث النقر المطول وإظهار التنبيه
-@interface HPlusDebugHelper : NSObject
-+ (instancetype)sharedInstance;
-- (void)handleLongPress:(UILongPressGestureRecognizer *)sender;
-@end
-
 @implementation HPlusDebugHelper
 
 + (instancetype)sharedInstance {
     static HPlusDebugHelper *sharedInstance = nil;
     static dispatch_once_t onceToken;
-    dispatch_once(&sharedInstance, ^{
+    dispatch_once(&onceToken, ^{
         sharedInstance = [[HPlusDebugHelper alloc] init];
     });
     return sharedInstance;
