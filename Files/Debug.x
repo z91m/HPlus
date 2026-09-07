@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+
 %hook UIView
 - (void)setAccessibilityIdentifier:(NSString *)accessibilityIdentifier {
     %orig;
