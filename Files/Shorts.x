@@ -126,7 +126,7 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"id.reel_sound_button": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
         @"id.reel_overlay": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
