@@ -133,15 +133,8 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
     };
     for (NSString *button in buttonsList) {
         if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
-            _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
-            ASDisplayNode *node = mainView.keepalive_node;
-            for (_ASDisplayView *view in node.yogaChildren) {
-                if ([[view description] containsString:button]) {
-                    [node removeYogaChild:view];
-                    [self removeFromSuperview];
-                    break;
-                }
-            }
+            self.hidden = YES;
+            self.userInteractionEnabled = NO;
             break;
         }
     }
