@@ -119,20 +119,21 @@ static BOOL isFullscreenEnabled = NO;
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
-    NSDictionary *buttonsList = @{
+    NSDictionary *possibleIds = @{
+        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
-        @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"id.reel_remix_button": @(IS_ENABLED(RemoveShortsRemixButton)),
+        @"id.reel_channel_bar": @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
         @"id.reel_overlay": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
-    for (NSString *button in buttonsList) {
-        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
+    for (NSString *target in possibleIds) {
+        if ([iden containsString:target] && [possibleIds[target] boolValue]) {
             self.hidden = YES;
             self.userInteractionEnabled = NO;
             break;
@@ -173,31 +174,6 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     [maindpView removeFromSuperview];
 }
 
-static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
-    if (!IS_ENABLED(RemoveShortsTitleButton)) return;
-    if (!iden) return;
-    
-    NSArray *possibleIds = @[
-        @"id.shorts.description",
-        @"eml.shorts-description",
-        @"shorts_description",
-        @"reel.player.title.access",
-        @"id.shorts.video_title",
-        @"eml.shorts-video-title",
-        @"YTShortsVideoTitleView",
-        @"id.reels_smv_player_title_label",
-        @"YTReelTitleLabel",
-    ];
-    
-    for (NSString *target in possibleIds) {
-        if ([iden containsString:target] || [iden isEqualToString:target]) {
-            self.hidden = YES;
-            self.userInteractionEnabled = NO;
-            break;
-        }
-    }
-}
-
 // _ASDisplayView filters
 %hook _ASDisplayView
 - (void)didMoveToWindow {
@@ -220,7 +196,7 @@ static void HPlusRemoveShortsTitleButton(UIView *self, NSString *iden) {
         return;
     }
     
-    HPlusRemoveShortsTitleButton(self, iden);
+    
     HPlusFilterShortsButtons(self, iden);
     HPlusFilterShortsPausedHeader(self, iden);
     HPlusFilterShortsDisclosure(self, iden);
