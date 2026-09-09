@@ -119,6 +119,7 @@ static BOOL isFullscreenEnabled = NO;
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
+    NSLog(@"[HPlus Debug] iden = %@", iden);
     NSDictionary *possibleIds = @{
         @"id.shorts.description": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"eml.shorts-description": @(IS_ENABLED(RemoveShortsTitleButton)),
