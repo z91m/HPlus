@@ -120,14 +120,14 @@ extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
     NSDictionary *possibleIds = @{
-        @"id.shorts.video_title": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_remix_button": @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"eml.shorts-channe-bar": @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
         @"id.reel_overlay": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
