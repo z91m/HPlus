@@ -119,7 +119,7 @@ static BOOL isFullscreenEnabled = NO;
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
-    NSDictionary *buttonsList = @{
+    NSDictionary *possibleIds = @{
         @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
@@ -132,21 +132,25 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_sound_lockup": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
-    for (NSString *button in buttonsList) {
-        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
-            _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
-            ASDisplayNode *node = mainView.keepalive_node;
-            for (_ASDisplayView *view in node.yogaChildren) {
-                if ([[view description] containsString:button]) {
-                    [node removeYogaChild:view];
-                    [self removeFromSuperview];
-                    break;
-                }
-            }
-            break;
+    for (NSString *target in possibleIds) {
+    if ([iden containsString:target] && [possibleIds[target] boolValue]) {
+        
+        ASDisplayNode *node = ((_ASDisplayView *)self).asyncdisplaykit_node;
+        if (node) {
+            [CATransaction begin];
+            [CATransaction setDisableActions:YES];
+            node.style.display = ASStackLayoutDisplayNone;
+            node.hidden = YES;
+            self.userInteractionEnabled = NO;
+            ASDisplayNode *supernode = node.supernode;
+            [supernode setNeedsLayout];
+            [supernode layoutIfNeeded];
+            [CATransaction commit];
         }
+        break;
     }
 }
+
 
 static void HPlusFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden) {
     NSDictionary *buttonsList = @{
