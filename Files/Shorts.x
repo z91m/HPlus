@@ -119,12 +119,10 @@ static BOOL isFullscreenEnabled = NO;
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
-    NSLog(@"[HPlus Debug] iden = %@", iden);
     NSDictionary *possibleIds = @{
-        @"id.shorts.description": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"eml.shorts-description": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"shorts_description": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"reel.player.title.access": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"YTShortsVideoTitleView": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"id.reels_smv_player_title_label": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"YTReelTitleLabel": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
