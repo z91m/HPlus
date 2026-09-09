@@ -133,24 +133,24 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
     for (NSString *target in possibleIds) {
-    if ([iden containsString:target] && [possibleIds[target] boolValue]) {
-        
-        ASDisplayNode *node = ((_ASDisplayView *)self).asyncdisplaykit_node;
-        if (node) {
-            [CATransaction begin];
-            [CATransaction setDisableActions:YES];
-            node.style.display = ASStackLayoutDisplayNone;
-            node.hidden = YES;
-            self.userInteractionEnabled = NO;
-            ASDisplayNode *supernode = node.supernode;
-            [supernode setNeedsLayout];
-            [supernode layoutIfNeeded];
-            [CATransaction commit];
+        if ([iden containsString:target] && [possibleIds[target] boolValue]) {
+
+            ASDisplayNode *node = ((_ASDisplayView *)self).asyncdisplaykit_node;
+            if (node) {
+                [CATransaction begin];
+                [CATransaction setDisableActions:YES];
+                node.style.display = ASStackLayoutDisplayNone;
+                node.hidden = YES;
+                self.userInteractionEnabled = NO;
+                ASDisplayNode *supernode = node.supernode;
+                [supernode setNeedsLayout];
+                [supernode layoutIfNeeded];
+                [CATransaction commit];
+            }
+            break;
         }
-        break;
     }
 }
-
 
 static void HPlusFilterShortsPausedHeader(_ASDisplayView *self, NSString *iden) {
     NSDictionary *buttonsList = @{
