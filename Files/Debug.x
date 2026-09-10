@@ -38,6 +38,18 @@ static char kHPlusGestureKey;
 
 %end
 
+// تجاوز طبقة الـ Overlay لمنعها من اعتراض اللمسات والتفاعل
+%hook UIView
+
+- (void)layoutSubviews {
+    %orig;
+    if ([self.accessibilityIdentifier isEqualToString:@"id.reel_overlay"]) {
+        self.userInteractionEnabled = NO;
+    }
+}
+
+%end
+
 @implementation HPlusDebugHelper
 
 + (instancetype)sharedInstance {
@@ -539,6 +551,17 @@ static char kHPlusGestureKey;
     UIView *targetView = [window hitTest:point withEvent:nil];
     if (!targetView) return;
     
+    // حل مشكلة طبقة الـ Overlay: تخطيها مؤقتاً للوصول لما تحتها إذا لزم الأمر
+    NSString *identifier = [self extractIdentifierFromView:targetView];
+    if ([identifier isEqualToString:@"id.reel_overlay"] || [NSStringFromClass([targetView class]) containsString:@"Overlay"]) {
+        targetView.hidden = YES;
+        UIView *underlyingView = [window hitTest:point withEvent:nil];
+        targetView.hidden = NO;
+        if (underlyingView) {
+            targetView = underlyingView;
+        }
+    }
+    
     // تجاهل عناصر النظام
     if ([self shouldIgnoreView:targetView]) return;
     
@@ -549,7 +572,7 @@ static char kHPlusGestureKey;
     NSString *imageInfo = [self getImageInfoForView:targetView];
     NSString *frameInfo = [self getFrameInfoForView:targetView];
     NSString *additionalInfo = [self getAdditionalInfoForView:targetView];
-    NSString *identifier = [self extractIdentifierFromView:targetView];
+    identifier = [self extractIdentifierFromView:targetView]; // إعادة استخراج المعرف بعد تحديث الـ targetView
     
     // بناء الرسالة
     NSMutableString *message = [NSMutableString string];
