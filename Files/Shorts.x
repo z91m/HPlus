@@ -119,7 +119,7 @@ static BOOL isFullscreenEnabled = NO;
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
 static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
-    NSDictionary *buttonsList = @{
+    NSDictionary *possibleIds = @{
         @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
@@ -127,22 +127,15 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_remix_button": @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"eml.shorts-channel-name": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"eml.reel_channel_bar.channel_name": @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
-        @"id.reel_sound_lockup": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reel_footer_analytics_button": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
-    for (NSString *button in buttonsList) {
-        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
-            _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
-            ASDisplayNode *node = mainView.keepalive_node;
-            for (_ASDisplayView *view in node.yogaChildren) {
-                if ([[view description] containsString:button]) {
-                    [node removeYogaChild:view];
-                    [self removeFromSuperview];
-                    break;
-                }
-            }
+    for (NSString *target in possibleIds) {
+        if ([iden containsString:target] && [possibleIds[target] boolValue]) {
+            self.hidden = YES;
+            self.userInteractionEnabled = NO;
             break;
         }
     }
