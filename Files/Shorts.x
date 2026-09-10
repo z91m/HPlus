@@ -129,24 +129,13 @@ static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_remix_button": @(IS_ENABLED(RemoveShortsRemixButton)),
         @"eml.shorts-channel-name": @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
-        @"id.reel_footer_analytics_button": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @" ⁠id.reel_sound_lockup": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
     for (NSString *target in possibleIds) {
         if ([iden containsString:target] && [possibleIds[target] boolValue]) {
-
-            ASDisplayNode *node = ((_ASDisplayView *)self).asyncdisplaykit_node;
-            if (node) {
-                [CATransaction begin];
-                [CATransaction setDisableActions:YES];
-                node.style.display = ASStackLayoutDisplayNone;
-                node.hidden = YES;
-                self.userInteractionEnabled = NO;
-                ASDisplayNode *supernode = node.supernode;
-                [supernode setNeedsLayout];
-                [supernode layoutIfNeeded];
-                [CATransaction commit];
-            }
+            self.hidden = YES;
+            self.userInteractionEnabled = NO;
             break;
         }
     }
