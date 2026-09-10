@@ -2011,11 +2011,82 @@ NSString *HPlusGlobalAuthHeader = nil;
 }
 %end
 
+static BOOL HPlusIsSheetActionBarItem(_ASDisplayView *view) {
+    if (![view.accessibilityIdentifier isEqualToString:@"id.elements.list_item"]) return NO;
+    UIView *parent = view.superview;
+    while (parent) {
+        if ([parent isKindOfClass:NSClassFromString(@"YTDialogContainerScrollView")]) return YES;
+        parent = parent.superview;
+    }
+    return NO;
+}
+
+static NSString *HPlusExtractTextFromView(UIView *view) {
+    if (!view) return nil;
+    if ([view isKindOfClass:UILabel.class]) return ((UILabel *)view).text;
+    if ([view isKindOfClass:UITextView.class]) return ((UITextView *)view).text;
+    if (view.accessibilityLabel.length > 0) return view.accessibilityLabel;
+    for (UIView *sub in view.subviews) {
+        NSString *text = HPlusExtractTextFromView(sub);
+        if (text.length > 0) return text;
+    }
+    return nil;
+}
+
+static void HPlusHandleSheetActionItem(_ASDisplayView *view) {
+    if (objc_getAssociatedObject(view, @selector(HPlusHandleSheetActionItem:))) return;
+
+    NSString *itemText = HPlusExtractTextFromView(view);
+    BOOL isDownloadItem = [itemText containsString:@"تنزيل"] ||
+                          [itemText containsString:@"Download"] ||
+                          [itemText containsString:@"تحميل"];
+
+    if (!isDownloadItem) return;
+
+    objc_setAssociatedObject(view, @selector(HPlusHandleSheetActionItem:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+    // إخفاء الزر الرسمي
+    view.hidden = YES;
+
+    // إضافة زر المود فوقه بنفس المكان
+    UIButton *modButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    modButton.translatesAutoresizingMaskIntoConstraints = NO;
+    modButton.backgroundColor = [UIColor clearColor];
+
+    YTIIcon *icon = [%c(YTIIcon) new];
+    icon.iconType = 658;
+    UIImage *iconImage = [icon iconImageWithColor:[UIColor labelColor]];
+
+    [modButton setTitle:@"  تنزيل" forState:UIControlStateNormal];
+    [modButton setTitleColor:[UIColor labelColor] forState:UIControlStateNormal];
+    [modButton setImage:iconImage forState:UIControlStateNormal];
+    modButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightRegular];
+    modButton.semanticContentAttribute = UISemanticContentAttributeForceRightToLeft;
+
+    [modButton addTarget:view action:@selector(HPlusDownloadButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+
+    UIView *container = view.superview;
+    [container addSubview:modButton];
+    [NSLayoutConstraint activateConstraints:@[
+        [modButton.leadingAnchor constraintEqualToAnchor:view.leadingAnchor],
+        [modButton.trailingAnchor constraintEqualToAnchor:view.trailingAnchor],
+        [modButton.topAnchor constraintEqualToAnchor:view.topAnchor],
+        [modButton.bottomAnchor constraintEqualToAnchor:view.bottomAnchor],
+    ]];
+}
+
 void HPlusConfigureDownloadButton(_ASDisplayView *view) {
     if (!IS_ENABLED(DownloadManager)) return;
-    if (objc_getAssociatedObject(view, @selector(HPlusDownloadButtonTapped:))) return;
 
+    // 1) القائمة الثلاث نقاط: أضف زر المود بدل الرسمي
+    if (HPlusIsSheetActionBarItem(view)) {
+        HPlusHandleSheetActionItem(view);
+        return;
+    }
+
+    // 2) زر الشريط السفلي/العلوي الأصلي
     if ([view.accessibilityIdentifier isEqualToString:@"id.ui.add_to.offline.button"]) {
+        if (objc_getAssociatedObject(view, @selector(HPlusDownloadButtonTapped:))) return;
         view.userInteractionEnabled = YES;
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(HPlusDownloadButtonTapped:)];
         tap.cancelsTouchesInView = YES;
@@ -2147,6 +2218,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 - (void)didMoveToWindow {
     %orig;
+    HPlusConfigureDownloadButton(self);
     if ([self.accessibilityIdentifier isEqualToString:@"id.ui.comment_cell"] && IS_ENABLED(DownloadComment)) {
         BOOL hasGesture = NO;
         for (UIGestureRecognizer *g in self.gestureRecognizers) {
@@ -2276,8 +2348,11 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 }
 
 %new
-- (void)HPlusDownloadButtonTapped:(UITapGestureRecognizer *)sender {
-    if (sender.state != UIGestureRecognizerStateEnded) return;
+- (void)HPlusDownloadButtonTapped:(id)sender {
+    // إذا كان UITapGestureRecognizer، تحقق من الحالة
+    if ([sender isKindOfClass:UITapGestureRecognizer.class]) {
+        if (((UITapGestureRecognizer *)sender).state != UIGestureRecognizerStateEnded) return;
+    }
     UIViewController *presenter = HPlusPresenterForSender(self, HPlusCurrentPlayerViewController);
     YTPlayerViewController *player = HPlusPlayerFromViewController(presenter);
     HPlusShowDownloadManager(player, presenter, self, NO);
