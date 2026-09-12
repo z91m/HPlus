@@ -1,3 +1,4 @@
+
 #import "Headers.h"
 #import <AVFoundation/AVFoundation.h>
 #import <Photos/Photos.h>
@@ -84,8 +85,6 @@ static UIImage *HPlusIconImage(NSInteger iconType) {
 @property (nonatomic, assign) unsigned long long contentLength;
 @property (nonatomic, assign) unsigned long long durationMs;
 @property (nonatomic, assign) NSInteger fps;
-@property (nonatomic, assign) NSInteger itag;
-@property (nonatomic, copy) NSString *codec;
 @property (nonatomic, assign) BOOL video;
 @property (nonatomic, copy) NSString *languageCode;
 @property (nonatomic, copy) NSString *languageName;
@@ -860,6 +859,7 @@ static void HPlusLoadFFmpegKitIfNeeded(void) {
 
     HPlusAppendFFmpegKitLoadEntry(@"[HPlus] Starting bundled FFmpegKit load...");
 
+    // Order is important: load dependencies (avutil, etc.) before the main toolkit
     NSArray <NSArray <NSString *> *> *frameworks = @[
         @[@"libavutil", @"libavutil"],
         @[@"libswresample", @"libswresample"],
@@ -878,8 +878,10 @@ static void HPlusLoadFFmpegKitIfNeeded(void) {
         return;
     }
 
+    // Only iterate through our controlled bundle directory
     for (NSString *directory in searchDirs) {
         for (NSArray <NSString *> *framework in frameworks) {
+            // This helper uses dlopen on the direct path within our bundle
             HPlusLoadFrameworkBinary(directory, framework.firstObject, framework.lastObject);
         }
         
@@ -1060,57 +1062,13 @@ static BOOL HPlusStartFFmpegKitAudioConvert(NSURL *inputURL, NSURL *outputURL, H
     return YES;
 }
 
-// =========================================================
-// MARK: - Codec detection from itag (NEW)
-// =========================================================
-static NSString *HPlusCodecFromItag(NSInteger itag) {
-    // AV1
-    if (itag >= 394 && itag <= 401) return @"av01";
-    // VP9
-    if ((itag >= 242 && itag <= 248) || (itag >= 270 && itag <= 278) ||
-        (itag >= 302 && itag <= 303) || (itag >= 308 && itag <= 315) ||
-        itag == 330) return @"vp9";
-    // VP8
-    if (itag >= 43 && itag <= 46) return @"vp8";
-    // HEVC
-    if (itag == 331 || itag == 332 || itag == 333 || itag == 334) return @"hevc";
-    // H.264 AVC (default)
-    return @"avc1";
-}
-
-static NSString *HPlusCodecFromMime(NSString *mimeType) {
-    NSString *lower = mimeType.lowercaseString ?: @"";
-    if ([lower containsString:@"av01"]) return @"av01";
-    if ([lower containsString:@"avc1"] || [lower containsString:@"h264"]) return @"avc1";
-    if ([lower containsString:@"vp9"]) return @"vp9";
-    if ([lower containsString:@"vp8"]) return @"vp8";
-    if ([lower containsString:@"hevc"] || [lower containsString:@"h265"]) return @"hevc";
-    return nil;
-}
-
-// =========================================================
-// MARK: - Mime Detail (ENHANCED - shows codec)
-// =========================================================
 static NSString *HPlusMimeDetail(NSString *mimeType) {
     NSString *lower = mimeType.lowercaseString ?: @"";
-    NSMutableString *result = [NSMutableString string];
-    
-    // Base format
-    if ([lower containsString:@"mp4"]) [result appendString:@"mp4"];
-    else if ([lower containsString:@"webm"]) [result appendString:@"webm"];
-    else if ([lower containsString:@"3gpp"]) [result appendString:@"3gp"];
-    else if ([lower containsString:@"mp3"]) [result appendString:@"mp3"];
-    else if ([lower containsString:@"aac"]) [result appendString:@"aac"];
-    else [result appendString:@"stream"];
-    
-    // Codec
-    NSString *codec = HPlusCodecFromMime(mimeType);
-    if (codec.length) {
-        [result appendString:@" · "];
-        [result appendString:codec];
-    }
-    
-    return result.copy;
+    if ([lower containsString:@"mp4"]) return @"MP4";
+    if ([lower containsString:@"webm"]) return @"WebM";
+    if ([lower containsString:@"mp3"]) return @"MP3";
+    if ([lower containsString:@"aac"]) return @"AAC";
+    return mimeType.length ? mimeType : @"Stream";
 }
 
 static NSString *HPlusFileExtensionForFormat(HPlusMediaFormat *format, NSString *fallbackExtension) {
@@ -1206,9 +1164,6 @@ static NSString *HPlusAudioOutputSubtitle(HPlusAudioOutputFormat *outputFormat) 
     return [NSString stringWithFormat:@"%@", outputFormat.subtitle];
 }
 
-// =========================================================
-// MARK: - Subtitle separator " · " like YTLite (ENHANCED)
-// =========================================================
 static NSString *HPlusFormatSubtitle(HPlusMediaFormat *format) {
     NSMutableArray *parts = [NSMutableArray array];
     NSString *language = format.languageName.length ? format.languageName : format.languageCode;
@@ -1218,36 +1173,7 @@ static NSString *HPlusFormatSubtitle(HPlusMediaFormat *format) {
     if (detail.length) [parts addObject:detail];
     NSString *size = HPlusByteCount(format.contentLength);
     if (size.length) [parts addObject:size];
-    return [parts componentsJoinedByString:@" · "];
-}
-
-// =========================================================
-// MARK: - Attributed Title for single-line layout (NEW)
-// =========================================================
-static NSAttributedString *HPlusAttributedTitle(NSString *title, NSString *subtitle) {
-    if (!subtitle.length) return [[NSAttributedString alloc] initWithString:title ?: @""];
-    
-    NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] init];
-    
-    // Main part: quality (e.g., "1080p")
-    [attr appendAttributedString:[[NSAttributedString alloc] 
-        initWithString:title 
-        attributes:@{
-            NSFontAttributeName: [UIFont systemFontOfSize:17 weight:UIFontWeightRegular],
-            NSForegroundColorAttributeName: [UIColor labelColor],
-        }]];
-    
-    // Sub part: codec + size (e.g., "mp4 · av01 · 133.7 MB")
-    if (subtitle.length) {
-        [attr appendAttributedString:[[NSAttributedString alloc] 
-            initWithString:[NSString stringWithFormat:@"  %@", subtitle]
-            attributes:@{
-                NSFontAttributeName: [UIFont systemFontOfSize:13 weight:UIFontWeightRegular],
-                NSForegroundColorAttributeName: [UIColor secondaryLabelColor],
-            }]];
-    }
-    
-    return attr.copy;
+    return [parts componentsJoinedByString:@" - "];
 }
 
 static NSString *HPlusVideoIDForPlayer(YTPlayerViewController *player) {
@@ -1268,6 +1194,7 @@ static NSArray *HPlusPlayerResponsesForPlayer(YTPlayerViewController *player) {
     return responses.copy;
 }
 
+// Where is this going to?
 static NSArray *HPlusCaptionTracksForPlayer(YTPlayerViewController *player) {
     for (id response in HPlusPlayerResponsesForPlayer(player)) {
         id playerData = HPlusObjectFromSelector(response, @selector(playerData)) ?: response;
@@ -1327,9 +1254,6 @@ static NSArray *HPlusAdaptiveFormatObjectsForPlayer(YTPlayerViewController *play
     return formats.copy;
 }
 
-// =========================================================
-// MARK: - Media format from stream (ENHANCED - all itags)
-// =========================================================
 static HPlusMediaFormat *HPlusMediaFormatFromStream(id stream, BOOL video) {
     id formatStream = HPlusObjectFromSelector(stream, @selector(formatStream));
     NSString *url = HPlusStringFromSelector(stream, @selector(URL));
@@ -1346,42 +1270,21 @@ static HPlusMediaFormat *HPlusMediaFormatFromStream(id stream, BOOL video) {
     NSInteger itag = HPlusIntegerFromSelector(stream, @selector(itag));
     if (itag == 0) itag = HPlusIntegerFromSelector(formatStream, @selector(itag));
 
-    // ✅ نوع الفيديو: نتحقق من mime أو من stream مباشرة
-    BOOL typeMatches = video 
-        ? ([lowerMime containsString:@"video/"] || streamSaysVideo)
-        : ([lowerMime containsString:@"audio/"] || streamSaysAudio);
-    
-    // ✅ إذا لم نجد mime، تحقق من itag
-    if (!typeMatches && mimeType.length == 0) {
-        // افتراض افتراضي بناءً على itag
-        NSSet *knownVideoItags = [NSSet setWithObjects:
-            @18, @22, @37, @38, @43, @44, @45, @46, @59, @78,
-            @133, @134, @135, @136, @137, @160,
-            @212, @242, @243, @244, @247, @248, @264, @266, @271, @272, @278,
-            @298, @299, @302, @303, @308, @313, @315, @330,
-            @394, @395, @396, @397, @398, @399, @400, @401,
-            nil];
-        NSSet *knownAudioItags = [NSSet setWithObjects:
-            @139, @140, @141, @171, @172, @249, @250, @251, @256, @258, @325, @328,
-            nil];
-        if (video && [knownVideoItags containsObject:@(itag)]) typeMatches = YES;
-        if (!video && [knownAudioItags containsObject:@(itag)]) typeMatches = YES;
-    }
-    
+    NSSet *mp4VideoItags = [NSSet setWithObjects:@18, @22, @37, @38, @59, @78, @133, @134, @135, @136, @137, @160, @212, @264, @266, @298, @299, nil];
+    NSSet *m4aAudioItags = [NSSet setWithObjects:@139, @140, @141, @256, @258, @325, @328, nil];
+    BOOL itagMatches = video ? [mp4VideoItags containsObject:@(itag)] : [m4aAudioItags containsObject:@(itag)];
+    BOOL typeMatches = video ? ([lowerMime containsString:@"video/"] || streamSaysVideo || itagMatches) : ([lowerMime containsString:@"audio/"] || streamSaysAudio || itagMatches);
     if (!typeMatches) return nil;
 
-    // ✅ لا مزيد من الفلترة الصارمة — نقبل كل شيء
-    // FFmpeg أو AVFoundation سيتولى الدمج
-    
+    BOOL mimeLooksMP4 = [lowerMime containsString:@"mp4"] || [lowerMime containsString:@"m4a"];
+    BOOL canRemuxWithFFmpeg = HPlusFFmpegKitAvailable();
+    if (mimeType.length && !mimeLooksMP4 && !itagMatches && !canRemuxWithFFmpeg) return nil;
+
     HPlusMediaFormat *format = [HPlusMediaFormat new];
     format.source = stream;
     format.video = video;
-    format.itag = itag;
-    format.codec = HPlusCodecFromItag(itag);
-    if (!format.codec) format.codec = HPlusCodecFromMime(mimeType);
     format.urlString = HPlusURLStringWithCPN(url);
     format.mimeType = mimeType.length ? mimeType : (video ? @"video/mp4" : @"audio/mp4");
-    
     NSInteger height = HPlusIntegerFromSelector(stream, @selector(height));
     if (height == 0) height = HPlusIntegerFromSelector(formatStream, @selector(height));
     NSInteger fps = HPlusIntegerFromSelector(stream, @selector(fps));
@@ -1392,10 +1295,8 @@ static HPlusMediaFormat *HPlusMediaFormatFromStream(id stream, BOOL video) {
     if (fps == 0) fps = HPlusIntegerFromSelector(formatStream, @selector(frameRate));
     fps = HPlusNormalizedFPS(fps);
     format.fps = fps;
-    
     format.qualityLabel = HPlusStringFromSelector(stream, @selector(qualityLabel));
     if (format.qualityLabel.length == 0) format.qualityLabel = HPlusStringFromSelector(formatStream, @selector(qualityLabel));
-    
     if (video) {
         NSInteger labelHeight = HPlusResolutionFromQuality(format.qualityLabel);
         NSInteger labelFPS = HPlusFPSFromQuality(format.qualityLabel);
@@ -1404,7 +1305,6 @@ static HPlusMediaFormat *HPlusMediaFormatFromStream(id stream, BOOL video) {
         if (format.qualityLabel.length == 0) format.qualityLabel = HPlusQualityLabel(height, fps, nil);
     }
     if (format.qualityLabel.length == 0 && !video) format.qualityLabel = @"Audio";
-    
     if (!video) {
         NSString *languageCode = HPlusStringFromSelector(stream, @selector(languageCode));
         if (languageCode.length == 0) languageCode = HPlusStringFromSelector(formatStream, @selector(languageCode));
@@ -1433,7 +1333,6 @@ static HPlusMediaFormat *HPlusMediaFormatFromStream(id stream, BOOL video) {
         }
         format.drcAudio = [[audioTraits componentsJoinedByString:@" "] localizedCaseInsensitiveContainsString:@"drc"];
     }
-    
     if (HPlusBoolFromSelector(stream, @selector(hasContentLength)) || [stream respondsToSelector:@selector(contentLength)])
         format.contentLength = HPlusUnsignedLongLongFromSelector(stream, @selector(contentLength));
     if (format.contentLength == 0 && (HPlusBoolFromSelector(formatStream, @selector(hasContentLength)) || [formatStream respondsToSelector:@selector(contentLength)]))
@@ -1535,10 +1434,9 @@ static NSArray <HPlusMediaFormat *> *HPlusFormatsForPlayer(YTPlayerViewControlle
     NSMutableSet *seen = [NSMutableSet set];
     for (HPlusMediaFormat *format in formats) {
         NSInteger fps = format.fps ?: HPlusFPSFromQuality(format.qualityLabel);
-        // ✅ الآن المفتاح يشمل codec أيضاً للتفريق بين AV1 و AVC1
         NSString *key = video
-            ? [NSString stringWithFormat:@"%@-%ld-%@-%ld", format.qualityLabel ?: @"", (long)fps, format.codec ?: @"", (long)format.itag]
-            : [NSString stringWithFormat:@"%@-%@-%@-%@-%ld", format.qualityLabel ?: @"", format.languageCode ?: @"", format.drcAudio ? @"drc" : @"std", format.codec ?: @"", (long)format.itag];
+            ? [NSString stringWithFormat:@"%@-%ld-%@", format.qualityLabel ?: @"", (long)fps, HPlusMimeDetail(format.mimeType)]
+            : [NSString stringWithFormat:@"%@-%@-%@-%@", format.qualityLabel ?: @"", format.languageCode ?: @"", format.drcAudio ? @"drc" : @"std", HPlusMimeDetail(format.mimeType)];
         if ([seen containsObject:key]) continue;
         [seen addObject:key];
         [unique addObject:format];
@@ -1609,91 +1507,38 @@ static void HPlusSaveVideoToPhotos(NSURL *fileURL, UIViewController *presenter, 
 static void HPlusShareFile(NSURL *fileURL, UIViewController *presenter) {
     if (!fileURL || !presenter) return;
     UIActivityViewController *activity = [[UIActivityViewController alloc] initWithActivityItems:@[fileURL] applicationActivities:nil];
+    // Fix for iPad and specific presentation alignment
     if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
         activity.popoverPresentationController.sourceView = presenter.view;
+        // Position at the bottom center of the screen
         activity.popoverPresentationController.sourceRect = CGRectMake(presenter.view.bounds.size.width / 2, presenter.view.bounds.size.height, 0, 0);
-        activity.popoverPresentationController.permittedArrowDirections = 0;
+        activity.popoverPresentationController.permittedArrowDirections = 0; // No arrow pointing to a button
     } else {
+        // On iPhone, UIActivityViewController naturally comes from the bottom center
         activity.popoverPresentationController.sourceView = presenter.view;
     }
     [presenter presentViewController:activity animated:YES completion:nil];
 }
 
-// =========================================================
-// MARK: - Menu presentation (ENHANCED - single-line via attributedTitle)
-// =========================================================
 static void HPlusPresentMenu(NSString *title, NSArray <HPlusMenuItem *> *items, UIViewController *presenter, UIView *sender) {
     presenter = HPlusTopViewController(presenter);
     Class sheetClass = NSClassFromString(@"YTDefaultSheetController");
     if (sheetClass && [sheetClass respondsToSelector:@selector(sheetControllerWithParentResponder:)]) {
         YTDefaultSheetController *sheet = [sheetClass sheetControllerWithParentResponder:presenter];
         Class actionClass = NSClassFromString(@"YTActionSheetAction");
-        
         for (HPlusMenuItem *item in items) {
             id action = nil;
-            
-            // ✅ Priority 1: attributedTitle (single-line like YTLite)
-            NSAttributedString *attrTitle = HPlusAttributedTitle(item.title, item.subtitle);
-            
-            if ([actionClass respondsToSelector:@selector(actionWithAttributedTitle:iconImage:style:handler:)]) {
-                action = ((id (*)(Class, SEL, NSAttributedString *, UIImage *, NSInteger, id))objc_msgSend)(
-                    actionClass,
-                    @selector(actionWithAttributedTitle:iconImage:style:handler:),
-                    attrTitle,
-                    item.iconImage,
-                    0,
-                    ^(__unused id action) { if (item.handler) item.handler(); });
-            } else if ([actionClass respondsToSelector:@selector(actionWithAttributedTitle:iconImage:handler:)]) {
-                action = ((id (*)(Class, SEL, NSAttributedString *, UIImage *, id))objc_msgSend)(
-                    actionClass,
-                    @selector(actionWithAttributedTitle:iconImage:handler:),
-                    attrTitle,
-                    item.iconImage,
-                    ^(__unused id action) { if (item.handler) item.handler(); });
-            } else if ([actionClass respondsToSelector:@selector(actionWithAttributedTitle:style:handler:)]) {
-                action = ((id (*)(Class, SEL, NSAttributedString *, NSInteger, id))objc_msgSend)(
-                    actionClass,
-                    @selector(actionWithAttributedTitle:style:handler:),
-                    attrTitle,
-                    0,
-                    ^(__unused id action) { if (item.handler) item.handler(); });
+            if ([actionClass respondsToSelector:@selector(actionWithTitle:subtitle:iconImage:handler:)]) {
+                action = ((id (*)(Class, SEL, NSString *, NSString *, UIImage *, id))objc_msgSend)(actionClass, @selector(actionWithTitle:subtitle:iconImage:handler:), item.title, item.subtitle, item.iconImage, ^(__unused id action) {
+                    if (item.handler) item.handler();
+                });
+            } else {
+                action = ((id (*)(Class, SEL, NSString *, NSInteger, id))objc_msgSend)(actionClass, @selector(actionWithTitle:style:handler:), item.title, 0, ^(__unused id action) {
+                    if (item.handler) item.handler();
+                });
             }
-            // ✅ Priority 2: combined title (fallback single-line)
-            else {
-                NSString *combined = item.subtitle.length 
-                    ? [NSString stringWithFormat:@"%@  %@", item.title, item.subtitle]
-                    : item.title;
-                
-                if ([actionClass respondsToSelector:@selector(actionWithTitle:iconImage:style:handler:)]) {
-                    action = ((id (*)(Class, SEL, NSString *, UIImage *, NSInteger, id))objc_msgSend)(
-                        actionClass,
-                        @selector(actionWithTitle:iconImage:style:handler:),
-                        combined,
-                        item.iconImage,
-                        0,
-                        ^(__unused id action) { if (item.handler) item.handler(); });
-                } else if ([actionClass respondsToSelector:@selector(actionWithTitle:style:handler:)]) {
-                    action = ((id (*)(Class, SEL, NSString *, NSInteger, id))objc_msgSend)(
-                        actionClass,
-                        @selector(actionWithTitle:style:handler:),
-                        combined,
-                        0,
-                        ^(__unused id action) { if (item.handler) item.handler(); });
-                } else if ([actionClass respondsToSelector:@selector(actionWithTitle:subtitle:iconImage:handler:)]) {
-                    // ⚠️ Last resort: two-line
-                    action = ((id (*)(Class, SEL, NSString *, NSString *, UIImage *, id))objc_msgSend)(
-                        actionClass,
-                        @selector(actionWithTitle:subtitle:iconImage:handler:),
-                        item.title,
-                        item.subtitle,
-                        item.iconImage,
-                        ^(__unused id action) { if (item.handler) item.handler(); });
-                }
-            }
-            
             if (action) [sheet addAction:action];
         }
-        
         if (sender && [sheet respondsToSelector:@selector(presentFromView:animated:completion:)])
             [sheet presentFromView:sender animated:YES completion:nil];
         else
@@ -1701,12 +1546,9 @@ static void HPlusPresentMenu(NSString *title, NSArray <HPlusMenuItem *> *items, 
         return;
     }
 
-    // Fallback: UIAlertController
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     for (HPlusMenuItem *item in items) {
-        NSString *rowTitle = item.subtitle.length 
-            ? [NSString stringWithFormat:@"%@  %@", item.title, item.subtitle] 
-            : item.title;
+        NSString *rowTitle = item.subtitle.length ? [NSString stringWithFormat:@"%@\n%@", item.title, item.subtitle] : item.title;
         [alert addAction:[UIAlertAction actionWithTitle:rowTitle style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
             if (item.handler) item.handler();
         }]];
@@ -1715,8 +1557,6 @@ static void HPlusPresentMenu(NSString *title, NSArray <HPlusMenuItem *> *items, 
     alert.popoverPresentationController.sourceView = sender ?: presenter.view;
     [presenter presentViewController:alert animated:YES completion:nil];
 }
-
-// (باقي الكود كما هو — HPlusDownloadCoordinator وكل الدوال التالية بنفس الملف الأصلي، لا تغيير فيها)
 
 @implementation HPlusDownloadCoordinator
 
