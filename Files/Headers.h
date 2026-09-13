@@ -383,7 +383,16 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (YTVideoFreeZoomOverlayView *)videoFreeZoomOverlayView;
 @end
 
-@interface YTQTMButton (HPlus)
+__attribute__((weak_import))
+@interface YTColor : NSObject
++ (UIColor *)black3;
++ (UIColor *)white1;
+@end
+
+__attribute__((weak_import))
+@interface YTQTMButton : UIButton
++ (instancetype)iconButton;
+- (void)setImage:(UIImage *)image forState:(UIControlState)state;
 - (void)enableNewTouchFeedback;
 @end
 
