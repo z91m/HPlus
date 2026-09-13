@@ -111,6 +111,7 @@
 #define AudioPreferIndex @"HPlusAudioPreferIndex"
 #define DownloadComment @"HPlusDownloadComment"
 #define DownloadPost @"HPlusDownloadPost"
+#define DownloadPreferDRCAudio @"HPlusDownloadPreferDRCAudio"
 // Cache
 #define AutoClearCache @"HPlusAutoClearCache"
 // Appearance
