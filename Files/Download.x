@@ -1149,24 +1149,6 @@ static NSAttributedString *HPlusAttributedTitle(NSString *title, NSString *subti
 }
 
 // =========================================================
-// MARK: - HPlusFormatSubtitle (compat variant for direct API)
-// =========================================================
-static NSString *HPlusFormatSubtitleEx(HPlusMediaFormat *format, BOOL video) {
-    if (video) {
-        NSMutableArray *parts = [NSMutableArray array];
-        NSString *detail = HPlusMimeDetail(format.mimeType);
-        if (detail.length) [parts addObject:detail];
-        NSString *size = HPlusByteCount(format.contentLength);
-        if (size.length) [parts addObject:size];
-        return [parts componentsJoinedByString:@" · "];
-    }
-    NSString *language = format.languageName.length ? format.languageName : format.languageCode;
-    if (language.length) return language;
-    NSString *cut = [[format.idp componentsSeparatedByString:@"."] firstObject];
-    return cut ?: @"";
-}
-
-// =========================================================
 // MARK: - Player data extraction
 // =========================================================
 static NSArray *HPlusPlayerResponsesForPlayer(YTPlayerViewController *player) {
@@ -2649,15 +2631,6 @@ static void HPlusCopyTextToPasteboard(NSString *text, NSString *successKey) {
 static void HPlusCopyImageToPasteboard(UIImage *image, NSString *successKey) {
     UIPasteboard.generalPasteboard.image = image;
     HPlusSendSuccess(LOC(successKey));
-}
-
-static void HPlusCopyVideoInfo(YTPlayerViewController *player, UIViewController *presenter) {
-    NSString *author = HPlusAuthorForPlayer(player);
-    NSString *title = HPlusTitleForPlayer(player);
-    NSString *description = HPlusDescriptionForPlayer(player);
-    NSString *all = [NSString stringWithFormat:@"%@ - %@\n%@", author, title, description];
-    UIPasteboard.generalPasteboard.string = all;
-    HPlusSendSuccess(LOC(@"COPIED_VID_INFO"));
 }
 
 // =========================================================
