@@ -2924,7 +2924,7 @@ static NSString *HPlusExtractCommentText(UIView *cellView) {
 
 static UIImage *HPlusRenderViewToImage(_ASDisplayView *view) {
     if (!view || view.bounds.size.width <= 0 || view.bounds.size.height <= 0) return nil;
-    UIColor *realBgColor = isDarkMode(view) ? [YTColor black3] : [YTColor white1];
+    UIColor *realBgColor = isDarkMode(view) ? [%c(YTColor) black3] : [%c(YTColor) white1];
     UIGraphicsBeginImageContextWithOptions(view.bounds.size, NO, [UIScreen mainScreen].scale);
     CGContextRef context = UIGraphicsGetCurrentContext();
     [realBgColor setFill];
@@ -3106,7 +3106,7 @@ NSString *HPlusGlobalAuthHeader = nil;
     if (!downloadBtn) {
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
         UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-        downloadBtn = [YTQTMButton iconButton];
+        downloadBtn = [%c(YTQTMButton) iconButton];
         [downloadBtn setImage:icon forState:UIControlStateNormal];
         downloadBtn.tintColor = [UIColor whiteColor];
         downloadBtn.exclusiveTouch = YES;
