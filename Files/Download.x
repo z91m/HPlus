@@ -13,6 +13,21 @@
 #import <stdlib.h>
 
 // =========================================================
+// MARK: - Forward declarations (must be before use)
+// =========================================================
+static NSInteger HPlusResolutionFromQuality(NSString *quality);
+static NSInteger HPlusFPSFromQuality(NSString *quality);
+static NSInteger HPlusNormalizedFPS(NSInteger fps);
+static NSInteger HPlusDisplayHeightForVideoHeight(NSInteger height);
+static NSString *HPlusQualityLabel(NSInteger height, NSInteger fps, NSString *fallback);
+static BOOL HPlusFFmpegKitAvailable(void);
+static BOOL HPlusVideoFileCanSaveToPhotos(NSURL *fileURL);
+static void HPlusShowTranslationDialog(NSString *text, UIViewController *presenter);
+static void HPlusHandlePostDownloadImage(UIImage *image, UIViewController *presenter);
+static void HPlusShareFile(NSURL *fileURL, UIViewController *presenter);
+static void HPlusCopyDownloadDiagnostics(UIViewController *presenter);
+
+// =========================================================
 // MARK: - Global state
 // =========================================================
 static __weak YTPlayerViewController *HPlusCurrentPlayerViewController;
@@ -2867,6 +2882,32 @@ void HPlusConfigureDownloadButton(_ASDisplayView *view) {
     tap.delaysTouchesEnded = YES;
     [view addGestureRecognizer:tap];
     objc_setAssociatedObject(view, @selector(HPlusDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+// =========================================================
+// MARK: - Translation dialog (defined locally)
+// =========================================================
+static void HPlusShowTranslationDialog(NSString *text, UIViewController *presenter) {
+    if (!text || text.length == 0 || !presenter) return;
+
+    HPlusTranslationViewController *vc = [[HPlusTranslationViewController alloc] init];
+    vc.originalText = text;
+
+    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
+
+    if (@available(iOS 15.0, *)) {
+        UISheetPresentationController *sheet = nav.sheetPresentationController;
+        if (sheet) {
+            sheet.detents = @[
+                [UISheetPresentationControllerDetent mediumDetent],
+                [UISheetPresentationControllerDetent largeDetent]
+            ];
+            sheet.prefersGrabberVisible = YES;
+            sheet.preferredCornerRadius = 24.0;
+        }
+    } else {
+        nav.modalPresentationStyle = UIModalPresentationFormSheet;
+    }
+    [presenter presentViewController:nav animated:YES completion:nil];
 }
 
 // =========================================================
