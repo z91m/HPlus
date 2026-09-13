@@ -26,6 +26,7 @@ static void HPlusShowTranslationDialog(NSString *text, UIViewController *present
 static void HPlusHandlePostDownloadImage(UIImage *image, UIViewController *presenter);
 static void HPlusShareFile(NSURL *fileURL, UIViewController *presenter);
 static void HPlusCopyDownloadDiagnostics(UIViewController *presenter);
+static void HPlusRecordDownloadDiagnostic(NSString *context, NSString *details);
 
 // =========================================================
 // MARK: - Global state
@@ -166,6 +167,7 @@ typedef void (^HPlusRangeDownloadProgress)(unsigned long long completedBytes);
 @property (nonatomic, assign) BOOL cancelled;
 @property (nonatomic, copy) NSString *baseProgressTitle;
 @property (nonatomic, assign) NSTimeInterval downloadStartTime;
+@property (nonatomic, assign) NSTimeInterval serverPollStartTime;
 @property (nonatomic, copy) void (^downloadCompletionBlock)(NSURL *localURL, NSString *errorMsg);
 + (instancetype)sharedCoordinator;
 - (void)startVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
@@ -185,6 +187,21 @@ static const unsigned long long HPlusFastDownloadMinimumBytes = 256ULL * 1024ULL
 static const unsigned long long HPlusFastDownloadChunkBytes = 4ULL * 1024ULL * 1024ULL;
 static const NSUInteger HPlusFastDownloadConcurrency = 8;
 static const NSUInteger HPlusFastDownloadMaxAttempts = 3;
+
+// مهلة قصوى لعملية "الخادم الخارجي" بالكامل (طلب + استعلام حالة متكرر) بالثواني.
+// بدونها ممكن الـ polling يستمر للأبد لو السيرفر عالق في status مش "done" ولا "error".
+static const NSTimeInterval HPlusServerDownloadTimeoutSeconds = 180.0;
+// الفاصل الزمني بين كل استعلام حالة (poll) والتالي له.
+static const NSTimeInterval HPlusServerPollIntervalSeconds = 0.5;
+
+// موقع/حجم زر التحميل في واجهة Shorts (YTReelWatchPlaybackOverlayView).
+// القيم دي متوافقة مع تصميم يوتيوب وقت كتابة الكود (v21.26). لو يوتيوب غيّر
+// الـ layout الخاص بالـ Reels، لازم تتحدث القيم دي يدويًا بعد المقارنة البصرية.
+static const CGFloat HPlusShortsDownloadBtnWidth = 64.0;
+static const CGFloat HPlusShortsDownloadBtnHeight = 60.0;
+static const CGFloat HPlusShortsDownloadBtnOffsetNoOverlay = 76.0;  // لما مفيش playerOverlayView
+static const CGFloat HPlusShortsDownloadBtnOffsetWithOverlay = 60.0; // لما فيه playerOverlayView
+static const CGFloat HPlusShortsDownloadBtnExtraHeightNoOverlay = 16.0;
 
 // =========================================================
 // MARK: - HTTP header helpers
@@ -612,6 +629,21 @@ static NSString *HPlusURLStringWithCPN(NSString *urlString) {
         cpn = HPlusGenerateCPN();
     NSString *separator = [urlString containsString:@"?"] ? @"&" : @"?";
     return [NSString stringWithFormat:@"%@%@cpn=%@", urlString, separator, cpn];
+}
+
+// عملية تحقق موحّدة من صحة الـ URL. بترجع nil وتسجل تشخيصًا واضحًا في اللوج
+// بدل ما تفشل بصمت في مكان بعيد عن مصدر المشكلة.
+static NSURL *HPlusSafeURLFromString(NSString *urlString, NSString *context) {
+    if (urlString.length == 0) {
+        HPlusRecordDownloadDiagnostic(context, @"Empty URL string");
+        return nil;
+    }
+    NSURL *url = [NSURL URLWithString:urlString];
+    if (!url || url.scheme.length == 0 || url.host.length == 0) {
+        HPlusRecordDownloadDiagnostic(context, [NSString stringWithFormat:@"Invalid URL: %@", urlString]);
+        return nil;
+    }
+    return url;
 }
 
 // =========================================================
@@ -1544,99 +1576,91 @@ static void HPlusShareFile(NSURL *fileURL, UIViewController *presenter) {
 }
 
 // =========================================================
-// MARK: - Post-download action handling
+// MARK: - Post-download action handling (unified: file + image)
 // =========================================================
 static NSInteger HPlusGetPostDownloadAction(void) {
     return INTFORVAL(PostDownloadAction);
 }
 
-static void HPlusHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, UIViewController *presenter) {
-    if (!fileURL) return;
+// نقطة واحدة موحّدة لمنطق "احفظ في الصور / شارك / اسأل" بدل تكرارها لكل
+// من الفيديو/الصوت والصورة بشكل منفصل. saveHandler هو اللي بيحدد الفرق
+// الفعلي (فيديو → مكتبة الصور بـ PHAssetCreationRequest، صورة → PHAssetChangeRequest).
+typedef void (^HPlusSaveCompletion)(BOOL success, NSError *error);
+typedef void (^HPlusSaveHandler)(HPlusSaveCompletion completion);
+
+static void HPlusHandlePostDownloadAction(NSString *successKey, NSString *failKey, HPlusSaveHandler saveHandler, void (^shareHandler)(void)) {
+    if (!saveHandler || !shareHandler) return;
     NSInteger action = HPlusGetPostDownloadAction();
 
     if (action == PostDownloadActionSaveToPhotos) {
-        if (isVideo && HPlusVideoFileCanSaveToPhotos(fileURL)) {
-            HPlusSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
-                if (success) {
-                    HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
-                } else {
-                    HPlusSendError(error.localizedDescription ?: LOC(@"CANNOT_SAVE_TO_PHOTOS"));
-                    HPlusShareFile(fileURL, presenter);
-                }
-            });
-        } else {
-            HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
-            HPlusShareFile(fileURL, presenter);
-        }
+        saveHandler(^(BOOL success, NSError *error) {
+            if (success) {
+                HPlusSendSuccess(LOC(successKey));
+            } else {
+                HPlusSendError(error.localizedDescription ?: LOC(failKey));
+                shareHandler();
+            }
+        });
     } else if (action == PostDownloadActionShare) {
         HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
-        HPlusShareFile(fileURL, presenter);
+        shareHandler();
     } else if (action == PostDownloadActionAsk) {
         UIView *parent = sbGetNotificationParent();
         [SBSkipNotificationView showDownloadCompleteDialogInView:parent
                                                         message:LOC(@"DOWNLOAD_COMPLETED")
                                                     saveHandler:^{
-            if (isVideo && HPlusVideoFileCanSaveToPhotos(fileURL)) {
-                HPlusSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
-                    if (success) {
-                        HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
-                    } else {
-                        HPlusSendError(error.localizedDescription ?: LOC(@"CANNOT_SAVE_TO_PHOTOS"));
-                        HPlusShareFile(fileURL, presenter);
-                    }
-                });
+            saveHandler(^(BOOL success, NSError *error) {
+                if (success) HPlusSendSuccess(LOC(successKey));
+                else HPlusSendError(error.localizedDescription ?: LOC(failKey));
+            });
+        } shareHandler:shareHandler
+          duration:8.0];
+    }
+}
+
+static void HPlusHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, UIViewController *presenter) {
+    if (!fileURL) return;
+    BOOL canSaveToPhotos = isVideo && HPlusVideoFileCanSaveToPhotos(fileURL);
+
+    if (!canSaveToPhotos) {
+        // ملفات صوتية أو فيديو غير مدعوم في مكتبة الصور: النجاح هنا يعني "مشاركة" مباشرة.
+        NSInteger action = HPlusGetPostDownloadAction();
+        if (action == PostDownloadActionAsk) {
+            // "Ask" لسه له معنى (ينتظر اختيار المستخدم) حتى لو الحفظ في الصور مش متاح،
+            // فبنسيب الـ dialog يظهر لكن زر "Save" هيأدي لنفس نتيجة المشاركة.
+        }
+    }
+
+    HPlusHandlePostDownloadAction(@"SAVED_TO_PHOTOS", @"CANNOT_SAVE_TO_PHOTOS",
+        ^(HPlusSaveCompletion completion) {
+            if (canSaveToPhotos) {
+                HPlusSaveVideoToPhotos(fileURL, presenter, completion);
             } else {
                 HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
                 HPlusShareFile(fileURL, presenter);
+                completion(YES, nil); // منعًا لعرض رسالة نجاح مزدوجة
             }
-        } shareHandler:^{
-            HPlusShareFile(fileURL, presenter);
-        } duration:8.0];
-    }
+        },
+        ^{ HPlusShareFile(fileURL, presenter); });
 }
 
 static void HPlusHandlePostDownloadImage(UIImage *image, UIViewController *presenter) {
     if (!image) return;
-    NSInteger action = HPlusGetPostDownloadAction();
-
-    if (action == PostDownloadActionSaveToPhotos) {
-        HPlusRequestPhotoAccess(^(BOOL granted) {
-            if (!granted) { HPlusSendError(LOC(@"PHOTO_ACCESS_DENINED")); return; }
-            [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
-                [PHAssetChangeRequest creationRequestForAssetFromImage:image];
-            } completionHandler:^(BOOL success, NSError *saveError) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    if (success) HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
-                    else {
-                        HPlusSendError(saveError.localizedDescription ?: LOC(@"SAVE_FAILED"));
-                        HPlusShareItem(image, presenter);
-                    }
-                });
-            }];
-        });
-    } else if (action == PostDownloadActionShare) {
-        HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
-        HPlusShareItem(image, presenter);
-    } else if (action == PostDownloadActionAsk) {
-        UIView *parent = sbGetNotificationParent();
-        [SBSkipNotificationView showDownloadCompleteDialogInView:parent
-                                                        message:LOC(@"DOWNLOAD_COMPLETED")
-                                                    saveHandler:^{
+    HPlusHandlePostDownloadAction(@"SAVED_TO_PHOTOS", @"SAVE_FAILED",
+        ^(HPlusSaveCompletion completion) {
             HPlusRequestPhotoAccess(^(BOOL granted) {
-                if (!granted) { HPlusSendError(LOC(@"PHOTO_ACCESS_DENINED")); return; }
+                if (!granted) {
+                    completion(NO, [NSError errorWithDomain:@"HPlus" code:1 userInfo:@{NSLocalizedDescriptionKey: LOC(@"PHOTO_ACCESS_DENINED")}]);
+                    return;
+                }
                 [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
                     [PHAssetChangeRequest creationRequestForAssetFromImage:image];
                 } completionHandler:^(BOOL success, NSError *saveError) {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        if (success) HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
-                        else HPlusSendError(saveError.localizedDescription ?: LOC(@"SAVE_FAILED"));
-                    });
+                    dispatch_async(dispatch_get_main_queue(), ^{ completion(success, saveError); });
                 }];
             });
-        } shareHandler:^{
-            HPlusShareItem(image, presenter);
-        } duration:8.0];
-    }
+        },
+        ^{ HPlusShareItem(image, presenter); });
 }
 
 // =========================================================
@@ -1948,9 +1972,6 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
         return;
     }
 
-    NSURL *videoURL = [NSURL URLWithString:videoFormat.urlString];
-    NSURL *audioURL = [NSURL URLWithString:audioFormat.urlString];
-
     // Server path (external)
     if (INTFORVAL(DownloadMethod) == DownloadMethodServer) {
         NSString *resolutionStr = [NSString stringWithFormat:@"%d", videoFormat.itag];
@@ -1958,6 +1979,8 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
         return;
     }
 
+    NSURL *videoURL = HPlusSafeURLFromString(videoFormat.urlString, @"Direct video download: video URL");
+    NSURL *audioURL = HPlusSafeURLFromString(audioFormat.urlString, @"Direct video download: audio URL");
     if (!videoURL || !audioURL) {
         HPlusSendError(LOC(@"NO_STREAM_URL"));
         return;
@@ -2025,7 +2048,7 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
 }
 
 - (void)startDirectSingleVideoDownloadWithFormat:(HPlusMediaFormat *)format fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
-    NSURL *videoURL = [NSURL URLWithString:format.urlString];
+    NSURL *videoURL = HPlusSafeURLFromString(format.urlString, @"Direct single video download");
     if (!videoURL) { HPlusSendError(LOC(@"NO_STREAM_URL")); return; }
 
     self.active = YES;
@@ -2075,13 +2098,12 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
         return;
     }
 
-    NSURL *audioURL = [NSURL URLWithString:audioFormat.urlString];
-
     if (INTFORVAL(DownloadMethod) == DownloadMethodServer) {
         [self triggerSilentDownloadWithQuality:nil isAudio:YES videoID:vidID presenter:presenter];
         return;
     }
 
+    NSURL *audioURL = HPlusSafeURLFromString(audioFormat.urlString, @"Direct audio download");
     if (!audioURL) { HPlusSendError(LOC(@"NO_AUDIO_URL")); return; }
 
     outputFormat = outputFormat ?: HPlusDefaultAudioOutputFormat();
@@ -2413,13 +2435,21 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
 // =========================================================
 // Server path (silent download)
 // =========================================================
+// تنبيه: السيرفرات دي أطراف خارجية غير تابعة لـ Google/YouTube. بيتبعتلها
+// رابط الفيديو فقط (لا كوكيز ولا Authorization header الخاص بحساب المستخدم -
+// شوف startYTDMDownloadWithWatchURL:، الطلب بسيط JSON من غير أي هيدرز حساسة).
 - (NSString *)serverEndpoint {
-    if (INTFORVAL(DownloadServerIndex) == 0) return @"https://appropriatenet2928.tail6a9ca7.ts.net/";
-    if (INTFORVAL(DownloadServerIndex) == 1) return @"https://waterserver.freeddns.org/";
+    if (INTFORVAL(DownloadServerIndex) == 0) return @"https://appropriatenet2928.tail6a9ca7.ts.net";
+    if (INTFORVAL(DownloadServerIndex) == 1) return @"https://waterserver.freeddns.org";
     return @"";
 }
 
 - (void)triggerSilentDownloadWithQuality:(NSString *)quality isAudio:(BOOL)isAudio videoID:(NSString *)vidID presenter:(UIViewController *)presenter {
+    if ([self serverEndpoint].length == 0) {
+        HPlusSendError(@"No download server configured.");
+        return;
+    }
+    self.serverPollStartTime = [NSDate timeIntervalSinceReferenceDate];
     __weak typeof(self) weakSelf = self;
     [self requestDownloadForVideoId:vidID isAudio:isAudio quality:quality presenter:presenter completion:^(NSURL *localURL, NSString *errorMsg) {
         __strong typeof(weakSelf) strongSelf = weakSelf;
@@ -2439,9 +2469,11 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
 }
 
 - (void)startYTDMDownloadWithWatchURL:(NSString *)watchURL format:(NSString *)format formatId:(NSString *)formatId presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
-    if (!self || self.cancelled) return;
-    NSString *urlStr = [[self serverEndpoint] stringByAppendingString:@"/api/download"];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlStr]];
+    if (self.cancelled) return;
+    NSURL *requestURL = HPlusSafeURLFromString([[self serverEndpoint] stringByAppendingString:@"/api/download"], @"Server download: init request");
+    if (!requestURL) { completionBlock(nil, @"Invalid server configuration."); return; }
+
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:requestURL];
     [request setHTTPMethod:@"POST"];
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
 
@@ -2449,7 +2481,9 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     if (formatId) payload[@"format_id"] = formatId;
     request.HTTPBody = [NSJSONSerialization dataWithJSONObject:payload options:0 error:nil];
 
+    __weak typeof(self) weakSelf = self;
     [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        __strong typeof(weakSelf) self = weakSelf;
         if (!self || self.cancelled) return;
         if (error || !data) { completionBlock(nil, @"Server unreachable."); return; }
         NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
@@ -2463,14 +2497,25 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
 }
 
 - (void)pollJobStatus:(NSString *)jobId isAudio:(BOOL)isAudio presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
-    if (!self || self.cancelled) return;
-    NSString *urlStr = [NSString stringWithFormat:@"%@/api/status/%@", [self serverEndpoint], jobId];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlStr]];
+    if (self.cancelled) return;
 
+    // مهلة قصوى لكل عملية polling؛ تمنع الانتظار اللانهائي لو السيرفر عالق.
+    NSTimeInterval elapsed = [NSDate timeIntervalSinceReferenceDate] - self.serverPollStartTime;
+    if (elapsed > HPlusServerDownloadTimeoutSeconds) {
+        completionBlock(nil, @"Server timeout - please try again or use a different download method.");
+        return;
+    }
+
+    NSURL *statusURL = HPlusSafeURLFromString([NSString stringWithFormat:@"%@/api/status/%@", [self serverEndpoint], jobId], @"Server download: poll status");
+    if (!statusURL) { completionBlock(nil, @"Invalid server configuration."); return; }
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:statusURL];
+
+    __weak typeof(self) weakSelf = self;
     [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        __strong typeof(weakSelf) self = weakSelf;
         if (!self || self.cancelled) return;
         if (error || !data) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(HPlusServerPollIntervalSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [self pollJobStatus:jobId isAudio:isAudio presenter:presenter completion:completionBlock];
             });
             return;
@@ -2489,7 +2534,7 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
             dispatch_async(dispatch_get_main_queue(), ^{
                 [self updateProgressTitle:LOC(@"DOWNLOADING_TO_SERVER") progress:0.0f];
             });
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(HPlusServerPollIntervalSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [self pollJobStatus:jobId isAudio:isAudio presenter:presenter completion:completionBlock];
             });
         }
@@ -2497,7 +2542,7 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
 }
 
 - (void)downloadSingleFile:(NSString *)filename isAudio:(BOOL)isAudio forJobId:(NSString *)jobId presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
-    if (!self || self.cancelled) return;
+    if (self.cancelled) return;
     self.downloadCompletionBlock = completionBlock;
     NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
     self.destinationURL = [NSURL fileURLWithPath:tempPath];
@@ -2508,8 +2553,12 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     dispatch_async(dispatch_get_main_queue(), ^{
         [self updateProgressTitle:self.baseProgressTitle progress:0.0f];
     });
-    NSString *urlString = [NSString stringWithFormat:@"%@/api/file/%@", [self serverEndpoint], jobId];
-    self.task = [self.session downloadTaskWithURL:[NSURL URLWithString:urlString]];
+    NSURL *fileURL = HPlusSafeURLFromString([NSString stringWithFormat:@"%@/api/file/%@", [self serverEndpoint], jobId], @"Server download: fetch file");
+    if (!fileURL) {
+        completionBlock(nil, @"Invalid server configuration.");
+        return;
+    }
+    self.task = [self.session downloadTaskWithURL:fileURL];
     self.task.taskDescription = filename;
     [self.task resume];
 }
@@ -2724,7 +2773,7 @@ static void HPlusShowCaptionsSheet(YTPlayerViewController *player, UIViewControl
 
         [items addObject:[HPlusMenuItem itemWithTitle:nameStr subtitle:languageCode icon:HPlusYTIconImage(50, NO, nil) handler:^{
             NSString *vttURL = [baseURL stringByAppendingString:@"&fmt=vtt"];
-            NSURL *url = [NSURL URLWithString:vttURL];
+            NSURL *url = HPlusSafeURLFromString(vttURL, @"Captions download");
             if (!url) {
                 HPlusSendError(LOC(@"NO_CAPTIONS_URL"));
                 return;
@@ -2935,6 +2984,38 @@ static UIImage *HPlusRenderViewToImage(_ASDisplayView *view) {
     return image;
 }
 
+// دالة موحّدة لقوائم "نسخ/ترجمة/حفظ صورة" بتستخدمها لسه تعليقات ومنشورات
+// Backstage، بدل تكرار نفس المنطق حرفيًا في دالتين منفصلتين.
+static void HPlusPresentTextLongPressMenu(_ASDisplayView *view, NSString *translateKey, NSString *copyTextKey, NSString *saveImageKey, NSString *copyImageKey) {
+    NSMutableArray *items = [NSMutableArray array];
+    NSString *text = HPlusExtractCommentText(view);
+
+    if (text.length > 0) {
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(translateKey) subtitle:nil icon:HPlusYTIconImage(897, NO, nil) handler:^{
+            UIViewController *presenter = HPlusPresenterForSender(view, nil);
+            HPlusShowTranslationDialog(text, presenter);
+        }]];
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(copyTextKey) subtitle:nil icon:HPlusYTIconImage(243, NO, nil) handler:^{
+            HPlusCopyTextToPasteboard(text, @"COPIED_TO_CLIPBOARD");
+        }]];
+    }
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(saveImageKey) subtitle:nil icon:HPlusYTIconImage(367, NO, nil) handler:^{
+        UIImage *image = HPlusRenderViewToImage(view);
+        if (image) {
+            UIViewController *p = HPlusPresenterForSender(view, nil);
+            HPlusHandlePostDownloadImage(image, p);
+        }
+    }]];
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(copyImageKey) subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
+        UIImage *image = HPlusRenderViewToImage(view);
+        if (image) HPlusCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
+    }]];
+
+    UIViewController *presenter = HPlusPresenterForSender(view, nil);
+    if (!presenter) return;
+    HPlusPresentMenu(nil, items, presenter, view);
+}
+
 // =========================================================
 // MARK: - %hook _ASDisplayView
 // =========================================================
@@ -2978,65 +3059,13 @@ static UIImage *HPlusRenderViewToImage(_ASDisplayView *view) {
 %new
 - (void)HPlusHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
-    NSMutableArray *items = [NSMutableArray array];
-    NSString *commentText = HPlusExtractCommentText(self);
-
-    if (commentText.length > 0) {
-        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"TRANSLATE_COMMENT") subtitle:nil icon:HPlusYTIconImage(897, NO, nil) handler:^{
-            UIViewController *presenter = HPlusPresenterForSender(self, nil);
-            HPlusShowTranslationDialog(commentText, presenter);
-        }]];
-        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_COMMENT_TEXT") subtitle:nil icon:HPlusYTIconImage(243, NO, nil) handler:^{
-            HPlusCopyTextToPasteboard(commentText, @"COPIED_TO_CLIPBOARD");
-        }]];
-    }
-    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_COMMENT_IMAGE") subtitle:nil icon:HPlusYTIconImage(367, NO, nil) handler:^{
-        UIImage *image = HPlusRenderViewToImage(self);
-        if (image) {
-            UIViewController *p = HPlusPresenterForSender(self, nil);
-            HPlusHandlePostDownloadImage(image, p);
-        }
-    }]];
-    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_COMMENT_IMAGE") subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
-        UIImage *image = HPlusRenderViewToImage(self);
-        if (image) HPlusCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
-    }]];
-
-    UIViewController *presenter = HPlusPresenterForSender(self, nil);
-    if (!presenter) return;
-    HPlusPresentMenu(nil, items, presenter, self);
+    HPlusPresentTextLongPressMenu(self, @"TRANSLATE_COMMENT", @"COPY_COMMENT_TEXT", @"SAVE_COMMENT_IMAGE", @"COPY_COMMENT_IMAGE");
 }
 
 %new
 - (void)HPlusHandlePostLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
-    NSMutableArray *items = [NSMutableArray array];
-    NSString *text = HPlusExtractCommentText(self);
-
-    if (text.length > 0) {
-        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"TRANSLATE_POST") subtitle:nil icon:HPlusYTIconImage(897, NO, nil) handler:^{
-            UIViewController *presenter = HPlusPresenterForSender(self, nil);
-            HPlusShowTranslationDialog(text, presenter);
-        }]];
-        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_POST_TEXT") subtitle:nil icon:HPlusYTIconImage(243, NO, nil) handler:^{
-            HPlusCopyTextToPasteboard(text, @"COPIED_TO_CLIPBOARD");
-        }]];
-    }
-    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_POST_IMAGE") subtitle:nil icon:HPlusYTIconImage(367, NO, nil) handler:^{
-        UIImage *image = HPlusRenderViewToImage(self);
-        if (image) {
-            UIViewController *p = HPlusPresenterForSender(self, nil);
-            HPlusHandlePostDownloadImage(image, p);
-        }
-    }]];
-    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_POST_IMAGE") subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
-        UIImage *image = HPlusRenderViewToImage(self);
-        if (image) HPlusCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
-    }]];
-
-    UIViewController *presenter = HPlusPresenterForSender(self, nil);
-    if (!presenter) return;
-    HPlusPresentMenu(nil, items, presenter, self);
+    HPlusPresentTextLongPressMenu(self, @"TRANSLATE_POST", @"COPY_POST_TEXT", @"SAVE_POST_IMAGE", @"COPY_POST_IMAGE");
 }
 
 %end
@@ -3115,18 +3144,17 @@ NSString *HPlusGlobalAuthHeader = nil;
         [downloadBtn enableNewTouchFeedback];
         [self addSubview:downloadBtn];
     }
-    CGFloat btnWidth = 64.0;
-    CGFloat btnHeight = 60.0;
-    YTReelElementAsyncComponentView *pov = nil;
-    @try { pov = [self valueForKey:@"_playerOverlayView"]; } @catch (...) {}
-    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
+    CGFloat btnWidth = HPlusShortsDownloadBtnWidth;
+    CGFloat btnHeight = HPlusShortsDownloadBtnHeight;
+    YTReelElementAsyncComponentView *pov = HPlusObjectFromSelector(self, NSSelectorFromString(@"_playerOverlayView"));
+    YTReelElementAsyncComponentView *actionBar = HPlusObjectFromSelector(self, NSSelectorFromString(@"_actionBarComponentView"));
     CGFloat X = [UIScreen mainScreen].bounds.size.width - actionBar.frame.origin.x - btnWidth;
     CGFloat Y = 0.0;
     if (pov == nil) {
-        Y = actionBar.frame.origin.y - 76.0;
-        btnHeight = btnHeight + 16.0;
+        Y = actionBar.frame.origin.y - HPlusShortsDownloadBtnOffsetNoOverlay;
+        btnHeight = btnHeight + HPlusShortsDownloadBtnExtraHeightNoOverlay;
     } else {
-        Y = pov.frame.origin.y - 60.0;
+        Y = pov.frame.origin.y - HPlusShortsDownloadBtnOffsetWithOverlay;
     }
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
