@@ -688,8 +688,7 @@ static HPlusMediaFormat *HPlusMediaFormatFromStream(YTIFormatStream *stream, BOO
     YTIAudioTrack *audio = stream.audioTrack;
     NSString *audioidp = audio.id_p;
     if (audio.hasId_p) {
-        if (INTFORVAL(AudioPreferIndex) == 1 && ![audioidp hasSuffix:@".4"]) return nil;
-        if (INTFORVAL(AudioPreferIndex) == 2 && ![audioidp hasPrefix:@"en"]) return nil;
+        if (audio.isAutoDubbed) return nil;   // امسح أي مسار مدبلج مهما كانت لغته
         format.qualityLabel = audio.displayName;
         format.idp = audioidp;
     }
