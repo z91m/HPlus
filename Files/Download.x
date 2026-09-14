@@ -39,6 +39,7 @@
 @property (nonatomic, assign) int itag;
 @property (nonatomic, assign) int resolution;
 @property (nonatomic, assign) BOOL video;
+@property (nonatomic, assign) BOOL isAutoDubbed;
 @end
 
 @implementation HPlusMediaFormat
@@ -684,15 +685,16 @@ static HPlusMediaFormat *HPlusMediaFormatFromStream(YTIFormatStream *stream, BOO
     format.qualityLabel = stream.qualityLabel;
     if ([stream.qualityLabel hasSuffix:@"HDR"]) return nil;
     if (!video) {
-        YTIAudioTrack *audio = stream.audioTrack;
-        NSString *audioidp = audio.id_p;
-        if (audio.hasId_p) {
-            if (INTFORVAL(AudioPreferIndex) == 1 && ![audioidp hasSuffix:@".4"]) return nil;
-            if (INTFORVAL(AudioPreferIndex) == 2 && ![audioidp hasPrefix:@"en"]) return nil;
-            format.qualityLabel = audio.displayName;
-            format.idp = audioidp;
-        }
+    YTIAudioTrack *audio = stream.audioTrack;
+    NSString *audioidp = audio.id_p;
+    if (audio.hasId_p) {
+        if (INTFORVAL(AudioPreferIndex) == 1 && ![audioidp hasSuffix:@".4"]) return nil;
+        if (INTFORVAL(AudioPreferIndex) == 2 && ![audioidp hasPrefix:@"en"]) return nil;
+        format.qualityLabel = audio.displayName;
+        format.idp = audioidp;
     }
+    format.isAutoDubbed = audio.isAutoDubbed;
+}
     format.contentLength = stream.contentLength;
     format.durationMs = stream.approxDurationMs;
     format.itag = stream.itag;
@@ -714,6 +716,9 @@ static NSArray <HPlusMediaFormat *> *HPlusFormatsForPlayer(YTPlayerViewControlle
             NSInteger leftFPS = left.fps;
             NSInteger rightFPS = right.fps;
             if (leftFPS != rightFPS) return leftFPS > rightFPS ? NSOrderedAscending : NSOrderedDescending;
+        } else {
+            if (left.isAutoDubbed != right.isAutoDubbed)
+                return left.isAutoDubbed ? NSOrderedDescending : NSOrderedAscending;
         }
         
         BOOL leftMP4 = HPlusFormatLooksMP4Family(left);
