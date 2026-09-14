@@ -1,7 +1,3 @@
-// Download.x — HPlus Download Module
-// Merged: Direct + Server + SABR + FFmpeg + RangeDownloader
-// Dependencies: Headers.h, SABRDownload.x
-
 #import "Headers.h"
 #import <AVFoundation/AVFoundation.h>
 #import <Photos/Photos.h>
@@ -12,31 +8,6 @@
 #import <stdarg.h>
 #import <stdlib.h>
 
-// =========================================================
-// MARK: - Forward declarations (must be before use)
-// =========================================================
-static NSInteger HPlusResolutionFromQuality(NSString *quality);
-static NSInteger HPlusFPSFromQuality(NSString *quality);
-static NSInteger HPlusNormalizedFPS(NSInteger fps);
-static NSInteger HPlusDisplayHeightForVideoHeight(NSInteger height);
-static NSString *HPlusQualityLabel(NSInteger height, NSInteger fps, NSString *fallback);
-static BOOL HPlusFFmpegKitAvailable(void);
-static BOOL HPlusVideoFileCanSaveToPhotos(NSURL *fileURL);
-static void HPlusShowTranslationDialog(NSString *text, UIViewController *presenter);
-static void HPlusHandlePostDownloadImage(UIImage *image, UIViewController *presenter);
-static void HPlusShareFile(NSURL *fileURL, UIViewController *presenter);
-static void HPlusCopyDownloadDiagnostics(UIViewController *presenter);
-static void HPlusRecordDownloadDiagnostic(NSString *context, NSString *details);
-
-// =========================================================
-// MARK: - Global state
-// =========================================================
-static __weak YTPlayerViewController *HPlusCurrentPlayerViewController;
-static NSString *HPlusLastDownloadDiagnostic;
-
-// =========================================================
-// MARK: - HPlusMenuItem
-// =========================================================
 @interface HPlusMenuItem : NSObject
 @property (nonatomic, copy) NSString *title;
 @property (nonatomic, copy) NSString *subtitle;
@@ -56,57 +27,27 @@ static NSString *HPlusLastDownloadDiagnostic;
 }
 @end
 
-// =========================================================
-// MARK: - HPlusMediaFormat (extended with codec + audio info)
-// =========================================================
 @interface HPlusMediaFormat : NSObject
 @property (nonatomic, strong) YTIFormatStream *source;
 @property (nonatomic, copy) NSString *urlString;
 @property (nonatomic, copy) NSString *qualityLabel;
 @property (nonatomic, copy) NSString *mimeType;
 @property (nonatomic, copy) NSString *idp;
-@property (nonatomic, copy) NSString *codec;
-@property (nonatomic, copy) NSString *languageCode;
-@property (nonatomic, copy) NSString *languageName;
-@property (nonatomic, copy) NSDictionary *httpHeaders;
 @property (nonatomic, assign) NSInteger contentLength;
 @property (nonatomic, assign) NSUInteger durationMs;
 @property (nonatomic, assign) int fps;
 @property (nonatomic, assign) int itag;
 @property (nonatomic, assign) int resolution;
 @property (nonatomic, assign) BOOL video;
-@property (nonatomic, assign) BOOL drcAudio;
 @end
 
 @implementation HPlusMediaFormat
 @end
 
-// =========================================================
-// MARK: - HPlusAudioOutputFormat (NEW: FFmpeg audio conversion)
-// =========================================================
-@interface HPlusAudioOutputFormat : NSObject
-@property (nonatomic, copy) NSString *identifier;
-@property (nonatomic, copy) NSString *title;
-@property (nonatomic, copy) NSString *subtitle;
-@property (nonatomic, copy) NSString *fileExtension;
-@property (nonatomic, copy) NSArray <NSString *> *ffmpegArguments;
-@property (nonatomic, assign) BOOL passthroughWhenCompatible;
-@property (nonatomic, assign) BOOL supported;
-@end
-
-@implementation HPlusAudioOutputFormat
-@end
-
-// =========================================================
-// MARK: - Completion blocks
-// =========================================================
 typedef void (^HPlusFileDownloadCompletion)(NSURL *fileURL, NSError *error);
 typedef void (^HPlusMergeCompletion)(BOOL success, NSError *error);
 typedef void (^HPlusRangeDownloadProgress)(unsigned long long completedBytes);
 
-// =========================================================
-// MARK: - HPlusDownloadChunk
-// =========================================================
 @interface HPlusDownloadChunk : NSObject
 @property (nonatomic, assign) unsigned long long offset;
 @property (nonatomic, assign) unsigned long long length;
@@ -116,9 +57,6 @@ typedef void (^HPlusRangeDownloadProgress)(unsigned long long completedBytes);
 @implementation HPlusDownloadChunk
 @end
 
-// =========================================================
-// MARK: - HPlusRangeDownloader (NEW: fast multi-chunk HTTP)
-// =========================================================
 @interface HPlusRangeDownloader : NSObject
 @property (nonatomic, strong) NSURL *url;
 @property (nonatomic, strong) NSURL *destinationURL;
@@ -142,9 +80,6 @@ typedef void (^HPlusRangeDownloadProgress)(unsigned long long completedBytes);
 - (void)cancel;
 @end
 
-// =========================================================
-// MARK: - HPlusDownloadCoordinator
-// =========================================================
 @interface HPlusDownloadCoordinator : NSObject <NSURLSessionDownloadDelegate>
 @property (nonatomic, strong) NSURLSession *session;
 @property (nonatomic, strong) NSURLSessionDownloadTask *task;
@@ -167,45 +102,22 @@ typedef void (^HPlusRangeDownloadProgress)(unsigned long long completedBytes);
 @property (nonatomic, assign) BOOL cancelled;
 @property (nonatomic, copy) NSString *baseProgressTitle;
 @property (nonatomic, assign) NSTimeInterval downloadStartTime;
-@property (nonatomic, assign) NSTimeInterval serverPollStartTime;
 @property (nonatomic, copy) void (^downloadCompletionBlock)(NSURL *localURL, NSString *errorMsg);
 + (instancetype)sharedCoordinator;
 - (void)startVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
 - (void)startAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
-- (void)startAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID outputFormat:(HPlusAudioOutputFormat *)outputFormat;
 - (void)startDirectVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
-- (void)startDirectAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID outputFormat:(HPlusAudioOutputFormat *)outputFormat;
+- (void)startDirectAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID;
 - (void)trimAudioToHalfLengthAtURL:(NSURL *)inputURL toURL:(NSURL *)outputURL completion:(void (^)(NSError *error))completion;
 - (void)mergeVideoURL:(NSURL *)videoURL audioURL:(NSURL *)audioURL fileName:(NSString *)fileName outputExtension:(NSString *)outputExtension durationMs:(unsigned long long)durationMs presenter:(UIViewController *)presenter;
 - (void)mergeVideoWithAVFoundationVideoURL:(NSURL *)videoURL audioURL:(NSURL *)audioURL outputURL:(NSURL *)outputURL durationMs:(unsigned long long)durationMs presenter:(UIViewController *)presenter fallbackError:(NSError *)fallbackError;
 @end
 
-// =========================================================
-// MARK: - Constants
-// =========================================================
 static const unsigned long long HPlusFastDownloadMinimumBytes = 256ULL * 1024ULL;
 static const unsigned long long HPlusFastDownloadChunkBytes = 4ULL * 1024ULL * 1024ULL;
 static const NSUInteger HPlusFastDownloadConcurrency = 8;
 static const NSUInteger HPlusFastDownloadMaxAttempts = 3;
 
-// مهلة قصوى لعملية "الخادم الخارجي" بالكامل (طلب + استعلام حالة متكرر) بالثواني.
-// بدونها ممكن الـ polling يستمر للأبد لو السيرفر عالق في status مش "done" ولا "error".
-static const NSTimeInterval HPlusServerDownloadTimeoutSeconds = 180.0;
-// الفاصل الزمني بين كل استعلام حالة (poll) والتالي له.
-static const NSTimeInterval HPlusServerPollIntervalSeconds = 0.5;
-
-// موقع/حجم زر التحميل في واجهة Shorts (YTReelWatchPlaybackOverlayView).
-// القيم دي متوافقة مع تصميم يوتيوب وقت كتابة الكود (v21.26). لو يوتيوب غيّر
-// الـ layout الخاص بالـ Reels، لازم تتحدث القيم دي يدويًا بعد المقارنة البصرية.
-static const CGFloat HPlusShortsDownloadBtnWidth = 64.0;
-static const CGFloat HPlusShortsDownloadBtnHeight = 60.0;
-static const CGFloat HPlusShortsDownloadBtnOffsetNoOverlay = 76.0;  // لما مفيش playerOverlayView
-static const CGFloat HPlusShortsDownloadBtnOffsetWithOverlay = 60.0; // لما فيه playerOverlayView
-static const CGFloat HPlusShortsDownloadBtnExtraHeightNoOverlay = 16.0;
-
-// =========================================================
-// MARK: - HTTP header helpers
-// =========================================================
 static BOOL HPlusHTTPHeadersContainField(NSDictionary *headers, NSString *field) {
     for (id key in headers) {
         if ([key isKindOfClass:NSString.class] && [(NSString *)key caseInsensitiveCompare:field] == NSOrderedSame)
@@ -252,9 +164,6 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
     [request setValue:@"identity" forHTTPHeaderField:@"Accept-Encoding"];
 }
 
-// =========================================================
-// MARK: - HPlusRangeDownloader Implementation
-// =========================================================
 @implementation HPlusRangeDownloader
 
 - (instancetype)initWithURL:(NSURL *)url destinationURL:(NSURL *)destinationURL expectedBytes:(unsigned long long)expectedBytes headers:(NSDictionary *)headers progress:(HPlusRangeDownloadProgress)progress completion:(HPlusFileDownloadCompletion)completion {
@@ -275,7 +184,6 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
         configuration.HTTPMaximumConnectionsPerHost = HPlusFastDownloadConcurrency;
         configuration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
         configuration.timeoutIntervalForResource = 300;
-
         NSMutableDictionary *additionalHeaders = [NSMutableDictionary dictionary];
         for (id key in headers) {
             id value = headers[key];
@@ -367,7 +275,10 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
         [self.tasks removeAllObjects];
         [self.session invalidateAndCancel];
         dispatch_async(self.fileQueue, ^{
-            @try { [self.fileHandle closeFile]; } @catch (__unused NSException *e) {}
+            @try {
+                [self.fileHandle closeFile];
+            } @catch (__unused NSException *exception) {
+            }
             [NSFileManager.defaultManager removeItemAtURL:self.destinationURL error:nil];
         });
     });
@@ -380,6 +291,7 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
         [self.pendingChunks removeObjectAtIndex:0];
         [self startChunkLocked:chunk];
     }
+
     if (self.activeTaskCount == 0 && self.pendingChunks.count == 0) {
         [self finishSuccessfullyLocked];
     }
@@ -405,13 +317,16 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
 
 - (NSError *)validationErrorForChunk:(HPlusDownloadChunk *)chunk data:(NSData *)data response:(NSURLResponse *)response error:(NSError *)error {
     if (error) return error;
+
     NSHTTPURLResponse *httpResponse = [response isKindOfClass:NSHTTPURLResponse.class] ? (NSHTTPURLResponse *)response : nil;
     NSInteger statusCode = httpResponse.statusCode;
     BOOL statusOK = statusCode == 206 || (self.totalChunkCount == 1 && statusCode == 200);
     if (httpResponse && !statusOK)
-        return [self errorWithCode:24 message:@"Range request rejected"];
+        return [self errorWithCode:24 message:@"Range request rejected by server"];
+
     if (data.length != chunk.length)
         return [self errorWithCode:25 message:@"Incomplete chunk"];
+
     return nil;
 }
 
@@ -423,12 +338,17 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
 
         NSError *validationError = [self validationErrorForChunk:chunk data:data response:response error:error];
         if (validationError) {
-            if (validationError.code == 24) { [self finishWithErrorLocked:validationError]; return; }
+            if (validationError.code == 24) {
+                [self finishWithErrorLocked:validationError];
+                return;
+            }
             if (chunk.attempts + 1 < HPlusFastDownloadMaxAttempts) {
                 chunk.attempts++;
                 [self.pendingChunks insertObject:chunk atIndex:0];
                 [self scheduleChunksLocked];
-            } else { [self finishWithErrorLocked:validationError]; }
+            } else {
+                [self finishWithErrorLocked:validationError];
+            }
             return;
         }
 
@@ -441,13 +361,20 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
             } @catch (NSException *exception) {
                 writeError = [self errorWithCode:26 message:exception.reason ?: @"Write failed"];
             }
+
             dispatch_async(self.stateQueue, ^{
                 if (self.finished || self.cancelled) return;
-                if (writeError) { [self finishWithErrorLocked:writeError]; return; }
+                if (writeError) {
+                    [self finishWithErrorLocked:writeError];
+                    return;
+                }
+
                 self.completedBytes += chunkData.length;
                 if (self.progress) {
                     unsigned long long completed = self.completedBytes;
-                    dispatch_async(dispatch_get_main_queue(), ^{ self.progress(completed); });
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        self.progress(completed);
+                    });
                 }
                 [self scheduleChunksLocked];
             });
@@ -460,7 +387,10 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
     self.finished = YES;
     [self.session finishTasksAndInvalidate];
     dispatch_async(self.fileQueue, ^{
-        @try { [self.fileHandle closeFile]; } @catch (__unused NSException *e) {}
+        @try {
+            [self.fileHandle closeFile];
+        } @catch (__unused NSException *exception) {
+        }
         dispatch_async(dispatch_get_main_queue(), ^{
             if (self.completion) self.completion(self.destinationURL, nil);
         });
@@ -474,7 +404,10 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
     [self.tasks removeAllObjects];
     [self.session invalidateAndCancel];
     dispatch_async(self.fileQueue, ^{
-        @try { [self.fileHandle closeFile]; } @catch (__unused NSException *e) {}
+        @try {
+            [self.fileHandle closeFile];
+        } @catch (__unused NSException *exception) {
+        }
         [NSFileManager.defaultManager removeItemAtURL:self.destinationURL error:nil];
         dispatch_async(dispatch_get_main_queue(), ^{
             if (self.completion) self.completion(nil, error ?: [self errorWithCode:27 message:@"Download failed"]);
@@ -484,9 +417,8 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
 
 @end
 
-// =========================================================
-// MARK: - Current player tracking
-// =========================================================
+static __weak YTPlayerViewController *HPlusCurrentPlayerViewController;
+
 void HPlusDownloadSetCurrentPlayer(YTPlayerViewController *player) {
     HPlusCurrentPlayerViewController = player;
 }
@@ -495,9 +427,6 @@ YTPlayerViewController *HPlusDownloadGetCurrentPlayer(void) {
     return HPlusCurrentPlayerViewController;
 }
 
-// =========================================================
-// MARK: - Safe KVC helpers
-// =========================================================
 static id HPlusObjectFromSelector(id object, SEL selector) {
     if (!object) return nil;
     if ([object respondsToSelector:selector]) {
@@ -510,57 +439,6 @@ static id HPlusObjectFromSelector(id object, SEL selector) {
     }
 }
 
-static NSString *HPlusStringFromSelector(id object, SEL selector) {
-    if (!object) return nil;
-    id value = HPlusObjectFromSelector(object, selector);
-    if ([value isKindOfClass:NSString.class]) return value;
-    if ([value isKindOfClass:NSURL.class]) return [(NSURL *)value absoluteString];
-    if ([value respondsToSelector:@selector(stringValue)]) return [value stringValue];
-    return [value respondsToSelector:@selector(description)] ? [value description] : nil;
-}
-
-static unsigned long long HPlusUnsignedLongLongFromSelector(id object, SEL selector) {
-    if (!object) return 0;
-    if ([object respondsToSelector:selector]) {
-        return ((unsigned long long (*)(id, SEL))objc_msgSend)(object, selector);
-    }
-    @try {
-        id value = [object valueForKey:NSStringFromSelector(selector)];
-        if ([value respondsToSelector:@selector(unsignedLongLongValue)])
-            return [value unsignedLongLongValue];
-    } @catch (__unused NSException *exception) {}
-    return 0;
-}
-
-static BOOL HPlusBoolFromSelector(id object, SEL selector) {
-    if (!object) return NO;
-    if ([object respondsToSelector:selector]) {
-        return ((BOOL (*)(id, SEL))objc_msgSend)(object, selector);
-    }
-    @try {
-        id value = [object valueForKey:NSStringFromSelector(selector)];
-        if ([value respondsToSelector:@selector(boolValue)])
-            return [value boolValue];
-    } @catch (__unused NSException *exception) {}
-    return NO;
-}
-
-static NSInteger HPlusIntegerFromSelector(id object, SEL selector) {
-    if (!object) return 0;
-    if ([object respondsToSelector:selector]) {
-        return ((NSInteger (*)(id, SEL))objc_msgSend)(object, selector);
-    }
-    @try {
-        id value = [object valueForKey:NSStringFromSelector(selector)];
-        if ([value respondsToSelector:@selector(integerValue)])
-            return [value integerValue];
-    } @catch (__unused NSException *exception) {}
-    return 0;
-}
-
-// =========================================================
-// MARK: - Notification helpers (uses SBSkipNotificationView)
-// =========================================================
 static void HPlusSendToast(NSString *message) {
     UIView *parent = sbGetNotificationParent();
     [SBSkipNotificationView showInView:parent message:message buttonTitle:nil action:nil duration:3.0];
@@ -576,22 +454,11 @@ static void HPlusSendError(NSString *message) {
     [SBSkipNotificationView showErrorInView:parent message:message duration:4.0];
 }
 
-// =========================================================
-// MARK: - Byte count / URL helpers
-// =========================================================
 static NSString *HPlusByteCount(unsigned long long bytes) {
     if (bytes == 0) return nil;
     NSByteCountFormatter *formatter = [NSByteCountFormatter new];
     formatter.countStyle = NSByteCountFormatterCountStyleFile;
     return [formatter stringFromByteCount:(long long)bytes];
-}
-
-static NSString *HPlusGenerateCPN(void) {
-    static NSString *const alphabet = @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-    NSMutableString *nonce = [NSMutableString stringWithCapacity:16];
-    for (NSUInteger i = 0; i < 16; i++)
-        [nonce appendFormat:@"%C", [alphabet characterAtIndex:arc4random_uniform((uint32_t)alphabet.length)]];
-    return nonce;
 }
 
 static NSString *HPlusURLStringBypassingThrottle(NSString *urlString) {
@@ -621,34 +488,11 @@ static NSString *HPlusURLStringWithCPN(NSString *urlString) {
     if (urlString.length == 0) return urlString;
     urlString = HPlusURLStringBypassingThrottle(urlString);
     if ([urlString containsString:@"cpn="]) return urlString;
-    Class ytDataUtils = NSClassFromString(@"YTDataUtils");
-    NSString *cpn = nil;
-    if (ytDataUtils && [ytDataUtils respondsToSelector:@selector(generateClientSideNonce)])
-        cpn = ((id (*)(Class, SEL))objc_msgSend)(ytDataUtils, @selector(generateClientSideNonce));
-    if (![cpn isKindOfClass:NSString.class] || cpn.length == 0)
-        cpn = HPlusGenerateCPN();
+    NSString *cpn = [%c(YTDataUtils) generateClientSideNonce];
     NSString *separator = [urlString containsString:@"?"] ? @"&" : @"?";
     return [NSString stringWithFormat:@"%@%@cpn=%@", urlString, separator, cpn];
 }
 
-// عملية تحقق موحّدة من صحة الـ URL. بترجع nil وتسجل تشخيصًا واضحًا في اللوج
-// بدل ما تفشل بصمت في مكان بعيد عن مصدر المشكلة.
-static NSURL *HPlusSafeURLFromString(NSString *urlString, NSString *context) {
-    if (urlString.length == 0) {
-        HPlusRecordDownloadDiagnostic(context, @"Empty URL string");
-        return nil;
-    }
-    NSURL *url = [NSURL URLWithString:urlString];
-    if (!url || url.scheme.length == 0 || url.host.length == 0) {
-        HPlusRecordDownloadDiagnostic(context, [NSString stringWithFormat:@"Invalid URL: %@", urlString]);
-        return nil;
-    }
-    return url;
-}
-
-// =========================================================
-// MARK: - File path helpers
-// =========================================================
 static NSString *HPlusSanitizedFileName(NSString *name) {
     if (name.length == 0) return @"YouTube Video";
     NSMutableCharacterSet *invalid = [NSMutableCharacterSet characterSetWithCharactersInString:@"/\\?%*|\"<>:"];
@@ -684,58 +528,6 @@ static NSURL *HPlusTemporaryFileURL(NSString *extension) {
     return [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:name]];
 }
 
-// =========================================================
-// MARK: - Download diagnostics
-// =========================================================
-static NSURL *HPlusDiagnosticLogURL(void) {
-    return [HPlusDownloadsDirectoryURL() URLByAppendingPathComponent:@"youmod-download-diagnostics.txt"];
-}
-
-static void HPlusRecordDownloadDiagnostic(NSString *context, NSString *details) {
-    if (context.length == 0 && details.length == 0) return;
-
-    NSDateFormatter *formatter = [NSDateFormatter new];
-    formatter.locale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
-    formatter.dateFormat = @"yyyy-MM-dd HH:mm:ss ZZZZZ";
-    NSString *timestamp = [formatter stringFromDate:NSDate.date];
-    NSString *entry = [NSString stringWithFormat:@"[%@]\n%@\n%@\n\n", timestamp ?: @"", context ?: @"", details ?: @""];
-    HPlusLastDownloadDiagnostic = entry;
-
-    NSURL *logURL = HPlusDiagnosticLogURL();
-    NSData *data = [entry dataUsingEncoding:NSUTF8StringEncoding];
-    if (![NSFileManager.defaultManager fileExistsAtPath:logURL.path])
-        [NSFileManager.defaultManager createFileAtPath:logURL.path contents:nil attributes:nil];
-
-    NSFileHandle *handle = [NSFileHandle fileHandleForWritingAtPath:logURL.path];
-    if (!handle) return;
-    @try {
-        [handle seekToEndOfFile];
-        [handle writeData:data];
-        [handle closeFile];
-    } @catch (__unused NSException *exception) {}
-}
-
-static NSString *HPlusDownloadDiagnosticText(void) {
-    if (HPlusLastDownloadDiagnostic.length) return HPlusLastDownloadDiagnostic;
-    NSString *log = [NSString stringWithContentsOfURL:HPlusDiagnosticLogURL() encoding:NSUTF8StringEncoding error:nil];
-    if (log.length == 0) return nil;
-    NSUInteger maxLength = 12000;
-    return log.length > maxLength ? [log substringFromIndex:log.length - maxLength] : log;
-}
-
-static void HPlusCopyDownloadDiagnostics(UIViewController *presenter) {
-    NSString *diagnostic = HPlusDownloadDiagnosticText();
-    if (diagnostic.length == 0) {
-        HPlusSendToast(@"No download diagnostics yet.");
-        return;
-    }
-    UIPasteboard.generalPasteboard.string = diagnostic;
-    HPlusSendSuccess(@"Copied download diagnostics");
-}
-
-// =========================================================
-// MARK: - AVFoundation duration helpers
-// =========================================================
 static unsigned long long HPlusDurationMsForURL(NSURL *url) {
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:nil];
     if (!CMTIME_IS_NUMERIC(asset.duration) || !CMTIME_IS_VALID(asset.duration)) return 0;
@@ -774,671 +566,142 @@ static CMTime HPlusExportDuration(AVAsset *videoAsset, AVAsset *audioAsset, unsi
     return duration;
 }
 
-// =========================================================
-// MARK: - FFmpegKit loader
-// =========================================================
-static NSMutableArray <NSString *> *HPlusFFmpegKitLoadEntries(void) {
-    static NSMutableArray <NSString *> *entries = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{ entries = [NSMutableArray array]; });
-    return entries;
-}
-
-static void HPlusAppendFFmpegKitLoadEntry(NSString *format, ...) {
-    if (format.length == 0) return;
-    va_list arguments;
-    va_start(arguments, format);
-    NSString *entry = [[NSString alloc] initWithFormat:format arguments:arguments];
-    va_end(arguments);
-    if (entry.length == 0) return;
-    NSMutableArray <NSString *> *entries = HPlusFFmpegKitLoadEntries();
-    @synchronized(entries) {
-        [entries addObject:entry];
-        if (entries.count > 220)
-            [entries removeObjectsInRange:NSMakeRange(0, entries.count - 220)];
-    }
-}
-
-static NSArray <NSString *> *HPlusFFmpegKitSearchDirectories(void) {
-    NSMutableOrderedSet <NSString *> *directories = [NSMutableOrderedSet orderedSet];
-    NSString *bundlePath = [[NSBundle.mainBundle resourcePath] stringByAppendingPathComponent:@"HPlus.bundle"];
-    NSString *frameworksInsideBundle = [bundlePath stringByAppendingPathComponent:@"Frameworks"];
-    BOOL isDir = NO;
-    if ([[NSFileManager defaultManager] fileExistsAtPath:frameworksInsideBundle isDirectory:&isDir] && isDir) {
-        [directories addObject:frameworksInsideBundle];
-    }
-    return directories.array;
-}
-
-static void HPlusDlopenPath(NSString *path, BOOL requireExistingFile) {
-    if (path.length == 0) return;
-    if (requireExistingFile && ![NSFileManager.defaultManager fileExistsAtPath:path]) {
-        HPlusAppendFFmpegKitLoadEntry(@"missing %@", path);
-        return;
-    }
-    dlerror();
-    void *handle = dlopen(path.fileSystemRepresentation, RTLD_NOW | RTLD_GLOBAL);
-    const char *error = dlerror();
-    if (handle) {
-        HPlusAppendFFmpegKitLoadEntry(@"loaded %@", path);
-    } else {
-        HPlusAppendFFmpegKitLoadEntry(@"failed %@\n  dlerror=%@", path, error ? [NSString stringWithUTF8String:error] : @"unknown");
-    }
-}
-
-static void HPlusLoadFrameworkBinary(NSString *directory, NSString *frameworkName, NSString *binaryName) {
-    if (directory.length == 0 || frameworkName.length == 0 || binaryName.length == 0) return;
-    HPlusDlopenPath([[directory stringByAppendingPathComponent:[frameworkName stringByAppendingString:@".framework"]] stringByAppendingPathComponent:binaryName], YES);
-    HPlusDlopenPath([[directory stringByAppendingPathComponent:[frameworkName stringByAppendingString:@".framework"]] stringByAppendingPathComponent:frameworkName], YES);
-}
-
-static void HPlusLoadFFmpegKitIfNeeded(void) {
-    static BOOL attempted = NO;
-    if (NSClassFromString(@"FFmpegKit")) return;
-    if (attempted) return;
-    attempted = YES;
-
-    HPlusAppendFFmpegKitLoadEntry(@"[HPlus] Starting bundled FFmpegKit load...");
-    NSArray <NSArray <NSString *> *> *frameworks = @[
-        @[@"libavutil", @"libavutil"],
-        @[@"libswresample", @"libswresample"],
-        @[@"libswscale", @"libswscale"],
-        @[@"libavcodec", @"libavcodec"],
-        @[@"libavformat", @"libavformat"],
-        @[@"libavfilter", @"libavfilter"],
-        @[@"libavdevice", @"libavdevice"],
-        @[@"ffmpegkit", @"ffmpegkit"],
-        @[@"FFmpegKit", @"FFmpegKit"],
-    ];
-    NSArray *searchDirs = HPlusFFmpegKitSearchDirectories();
-    if (searchDirs.count == 0) {
-        HPlusAppendFFmpegKitLoadEntry(@"[HPlus] Error: Bundled Frameworks directory not found.");
-        return;
-    }
-    for (NSString *directory in searchDirs) {
-        for (NSArray <NSString *> *framework in frameworks) {
-            HPlusLoadFrameworkBinary(directory, framework.firstObject, framework.lastObject);
-        }
-        if (NSClassFromString(@"FFmpegKit")) {
-            HPlusAppendFFmpegKitLoadEntry(@"[HPlus] Success: FFmpegKit loaded from bundle.");
-            return;
-        }
-    }
-    HPlusAppendFFmpegKitLoadEntry(@"[HPlus] Critical: FFmpegKit could not be found in HPlus.bundle.");
-}
-
-static Class HPlusFFmpegKitClass(void) {
-    Class ffmpegKitClass = NSClassFromString(@"FFmpegKit");
-    if (!ffmpegKitClass) {
-        HPlusLoadFFmpegKitIfNeeded();
-        ffmpegKitClass = NSClassFromString(@"FFmpegKit");
-    }
-    return ffmpegKitClass;
-}
-
-static BOOL HPlusFFmpegKitAvailable(void) {
-    Class ffmpegKitClass = HPlusFFmpegKitClass();
-    return ffmpegKitClass && [ffmpegKitClass respondsToSelector:@selector(executeWithArgumentsAsync:withCompleteCallback:withLogCallback:withStatisticsCallback:)];
-}
-
-static NSString *HPlusFFmpegKitDiagnosticText(HPlusAudioOutputFormat *outputFormat, HPlusMediaFormat *sourceFormat, NSString *videoID) {
-    HPlusLoadFFmpegKitIfNeeded();
-    Class ffmpegKitClass = NSClassFromString(@"FFmpegKit");
-    SEL executeSelector = @selector(executeWithArgumentsAsync:withCompleteCallback:withLogCallback:withStatisticsCallback:);
-    NSMutableArray <NSString *> *lines = [NSMutableArray array];
-    NSBundle *mainBundle = NSBundle.mainBundle;
-    NSString *resourcePath = mainBundle.resourcePath ?: @"";
-    NSString *bundlePath = [resourcePath stringByAppendingPathComponent:@"HPlus.bundle"];
-    NSString *packageFrameworkPath = [resourcePath stringByAppendingPathComponent:@"HPlus.bundle/Frameworks"];
-
-    [lines addObject:@"FFmpegKit lookup"];
-    [lines addObject:[NSString stringWithFormat:@"videoID=%@", videoID ?: @""]];
-    [lines addObject:[NSString stringWithFormat:@"requestedFormat=%@ (%@)", outputFormat.title ?: @"", outputFormat.identifier ?: @""]];
-    [lines addObject:[NSString stringWithFormat:@"sourceMime=%@", sourceFormat.mimeType ?: @""]];
-    [lines addObject:[NSString stringWithFormat:@"sourceQuality=%@", sourceFormat.qualityLabel ?: @""]];
-    [lines addObject:[NSString stringWithFormat:@"sourceBytes=%lld", (long long)sourceFormat.contentLength]];
-    [lines addObject:[NSString stringWithFormat:@"HPlus.bundle exists=%@", [NSFileManager.defaultManager fileExistsAtPath:bundlePath] ? @"YES" : @"NO"]];
-    [lines addObject:[NSString stringWithFormat:@"HPlus.bundle/Frameworks exists=%@", [NSFileManager.defaultManager fileExistsAtPath:packageFrameworkPath] ? @"YES" : @"NO"]];
-    [lines addObject:[NSString stringWithFormat:@"FFmpegKit class=%@", ffmpegKitClass ? @"YES" : @"NO"]];
-    [lines addObject:[NSString stringWithFormat:@"FFmpegKit execute selector=%@", [ffmpegKitClass respondsToSelector:executeSelector] ? @"YES" : @"NO"]];
-    [lines addObject:[NSString stringWithFormat:@"ReturnCode class=%@", NSClassFromString(@"ReturnCode") ? @"YES" : @"NO"]];
-    [lines addObject:@"searchDirectories:"];
-    for (NSString *directory in HPlusFFmpegKitSearchDirectories()) {
-        BOOL isDirectory = NO;
-        BOOL exists = [NSFileManager.defaultManager fileExistsAtPath:directory isDirectory:&isDirectory];
-        [lines addObject:[NSString stringWithFormat:@"  %@ exists=%@ directory=%@", directory, exists ? @"YES" : @"NO", isDirectory ? @"YES" : @"NO"]];
-    }
-    NSMutableArray <NSString *> *entries = HPlusFFmpegKitLoadEntries();
-    [lines addObject:@"dlopenAttempts:"];
-    @synchronized(entries) { [lines addObjectsFromArray:entries]; }
-    return [lines componentsJoinedByString:@"\n"];
-}
-
-static void HPlusCancelFFmpegKit(void) {
-    Class ffmpegKitClass = HPlusFFmpegKitClass();
-    if ([ffmpegKitClass respondsToSelector:@selector(cancel)])
-        ((void (*)(Class, SEL))objc_msgSend)(ffmpegKitClass, @selector(cancel));
-}
-
-static NSError *HPlusFFmpegErrorFromSession(id session) {
-    NSString *failure = HPlusStringFromSelector(session, @selector(getFailStackTrace));
-    NSString *message = failure.length ? failure : @"FFmpeg failed";
-    return [NSError errorWithDomain:@"HPlus" code:7 userInfo:@{NSLocalizedDescriptionKey: message}];
-}
-
 static BOOL HPlusPathExtensionIsPhotosVideo(NSString *extension) {
-    NSString *lower = extension.lowercaseString ?: @"";
-    return [@[@"mp4", @"m4v", @"mov"] containsObject:lower];
-}
-
-// =========================================================
-// MARK: - FFmpegKit Merge + Audio Convert
-// =========================================================
-static BOOL HPlusStartFFmpegKitMerge(NSURL *videoURL, NSURL *audioURL, NSURL *outputURL, unsigned long long durationMs, void (^progress)(float progress), HPlusMergeCompletion completion) {
-    Class ffmpegKitClass = HPlusFFmpegKitClass();
-    SEL executeSelector = @selector(executeWithArgumentsAsync:withCompleteCallback:withLogCallback:withStatisticsCallback:);
-    if (![ffmpegKitClass respondsToSelector:executeSelector]) return NO;
-
-    NSMutableArray *arguments = [@[
-        @"-y", @"-i", videoURL.path, @"-i", audioURL.path,
-        @"-map", @"0:v:0", @"-map", @"1:a:0",
-    ] mutableCopy];
-    if (durationMs > 0)
-        [arguments addObjectsFromArray:@[@"-t", [NSString stringWithFormat:@"%.3f", (double)durationMs / 1000.0]]];
-    [arguments addObjectsFromArray:@[@"-c", @"copy", @"-shortest", @"-avoid_negative_ts", @"make_zero"]];
-    if (HPlusPathExtensionIsPhotosVideo(outputURL.pathExtension))
-        [arguments addObjectsFromArray:@[@"-movflags", @"+faststart"]];
-    [arguments addObject:outputURL.path];
-
-    id completeBlock = [^(id session) {
-        Class returnCodeClass = NSClassFromString(@"ReturnCode");
-        id returnCode = HPlusObjectFromSelector(session, @selector(getReturnCode));
-        BOOL success = NO;
-        if ([returnCodeClass respondsToSelector:@selector(isSuccess:)])
-            success = ((BOOL (*)(Class, SEL, id))objc_msgSend)(returnCodeClass, @selector(isSuccess:), returnCode);
-        NSError *error = success ? nil : HPlusFFmpegErrorFromSession(session);
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (success && [NSFileManager.defaultManager fileExistsAtPath:outputURL.path]) {
-                completion(YES, nil);
-            } else {
-                completion(NO, error ?: [NSError errorWithDomain:@"HPlus" code:7 userInfo:@{NSLocalizedDescriptionKey: @"Merge failed"}]);
-            }
-        });
-    } copy];
-
-    id statisticsBlock = durationMs ? [^(id statistics) {
-        if (!progress || ![statistics respondsToSelector:@selector(getTime)]) return;
-        double timeMs = ((double (*)(id, SEL))objc_msgSend)(statistics, @selector(getTime));
-        if (!isfinite(timeMs) || timeMs <= 0.0) return;
-        float p = 0.985f + (0.01f * fminf((float)(timeMs / (double)durationMs), 1.0f));
-        dispatch_async(dispatch_get_main_queue(), ^{ progress(p); });
-    } copy] : nil;
-
-    ((id (*)(Class, SEL, NSArray *, id, id, id))objc_msgSend)(ffmpegKitClass, executeSelector, arguments, completeBlock, nil, statisticsBlock);
-    return YES;
-}
-
-static BOOL HPlusStartFFmpegKitAudioConvert(NSURL *inputURL, NSURL *outputURL, HPlusAudioOutputFormat *outputFormat, unsigned long long durationMs, void (^progress)(float progress), HPlusMergeCompletion completion) {
-    Class ffmpegKitClass = HPlusFFmpegKitClass();
-    SEL executeSelector = @selector(executeWithArgumentsAsync:withCompleteCallback:withLogCallback:withStatisticsCallback:);
-    if (![ffmpegKitClass respondsToSelector:executeSelector] || outputFormat.ffmpegArguments.count == 0) return NO;
-
-    NSMutableArray *arguments = [@[@"-y", @"-i", inputURL.path] mutableCopy];
-    [arguments addObjectsFromArray:outputFormat.ffmpegArguments];
-    [arguments addObject:outputURL.path];
-
-    id completeBlock = [^(id session) {
-        Class returnCodeClass = NSClassFromString(@"ReturnCode");
-        id returnCode = HPlusObjectFromSelector(session, @selector(getReturnCode));
-        BOOL success = NO;
-        if ([returnCodeClass respondsToSelector:@selector(isSuccess:)])
-            success = ((BOOL (*)(Class, SEL, id))objc_msgSend)(returnCodeClass, @selector(isSuccess:), returnCode);
-        NSError *error = success ? nil : HPlusFFmpegErrorFromSession(session);
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (success && [NSFileManager.defaultManager fileExistsAtPath:outputURL.path]) {
-                completion(YES, nil);
-            } else {
-                completion(NO, error ?: [NSError errorWithDomain:@"HPlus" code:13 userInfo:@{NSLocalizedDescriptionKey: @"Conversion failed"}]);
-            }
-        });
-    } copy];
-
-    id statisticsBlock = durationMs ? [^(id statistics) {
-        if (!progress || ![statistics respondsToSelector:@selector(getTime)]) return;
-        double timeMs = ((double (*)(id, SEL))objc_msgSend)(statistics, @selector(getTime));
-        if (!isfinite(timeMs) || timeMs <= 0.0) return;
-        float p = 0.985f + (0.01f * fminf((float)(timeMs / (double)durationMs), 1.0f));
-        dispatch_async(dispatch_get_main_queue(), ^{ progress(p); });
-    } copy] : nil;
-
-    ((id (*)(Class, SEL, NSArray *, id, id, id))objc_msgSend)(ffmpegKitClass, executeSelector, arguments, completeBlock, nil, statisticsBlock);
-    return YES;
-}
-
-// =========================================================
-// MARK: - Codec detection
-// =========================================================
-static NSString *HPlusCodecFromItag(NSInteger itag) {
-    if (itag >= 394 && itag <= 401) return @"av01";
-    if ((itag >= 242 && itag <= 248) || (itag >= 270 && itag <= 278) ||
-        (itag >= 302 && itag <= 303) || (itag >= 308 && itag <= 315) ||
-        itag == 330) return @"vp9";
-    if (itag >= 43 && itag <= 46) return @"vp8";
-    if (itag == 331 || itag == 332 || itag == 333 || itag == 334) return @"hevc";
-    return @"avc1";
-}
-
-static NSString *HPlusCodecFromMime(NSString *mimeType) {
-    NSString *lower = mimeType.lowercaseString ?: @"";
-    if ([lower containsString:@"av01"]) return @"av01";
-    if ([lower containsString:@"avc1"] || [lower containsString:@"h264"]) return @"avc1";
-    if ([lower containsString:@"vp9"]) return @"vp9";
-    if ([lower containsString:@"vp8"]) return @"vp8";
-    if ([lower containsString:@"hevc"] || [lower containsString:@"h265"]) return @"hevc";
-    return nil;
+    NSString *lower = extension.lowercaseString;
+    return [@[@"mp4"] containsObject:lower];
 }
 
 static NSString *HPlusMimeDetail(NSString *mimeType) {
-    NSString *lower = mimeType.lowercaseString ?: @"";
-    NSMutableString *result = [NSMutableString string];
-    if ([lower containsString:@"mp4"]) [result appendString:@"mp4"];
-    else if ([lower containsString:@"webm"]) [result appendString:@"webm"];
-    else if ([lower containsString:@"3gpp"]) [result appendString:@"3gp"];
-    else if ([lower containsString:@"mp3"]) [result appendString:@"mp3"];
-    else if ([lower containsString:@"aac"]) [result appendString:@"aac"];
-    else [result appendString:@"stream"];
-    NSString *codec = HPlusCodecFromMime(mimeType);
-    if (codec.length) {
-        [result appendString:@" · "];
-        [result appendString:codec];
-    }
-    return result.copy;
+    NSString *lower = mimeType.lowercaseString;
+    if ([lower containsString:@"mp4"]) return @"MP4";
+    return mimeType;
 }
 
-static NSString *HPlusFileExtensionForFormat(HPlusMediaFormat *format, NSString *fallbackExtension) {
-    NSString *lower = format.mimeType.lowercaseString ?: @"";
-    if ([lower containsString:@"webm"]) return @"webm";
-    if ([lower containsString:@"matroska"]) return @"mkv";
-    if ([lower containsString:@"quicktime"]) return @"mov";
-    if ([lower containsString:@"m4a"]) return @"m4a";
+static NSString *HPlusFileExtensionForFormat(HPlusMediaFormat *format) {
+    NSString *lower = format.mimeType.lowercaseString;
+    if ([lower containsString:@"mp4a"]) return @"m4a";
     if ([lower containsString:@"mp4"]) return @"mp4";
-    return fallbackExtension ?: @"mp4";
+    return nil;
 }
 
 static BOOL HPlusFormatLooksMP4Family(HPlusMediaFormat *format) {
-    NSString *mime = format.mimeType.lowercaseString ?: @"";
-    NSString *extension = HPlusFileExtensionForFormat(format, @"").lowercaseString ?: @"";
-    return [mime containsString:@"mp4"] || [mime containsString:@"m4a"] || [mime containsString:@"quicktime"] || [@[@"mp4", @"m4a", @"m4v", @"mov"] containsObject:extension];
-}
-
-static BOOL HPlusFormatLooksWebM(HPlusMediaFormat *format) {
-    NSString *mime = format.mimeType.lowercaseString ?: @"";
-    NSString *extension = HPlusFileExtensionForFormat(format, @"").lowercaseString ?: @"";
-    return [mime containsString:@"webm"] || [extension isEqualToString:@"webm"];
+    NSString *mime = format.mimeType.lowercaseString;
+    NSString *extension = HPlusFileExtensionForFormat(format);
+    return [mime containsString:@"mp4"] || [mime containsString:@"mp4a"] || [@[@"mp4", @"mp4a"] containsObject:extension];
 }
 
 static NSString *HPlusMergedVideoOutputExtension(HPlusMediaFormat *videoFormat, HPlusMediaFormat *audioFormat) {
     if (HPlusFormatLooksMP4Family(videoFormat) && HPlusFormatLooksMP4Family(audioFormat)) return @"mp4";
-    if (HPlusFormatLooksWebM(videoFormat) && HPlusFormatLooksWebM(audioFormat)) return @"webm";
-    return @"mkv";
+    return nil;
+}
+
+static BOOL HPlusVideoFileCanUseAVFoundation(NSURL *fileURL) {
+    return HPlusPathExtensionIsPhotosVideo(fileURL.pathExtension);
 }
 
 static BOOL HPlusVideoFileCanSaveToPhotos(NSURL *fileURL) {
     return HPlusPathExtensionIsPhotosVideo(fileURL.pathExtension);
 }
 
-// =========================================================
-// MARK: - Audio output formats (FFmpeg conversion targets)
-// =========================================================
-static HPlusAudioOutputFormat *HPlusAudioOutputFormatMake(NSString *identifier, NSString *title, NSString *subtitle, NSString *fileExtension, NSArray <NSString *> *ffmpegArguments, BOOL passthroughWhenCompatible, BOOL supported) {
-    HPlusAudioOutputFormat *format = [HPlusAudioOutputFormat new];
-    format.identifier = identifier;
-    format.title = title;
-    format.subtitle = subtitle;
-    format.fileExtension = fileExtension;
-    format.ffmpegArguments = ffmpegArguments;
-    format.passthroughWhenCompatible = passthroughWhenCompatible;
-    format.supported = supported;
-    return format;
+static NSString *HPlusFormatSubtitle(HPlusMediaFormat *format, BOOL video) {
+    if (video) {
+        NSMutableArray *parts = [NSMutableArray array];
+        NSString *detail = HPlusMimeDetail(format.mimeType);
+        if (detail.length) [parts addObject:detail];
+        NSString *size = HPlusByteCount(format.contentLength);
+        if (size.length) [parts addObject:size];
+        return [parts componentsJoinedByString:@" - "];
+    }
+    NSString *cut = [[format.idp componentsSeparatedByString:@"."] firstObject];
+    return cut;
 }
 
-static NSArray <HPlusAudioOutputFormat *> *HPlusAudioOutputFormats(void) {
-    static NSArray <HPlusAudioOutputFormat *> *formats = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        formats = @[
-            HPlusAudioOutputFormatMake(@"m4a", @"M4A", @"AAC container, passthrough when possible", @"m4a", @[@"-map", @"0:a:0", @"-vn", @"-c:a", @"aac", @"-b:a", @"192k", @"-movflags", @"+faststart"], YES, YES),
-            HPlusAudioOutputFormatMake(@"aac", @"AAC", @"Lossy (192k)", @"aac", @[@"-map", @"0:a:0", @"-vn", @"-c:a", @"aac", @"-b:a", @"192k", @"-f", @"adts"], YES, YES),
-            HPlusAudioOutputFormatMake(@"mp3", @"MP3", @"Lossy, widely compatible", @"mp3", @[@"-map", @"0:a:0", @"-vn", @"-c:a", @"libmp3lame", @"-q:a", @"2"], NO, YES),
-            HPlusAudioOutputFormatMake(@"opus", @"Opus", @"Lossy, small file size", @"opus", @[@"-map", @"0:a:0", @"-vn", @"-c:a", @"libopus", @"-b:a", @"160k", @"-vbr", @"on"], NO, YES),
-            HPlusAudioOutputFormatMake(@"ogg", @"OGG", @"Vorbis lossy", @"ogg", @[@"-map", @"0:a:0", @"-vn", @"-c:a", @"libvorbis", @"-q:a", @"6"], NO, YES),
-            HPlusAudioOutputFormatMake(@"flac", @"FLAC", @"Lossless compressed", @"flac", @[@"-map", @"0:a:0", @"-vn", @"-c:a", @"flac", @"-compression_level", @"8"], NO, YES),
-            HPlusAudioOutputFormatMake(@"alac", @"ALAC", @"Apple lossless (M4A)", @"m4a", @[@"-map", @"0:a:0", @"-vn", @"-c:a", @"alac", @"-movflags", @"+faststart"], NO, YES),
-            HPlusAudioOutputFormatMake(@"wav", @"WAV", @"Uncompressed PCM", @"wav", @[@"-map", @"0:a:0", @"-vn", @"-c:a", @"pcm_s24le"], NO, YES),
-            HPlusAudioOutputFormatMake(@"aiff", @"AIFF", @"Apple PCM", @"aiff", @[@"-map", @"0:a:0", @"-vn", @"-c:a", @"pcm_s24be"], NO, YES),
-        ];
-    });
-    return formats;
-}
-
-static HPlusAudioOutputFormat *HPlusDefaultAudioOutputFormat(void) {
-    return [HPlusAudioOutputFormats() firstObject];
-}
-
-static BOOL HPlusAudioOutputFormatCanPassthrough(HPlusAudioOutputFormat *outputFormat, HPlusMediaFormat *sourceFormat) {
-    if (!outputFormat.passthroughWhenCompatible) return NO;
-    NSString *identifier = outputFormat.identifier.lowercaseString ?: @"";
-    NSString *mime = sourceFormat.mimeType.lowercaseString ?: @"";
-    NSString *extension = HPlusFileExtensionForFormat(sourceFormat, @"").lowercaseString ?: @"";
-    if ([identifier isEqualToString:@"m4a"] || [identifier isEqualToString:@"aac"])
-        return [extension isEqualToString:@"m4a"] || [mime containsString:@"mp4"] || [mime containsString:@"m4a"];
-    return NO;
-}
-
-static NSString *HPlusAudioOutputFileExtension(HPlusAudioOutputFormat *outputFormat, HPlusMediaFormat *sourceFormat, BOOL passthrough) {
-    NSString *identifier = outputFormat.identifier.lowercaseString ?: @"";
-    NSString *mime = sourceFormat.mimeType.lowercaseString ?: @"";
-    if (passthrough && ([identifier isEqualToString:@"m4a"] || [identifier isEqualToString:@"aac"]) && ([mime containsString:@"mp4"] || [mime containsString:@"m4a"]))
-        return @"m4a";
-    return outputFormat.fileExtension ?: HPlusFileExtensionForFormat(sourceFormat, @"m4a");
-}
-
-static NSString *HPlusAudioOutputSubtitle(HPlusAudioOutputFormat *outputFormat) {
-    return outputFormat.subtitle ?: @"";
-}
-
-// =========================================================
-// MARK: - Subtitle / Attributed title helpers
-// =========================================================
-static NSString *HPlusFormatSubtitle(HPlusMediaFormat *format) {
-    NSMutableArray *parts = [NSMutableArray array];
-    NSString *language = format.languageName.length ? format.languageName : format.languageCode;
-    if (language.length) [parts addObject:language];
-    if (format.drcAudio) [parts addObject:@"DRC"];
-    NSString *detail = HPlusMimeDetail(format.mimeType);
-    if (detail.length) [parts addObject:detail];
-    NSString *size = HPlusByteCount(format.contentLength);
-    if (size.length) [parts addObject:size];
-    return [parts componentsJoinedByString:@" · "];
-}
-
-static NSAttributedString *HPlusAttributedTitle(NSString *title, NSString *subtitle) {
-    if (!subtitle.length) return [[NSAttributedString alloc] initWithString:title ?: @""];
-    NSMutableAttributedString *attr = [[NSMutableAttributedString alloc] init];
-    [attr appendAttributedString:[[NSAttributedString alloc]
-        initWithString:title ?: @""
-        attributes:@{
-            NSFontAttributeName: [UIFont systemFontOfSize:17 weight:UIFontWeightRegular],
-            NSForegroundColorAttributeName: [UIColor labelColor],
-        }]];
-    [attr appendAttributedString:[[NSAttributedString alloc]
-        initWithString:[NSString stringWithFormat:@"  %@", subtitle]
-        attributes:@{
-            NSFontAttributeName: [UIFont systemFontOfSize:13 weight:UIFontWeightRegular],
-            NSForegroundColorAttributeName: [UIColor secondaryLabelColor],
-        }]];
-    return attr.copy;
-}
-
-// =========================================================
-// MARK: - Player data extraction
-// =========================================================
-static NSArray *HPlusPlayerResponsesForPlayer(YTPlayerViewController *player) {
-    NSMutableArray *responses = [NSMutableArray array];
-    id response = HPlusObjectFromSelector(player, @selector(contentPlayerResponse));
-    if (response) [responses addObject:response];
-
-    id activeVideo = HPlusObjectFromSelector(player, @selector(activeVideo));
-    response = HPlusObjectFromSelector(activeVideo, @selector(contentPlayerResponse));
-    if (response && ![responses containsObject:response]) [responses addObject:response];
-    return responses.copy;
-}
-
-static id HPlusPlayerDataForPlayer(YTPlayerViewController *player) {
-    id response = HPlusPlayerResponsesForPlayer(player).firstObject;
-    id playerData = HPlusObjectFromSelector(response, @selector(playerData));
-    return playerData ?: response;
-}
-
-static NSString *HPlusVideoIDForPlayer(YTPlayerViewController *player) {
-    NSString *videoID = [player contentVideoID];
-    if (videoID.length == 0) videoID = [player currentVideoID];
-    if (videoID.length == 0) videoID = HPlusStringFromSelector(player, @selector(videoID));
-    return videoID;
-}
-
-static NSString *HPlusTitleForPlayer(YTPlayerViewController *player) {
-    id playerData = HPlusPlayerDataForPlayer(player);
-    id details = HPlusObjectFromSelector(playerData, @selector(videoDetails));
-    NSString *title = HPlusStringFromSelector(details, @selector(title));
-    if (title.length) return title;
-    NSString *videoID = HPlusVideoIDForPlayer(player);
-    return videoID.length ? [NSString stringWithFormat:@"YouTube %@", videoID] : @"YouTube Video";
-}
-
-static NSString *HPlusAuthorForPlayer(YTPlayerViewController *player) {
-    id playerData = HPlusPlayerDataForPlayer(player);
-    id details = HPlusObjectFromSelector(playerData, @selector(videoDetails));
-    return HPlusStringFromSelector(details, @selector(author));
-}
-
-static NSString *HPlusDescriptionForPlayer(YTPlayerViewController *player) {
-    id playerData = HPlusPlayerDataForPlayer(player);
-    id details = HPlusObjectFromSelector(playerData, @selector(videoDetails));
-    return HPlusStringFromSelector(details, @selector(shortDescription));
+static YTIPlayerResponse *HPlusPlayerDataForPlayer(YTPlayerViewController *player) {
+    YTPlayerResponse *response;
+    if ([player respondsToSelector:@selector(contentPlayerResponse)]) {
+        response = player.contentPlayerResponse;
+    } else {
+        response = player.playerResponse;
+    }
+    YTIPlayerResponse *playerData = response.playerData;
+    return playerData;
 }
 
 static NSArray *HPlusCaptionTracksForPlayer(YTPlayerViewController *player) {
-    for (id response in HPlusPlayerResponsesForPlayer(player)) {
-        id playerData = HPlusObjectFromSelector(response, @selector(playerData)) ?: response;
-        id captions = HPlusObjectFromSelector(playerData, @selector(captions));
-        id tracklistRenderer = HPlusObjectFromSelector(captions, @selector(playerCaptionsTracklistRenderer));
-        NSArray *tracks = HPlusObjectFromSelector(tracklistRenderer, @selector(captionTracksArray));
-        if (tracks.count > 0) return tracks;
-    }
+    YTIPlayerResponse *playerData = HPlusPlayerDataForPlayer(player);
+    YTICaptionsSupportedRenderers *captions = playerData.captions;
+    YTIPlayerCaptionsTrackListRenderer *tracklistRenderer = captions.playerCaptionsTracklistRenderer;
+    NSArray *tracks = tracklistRenderer.captionTracksArray;
+    if (tracks.count > 0) return tracks;
     return nil;
 }
 
-static NSArray *HPlusAdaptiveFormatObjectsForPlayer(YTPlayerViewController *player) {
-    NSMutableArray *formats = [NSMutableArray array];
-    NSMutableSet *seenPointers = [NSMutableSet set];
-
-    void (^appendFormats)(NSArray *) = ^(NSArray *candidateFormats) {
-        if (![candidateFormats isKindOfClass:NSArray.class]) return;
-        for (id format in candidateFormats) {
-            NSString *key = [NSString stringWithFormat:@"%p", format];
-            if ([seenPointers containsObject:key]) continue;
-            [seenPointers addObject:key];
-            [formats addObject:format];
-        }
-    };
-
-    id activeVideo = HPlusObjectFromSelector(player, @selector(activeVideo));
-    id streamingData = HPlusObjectFromSelector(activeVideo, @selector(streamingData));
-    appendFormats(HPlusObjectFromSelector(streamingData, @selector(adaptiveStreams)));
-    appendFormats(HPlusObjectFromSelector(activeVideo, @selector(selectableVideoFormats)));
-
-    for (id response in HPlusPlayerResponsesForPlayer(player)) {
-        id playerData = HPlusObjectFromSelector(response, @selector(playerData)) ?: response;
-        id responseStreamingData = HPlusObjectFromSelector(playerData, @selector(streamingData));
-        appendFormats(HPlusObjectFromSelector(responseStreamingData, @selector(adaptiveFormatsArray)));
-    }
-    return formats.copy;
+static YTIVideoDetails *HPlusVideoDetailsForPlayer(YTPlayerViewController *player) {
+    YTIPlayerResponse *ires = HPlusPlayerDataForPlayer(player);
+    return ires.videoDetails;
 }
 
-// =========================================================
-// MARK: - Media format from stream
-// =========================================================
-static HPlusMediaFormat *HPlusMediaFormatFromStream(id stream, BOOL video) {
-    id formatStream = HPlusObjectFromSelector(stream, @selector(formatStream));
-    NSString *url = HPlusStringFromSelector(stream, @selector(URL));
-    if (url.length == 0) url = HPlusStringFromSelector(formatStream, @selector(URL));
-    if (url.length == 0) url = HPlusStringFromSelector(stream, @selector(url));
-    if (url.length == 0) url = HPlusStringFromSelector(formatStream, @selector(url));
+static NSString *HPlusAuthorForPlayer(YTPlayerViewController *player) {
+    YTIVideoDetails *details = HPlusVideoDetailsForPlayer(player);
+    return details.author;
+}
 
-    NSString *mimeType = HPlusStringFromSelector(stream, @selector(mimeType));
-    if (mimeType.length == 0) mimeType = HPlusStringFromSelector(formatStream, @selector(mimeType));
-    NSString *lowerMime = mimeType.lowercaseString ?: @"";
-    BOOL streamSaysVideo = HPlusBoolFromSelector(stream, @selector(isVideo)) || HPlusBoolFromSelector(formatStream, @selector(isVideo));
-    BOOL streamSaysAudio = HPlusBoolFromSelector(stream, @selector(isAudio)) || HPlusBoolFromSelector(formatStream, @selector(isAudio));
-    NSInteger itag = HPlusIntegerFromSelector(stream, @selector(itag));
-    if (itag == 0) itag = HPlusIntegerFromSelector(formatStream, @selector(itag));
+static NSString *HPlusTitleForPlayer(YTPlayerViewController *player) {
+    YTIVideoDetails *details = HPlusVideoDetailsForPlayer(player);
+    return details.title;
+}
 
-    // Type check
-    BOOL typeMatches = video
-        ? ([lowerMime containsString:@"video/"] || streamSaysVideo)
-        : ([lowerMime containsString:@"audio/"] || streamSaysAudio);
+static NSString *HPlusDescriptionForPlayer(YTPlayerViewController *player) {
+    YTIVideoDetails *details = HPlusVideoDetailsForPlayer(player);
+    return details.shortDescription;
+}
 
-    if (!typeMatches && mimeType.length == 0) {
-        NSSet *knownVideoItags = [NSSet setWithObjects:
-            @18, @22, @37, @38, @43, @44, @45, @46, @59, @78,
-            @133, @134, @135, @136, @137, @160,
-            @212, @242, @243, @244, @247, @248, @264, @266, @271, @272, @278,
-            @298, @299, @302, @303, @308, @313, @315, @330,
-            @394, @395, @396, @397, @398, @399, @400, @401, nil];
-        NSSet *knownAudioItags = [NSSet setWithObjects:
-            @139, @140, @141, @171, @172, @249, @250, @251, @256, @258, @325, @328, nil];
-        if (video && [knownVideoItags containsObject:@(itag)]) typeMatches = YES;
-        if (!video && [knownAudioItags containsObject:@(itag)]) typeMatches = YES;
-    }
+static NSArray *HPlusAdaptiveFormatObjectsForPlayer(YTPlayerViewController *player) {
+    YTIPlayerResponse *playerData = HPlusPlayerDataForPlayer(player);
+    YTIStreamingData *streamingData = playerData.streamingData;
+    return streamingData.adaptiveFormatsArray;
+}
+
+static HPlusMediaFormat *HPlusMediaFormatFromStream(YTIFormatStream *stream, BOOL video) {
+    NSString *url = stream.URL;
+    NSString *mimeType = stream.mimeType;
+    NSString *lowerMime = mimeType.lowercaseString;
+    BOOL typeMatches = video ? ([lowerMime containsString:@"video/"]) : ([lowerMime containsString:@"audio/"]);
     if (!typeMatches) return nil;
+
+    BOOL mimeLooksMP4 = [lowerMime containsString:@"mp4"] && ([lowerMime containsString:@"avc1"] || ([lowerMime containsString:@"mp4a"] && stream.itag == 140));
+    if (mimeType.length && !mimeLooksMP4) return nil;
 
     HPlusMediaFormat *format = [HPlusMediaFormat new];
     format.source = stream;
     format.video = video;
-    format.itag = (int)itag;
-    format.codec = HPlusCodecFromItag(itag);
-    if (!format.codec) format.codec = HPlusCodecFromMime(mimeType);
-    format.urlString = url.length ? HPlusURLStringWithCPN(url) : nil;
-    format.mimeType = mimeType.length ? mimeType : (video ? @"video/mp4" : @"audio/mp4");
-
-    NSInteger height = HPlusIntegerFromSelector(stream, @selector(height));
-    if (height == 0) height = HPlusIntegerFromSelector(formatStream, @selector(height));
-    NSInteger fps = HPlusIntegerFromSelector(stream, @selector(fps));
-    if (fps == 0) fps = HPlusIntegerFromSelector(formatStream, @selector(fps));
-    if (fps == 0) fps = HPlusIntegerFromSelector(stream, @selector(framesPerSecond));
-    if (fps == 0) fps = HPlusIntegerFromSelector(formatStream, @selector(framesPerSecond));
-    if (fps == 0) fps = HPlusIntegerFromSelector(stream, @selector(frameRate));
-    if (fps == 0) fps = HPlusIntegerFromSelector(formatStream, @selector(frameRate));
-    fps = HPlusNormalizedFPS(fps);
-    format.fps = (int)fps;
-    format.resolution = (int)height;
-
-    format.qualityLabel = HPlusStringFromSelector(stream, @selector(qualityLabel));
-    if (format.qualityLabel.length == 0) format.qualityLabel = HPlusStringFromSelector(formatStream, @selector(qualityLabel));
-
-    if (video) {
-        NSInteger labelHeight = HPlusResolutionFromQuality(format.qualityLabel);
-        NSInteger labelFPS = HPlusFPSFromQuality(format.qualityLabel);
-        if (labelHeight == 960) format.qualityLabel = HPlusQualityLabel(labelHeight, fps ?: labelFPS, nil);
-        else if (labelFPS == 0 && fps > 0) format.qualityLabel = HPlusQualityLabel(height, fps, format.qualityLabel);
-        if (format.qualityLabel.length == 0) format.qualityLabel = HPlusQualityLabel(height, fps, nil);
-    }
-    if (format.qualityLabel.length == 0 && !video) format.qualityLabel = @"Audio";
-
+    format.urlString = HPlusURLStringWithCPN(url);
+    format.mimeType = mimeType;
+    int height = stream.height;
+    if (video && height > 1080) return nil;
+    format.resolution = height;
+    format.fps = stream.fps;
+    format.qualityLabel = stream.qualityLabel;
+    if ([stream.qualityLabel hasSuffix:@"HDR"]) return nil;
     if (!video) {
-        NSString *languageCode = HPlusStringFromSelector(stream, @selector(languageCode));
-        if (languageCode.length == 0) languageCode = HPlusStringFromSelector(formatStream, @selector(languageCode));
-        if (languageCode.length == 0) languageCode = HPlusStringFromSelector(stream, @selector(language));
-        if (languageCode.length == 0) languageCode = HPlusStringFromSelector(formatStream, @selector(language));
-        format.languageCode = languageCode;
-
-        NSString *languageName = HPlusStringFromSelector(stream, @selector(languageName));
-        if (languageName.length == 0) languageName = HPlusStringFromSelector(formatStream, @selector(languageName));
-        if (languageName.length == 0) languageName = HPlusStringFromSelector(stream, @selector(displayName));
-        if (languageName.length == 0) languageName = HPlusStringFromSelector(formatStream, @selector(displayName));
-        format.languageName = languageName.length ? languageName : languageCode;
-
-        NSMutableArray *audioTraits = [NSMutableArray array];
-        for (NSString *value in @[
-            mimeType ?: @"",
-            format.qualityLabel ?: @"",
-            HPlusStringFromSelector(stream, @selector(audioTrack)) ?: @"",
-            HPlusStringFromSelector(formatStream, @selector(audioTrack)) ?: @"",
-            HPlusStringFromSelector(stream, @selector(audioTrackType)) ?: @"",
-            HPlusStringFromSelector(formatStream, @selector(audioTrackType)) ?: @"",
-        ]) {
-            if (value.length) [audioTraits addObject:value];
-        }
-        format.drcAudio = [[audioTraits componentsJoinedByString:@" "] localizedCaseInsensitiveContainsString:@"drc"];
-    }
-
-    if (HPlusBoolFromSelector(stream, @selector(hasContentLength)) || [stream respondsToSelector:@selector(contentLength)])
-        format.contentLength = (NSInteger)HPlusUnsignedLongLongFromSelector(stream, @selector(contentLength));
-    if (format.contentLength == 0 && (HPlusBoolFromSelector(formatStream, @selector(hasContentLength)) || [formatStream respondsToSelector:@selector(contentLength)]))
-        format.contentLength = (NSInteger)HPlusUnsignedLongLongFromSelector(formatStream, @selector(contentLength));
-    format.durationMs = (NSUInteger)HPlusUnsignedLongLongFromSelector(stream, @selector(approxDurationMs));
-    if (format.durationMs == 0) format.durationMs = (NSUInteger)HPlusUnsignedLongLongFromSelector(formatStream, @selector(approxDurationMs));
-
-    NSMutableDictionary *headers = [NSMutableDictionary dictionary];
-    NSDictionary *streamHeaders = HPlusObjectFromSelector(stream, @selector(httpHeaders));
-    if (![streamHeaders isKindOfClass:NSDictionary.class]) streamHeaders = HPlusObjectFromSelector(formatStream, @selector(httpHeaders));
-    if ([streamHeaders isKindOfClass:NSDictionary.class]) {
-        for (id key in streamHeaders) {
-            id value = streamHeaders[key];
-            if ([key isKindOfClass:NSString.class] && [value isKindOfClass:NSString.class])
-                headers[key] = value;
+        YTIAudioTrack *audio = stream.audioTrack;
+        NSString *audioidp = audio.id_p;
+        if (audio.hasId_p) {
+            if (INTFORVAL(AudioPreferIndex) == 1 && ![audioidp hasSuffix:@".4"]) return nil;
+            if (INTFORVAL(AudioPreferIndex) == 2 && ![audioidp hasPrefix:@"en"]) return nil;
+            format.qualityLabel = audio.displayName;
+            format.idp = audioidp;
         }
     }
-    if (!HPlusHTTPHeadersContainField(headers, @"Origin"))
-        headers[@"Origin"] = @"https://www.youtube.com";
-    if (!HPlusHTTPHeadersContainField(headers, @"Referer"))
-        headers[@"Referer"] = @"https://www.youtube.com/";
-    format.httpHeaders = headers;
+    format.contentLength = stream.contentLength;
+    format.durationMs = stream.approxDurationMs;
+    format.itag = stream.itag;
     return format;
 }
 
-// =========================================================
-// MARK: - Quality label helpers
-// =========================================================
-static NSInteger HPlusResolutionFromQuality(NSString *quality) {
-    NSScanner *scanner = [NSScanner scannerWithString:quality ?: @""];
-    NSInteger value = 0;
-    [scanner scanInteger:&value];
-    return value;
-}
-
-static NSInteger HPlusFPSFromQuality(NSString *quality) {
-    NSString *lower = quality.lowercaseString ?: @"";
-    NSRange pRange = [lower rangeOfString:@"p"];
-    if (pRange.location != NSNotFound && pRange.location + 1 < lower.length) {
-        NSString *afterP = [lower substringFromIndex:pRange.location + 1];
-        NSScanner *scanner = [NSScanner scannerWithString:afterP];
-        NSInteger fps = 0;
-        if ([scanner scanInteger:&fps] && fps > 0) return fps;
-    }
-    if ([lower containsString:@"60fps"] || [lower containsString:@"60 fps"]) return 60;
-    if ([lower containsString:@"30fps"] || [lower containsString:@"30 fps"]) return 30;
-    return 0;
-}
-
-static NSInteger HPlusNormalizedFPS(NSInteger fps) {
-    if (fps >= 50 && fps <= 61) return 60;
-    if (fps >= 24 && fps <= 31) return 30;
-    return fps;
-}
-
-static NSInteger HPlusDisplayHeightForVideoHeight(NSInteger height) {
-    if (height >= 900 && height < 1080) return 1080;
-    return height;
-}
-
-static NSString *HPlusQualityLabel(NSInteger height, NSInteger fps, NSString *fallback) {
-    height = HPlusDisplayHeightForVideoHeight(height);
-    fps = HPlusNormalizedFPS(fps);
-    if (height > 0 && fps > 0) return [NSString stringWithFormat:@"%ldp%ld", (long)height, (long)fps];
-    if (height > 0) return [NSString stringWithFormat:@"%ldp", (long)height];
-    if (fallback.length && fps > 0 && ![fallback.lowercaseString containsString:@"fps"])
-        return [NSString stringWithFormat:@"%@ %ldfps", fallback, (long)fps];
-    return fallback;
-}
-
-// =========================================================
-// MARK: - Format list for player
-// =========================================================
 static NSArray <HPlusMediaFormat *> *HPlusFormatsForPlayer(YTPlayerViewController *player, BOOL video) {
     NSMutableArray *formats = [NSMutableArray array];
-    for (id stream in HPlusAdaptiveFormatObjectsForPlayer(player)) {
+    for (YTIFormatStream *stream in HPlusAdaptiveFormatObjectsForPlayer(player)) {
         HPlusMediaFormat *format = HPlusMediaFormatFromStream(stream, video);
         if (format) [formats addObject:format];
     }
@@ -1452,11 +715,11 @@ static NSArray <HPlusMediaFormat *> *HPlusFormatsForPlayer(YTPlayerViewControlle
             NSInteger rightFPS = right.fps;
             if (leftFPS != rightFPS) return leftFPS > rightFPS ? NSOrderedAscending : NSOrderedDescending;
         }
+        
         BOOL leftMP4 = HPlusFormatLooksMP4Family(left);
         BOOL rightMP4 = HPlusFormatLooksMP4Family(right);
         if (leftMP4 != rightMP4) return leftMP4 ? NSOrderedAscending : NSOrderedDescending;
-        if (!video && IS_ENABLED(DownloadPreferDRCAudio) && left.drcAudio != right.drcAudio)
-            return left.drcAudio ? NSOrderedAscending : NSOrderedDescending;
+
         if (left.contentLength != right.contentLength)
             return left.contentLength > right.contentLength ? NSOrderedAscending : NSOrderedDescending;
         return NSOrderedSame;
@@ -1465,10 +728,10 @@ static NSArray <HPlusMediaFormat *> *HPlusFormatsForPlayer(YTPlayerViewControlle
     NSMutableArray *unique = [NSMutableArray array];
     NSMutableSet *seen = [NSMutableSet set];
     for (HPlusMediaFormat *format in formats) {
-        NSInteger fps = format.fps ?: HPlusFPSFromQuality(format.qualityLabel);
+        NSInteger fps = format.fps;
         NSString *key = video
-            ? [NSString stringWithFormat:@"%@-%ld-%@-%d", format.qualityLabel ?: @"", (long)fps, format.codec ?: @"", format.itag]
-            : [NSString stringWithFormat:@"%@-%@-%@-%@-%d", format.qualityLabel ?: @"", format.languageCode ?: @"", format.drcAudio ? @"drc" : @"std", format.codec ?: @"", format.itag];
+            ? [NSString stringWithFormat:@"%@-%ld-%@", format.qualityLabel, (long)fps, HPlusMimeDetail(format.mimeType)]
+            : [NSString stringWithFormat:@"%@-%@", format.qualityLabel, HPlusMimeDetail(format.mimeType)];
         if ([seen containsObject:key]) continue;
         [seen addObject:key];
         [unique addObject:format];
@@ -1476,13 +739,6 @@ static NSArray <HPlusMediaFormat *> *HPlusFormatsForPlayer(YTPlayerViewControlle
     return unique.copy;
 }
 
-static HPlusMediaFormat *HPlusBestAudioFormatForPlayer(YTPlayerViewController *player) {
-    return [HPlusFormatsForPlayer(player, NO) firstObject];
-}
-
-// =========================================================
-// MARK: - Presenter / Player lookup
-// =========================================================
 static UIViewController *HPlusPresenterForSender(UIView *sender, YTPlayerViewController *player) {
     UIViewController *presenter = nil;
     if ([sender respondsToSelector:@selector(_viewControllerForAncestor)])
@@ -1505,39 +761,26 @@ static YTPlayerViewController *HPlusPlayerFromViewController(UIViewController *v
 
 static NSURL *HPlusThumbnailURL(YTPlayerViewController *player) {
     if (!player) return nil;
-    id playerData = HPlusPlayerDataForPlayer(player);
-    id details = HPlusObjectFromSelector(playerData, @selector(videoDetails));
-    id thumbmain = HPlusObjectFromSelector(details, @selector(thumbnail));
-    NSArray *thumbs = HPlusObjectFromSelector(thumbmain, @selector(thumbnailsArray));
-    id best = nil; NSUInteger maxPixels = 0;
-    for (id thumb in thumbs) {
-        NSInteger w = HPlusIntegerFromSelector(thumb, @selector(width));
-        NSInteger h = HPlusIntegerFromSelector(thumb, @selector(height));
-        NSUInteger px = (NSUInteger)(w * h);
-        if (px > maxPixels) { maxPixels = px; best = thumb; }
+    YTIVideoDetails *details = HPlusVideoDetailsForPlayer(player);
+    YTIThumbnailDetails *thumbmain = details.thumbnail;
+    YTIThumbnailDetails_Thumbnail *bestThumbnail = nil;
+    NSUInteger maxPixels = 0;
+    
+    for (YTIThumbnailDetails_Thumbnail *thumb in thumbmain.thumbnailsArray) {
+        NSUInteger pixels = (NSUInteger)thumb.width * (NSUInteger)thumb.height;
+        if (pixels > maxPixels) {
+            maxPixels = pixels;
+            bestThumbnail = thumb;
+        }
     }
-    if (!best) {
-        NSString *videoID = HPlusVideoIDForPlayer(player);
-        if (videoID.length == 0) return nil;
-        return [NSURL URLWithString:[NSString stringWithFormat:@"https://i.ytimg.com/vi/%@/maxresdefault.jpg", videoID]];
-    }
-    NSString *urlString = HPlusStringFromSelector(best, @selector(URL));
-    return urlString.length ? [NSURL URLWithString:urlString] : nil;
+
+    return [NSURL URLWithString:bestThumbnail.URL];
 }
 
-// =========================================================
-// MARK: - Photos
-// =========================================================
 static void HPlusRequestPhotoAccess(void (^completion)(BOOL granted)) {
-    if (@available(iOS 14.0, *)) {
-        [PHPhotoLibrary requestAuthorizationForAccessLevel:PHAccessLevelAddOnly handler:^(PHAuthorizationStatus status) {
-            completion(status == PHAuthorizationStatusAuthorized || status == PHAuthorizationStatusLimited);
-        }];
-    } else {
-        [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
-            completion(status == PHAuthorizationStatusAuthorized);
-        }];
-    }
+    [PHPhotoLibrary requestAuthorizationForAccessLevel:PHAccessLevelAddOnly handler:^(PHAuthorizationStatus status) {
+        completion(status == PHAuthorizationStatusAuthorized || status == PHAuthorizationStatusLimited);
+    }];
 }
 
 static void HPlusSaveVideoToPhotos(NSURL *fileURL, UIViewController *presenter, void (^completion)(BOOL success, NSError *error)) {
@@ -1550,14 +793,13 @@ static void HPlusSaveVideoToPhotos(NSURL *fileURL, UIViewController *presenter, 
         [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
             [PHAssetCreationRequest creationRequestForAssetFromVideoAtFileURL:fileURL];
         } completionHandler:^(BOOL success, NSError *error) {
-            dispatch_async(dispatch_get_main_queue(), ^{ completion(success, error); });
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completion(success, error);
+            });
         }];
     });
 }
 
-// =========================================================
-// MARK: - Share
-// =========================================================
 static void HPlusShareItem(id item, UIViewController *presenter) {
     if (!item || !presenter) return;
     UIActivityViewController *activity = [[UIActivityViewController alloc] initWithActivityItems:@[item] applicationActivities:nil];
@@ -1575,184 +817,143 @@ static void HPlusShareFile(NSURL *fileURL, UIViewController *presenter) {
     HPlusShareItem(fileURL, presenter);
 }
 
-// =========================================================
-// MARK: - Post-download action handling (unified: file + image)
-// =========================================================
 static NSInteger HPlusGetPostDownloadAction(void) {
     return INTFORVAL(PostDownloadAction);
 }
 
-// نقطة واحدة موحّدة لمنطق "احفظ في الصور / شارك / اسأل" بدل تكرارها لكل
-// من الفيديو/الصوت والصورة بشكل منفصل. saveHandler هو اللي بيحدد الفرق
-// الفعلي (فيديو → مكتبة الصور بـ PHAssetCreationRequest، صورة → PHAssetChangeRequest).
-typedef void (^HPlusSaveCompletion)(BOOL success, NSError *error);
-typedef void (^HPlusSaveHandler)(HPlusSaveCompletion completion);
-
-static void HPlusHandlePostDownloadAction(NSString *successKey, NSString *failKey, HPlusSaveHandler saveHandler, void (^shareHandler)(void)) {
-    if (!saveHandler || !shareHandler) return;
+static void HPlusHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, UIViewController *presenter) {
+    if (!fileURL) return;
     NSInteger action = HPlusGetPostDownloadAction();
 
     if (action == PostDownloadActionSaveToPhotos) {
-        saveHandler(^(BOOL success, NSError *error) {
-            if (success) {
-                HPlusSendSuccess(LOC(successKey));
-            } else {
-                HPlusSendError(error.localizedDescription ?: LOC(failKey));
-                shareHandler();
-            }
-        });
+        if (isVideo && HPlusVideoFileCanSaveToPhotos(fileURL)) {
+            HPlusSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
+                if (success) {
+                    HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
+                } else {
+                    HPlusSendError(error.localizedDescription ?: LOC(@"CANNOT_SAVE_TO_PHOTOS"));
+                    HPlusShareFile(fileURL, presenter);
+                }
+            });
+        } else {
+            HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
+            HPlusShareFile(fileURL, presenter);
+        }
     } else if (action == PostDownloadActionShare) {
         HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
-        shareHandler();
+        HPlusShareFile(fileURL, presenter);
     } else if (action == PostDownloadActionAsk) {
         UIView *parent = sbGetNotificationParent();
         [SBSkipNotificationView showDownloadCompleteDialogInView:parent
                                                         message:LOC(@"DOWNLOAD_COMPLETED")
                                                     saveHandler:^{
-            saveHandler(^(BOOL success, NSError *error) {
-                if (success) HPlusSendSuccess(LOC(successKey));
-                else HPlusSendError(error.localizedDescription ?: LOC(failKey));
-            });
-        } shareHandler:shareHandler
-          duration:8.0];
-    }
-}
-
-static void HPlusHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, UIViewController *presenter) {
-    if (!fileURL) return;
-    BOOL canSaveToPhotos = isVideo && HPlusVideoFileCanSaveToPhotos(fileURL);
-
-    if (!canSaveToPhotos) {
-        // ملفات صوتية أو فيديو غير مدعوم في مكتبة الصور: النجاح هنا يعني "مشاركة" مباشرة.
-        NSInteger action = HPlusGetPostDownloadAction();
-        if (action == PostDownloadActionAsk) {
-            // "Ask" لسه له معنى (ينتظر اختيار المستخدم) حتى لو الحفظ في الصور مش متاح،
-            // فبنسيب الـ dialog يظهر لكن زر "Save" هيأدي لنفس نتيجة المشاركة.
-        }
-    }
-
-    HPlusHandlePostDownloadAction(@"SAVED_TO_PHOTOS", @"CANNOT_SAVE_TO_PHOTOS",
-        ^(HPlusSaveCompletion completion) {
-            if (canSaveToPhotos) {
-                HPlusSaveVideoToPhotos(fileURL, presenter, completion);
+            if (isVideo && HPlusVideoFileCanSaveToPhotos(fileURL)) {
+                HPlusSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
+                    if (success) {
+                        HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
+                    } else {
+                        HPlusSendError(error.localizedDescription ?: LOC(@"CANNOT_SAVE_TO_PHOTOS"));
+                        HPlusShareFile(fileURL, presenter);
+                    }
+                });
             } else {
                 HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
                 HPlusShareFile(fileURL, presenter);
-                completion(YES, nil); // منعًا لعرض رسالة نجاح مزدوجة
             }
-        },
-        ^{ HPlusShareFile(fileURL, presenter); });
+        } shareHandler:^{
+            HPlusShareFile(fileURL, presenter);
+        } duration:8.0];
+    }
 }
 
 static void HPlusHandlePostDownloadImage(UIImage *image, UIViewController *presenter) {
     if (!image) return;
-    HPlusHandlePostDownloadAction(@"SAVED_TO_PHOTOS", @"SAVE_FAILED",
-        ^(HPlusSaveCompletion completion) {
+    NSInteger action = HPlusGetPostDownloadAction();
+
+    if (action == PostDownloadActionSaveToPhotos) {
+        HPlusRequestPhotoAccess(^(BOOL granted) {
+            if (!granted) {
+                HPlusSendError(LOC(@"PHOTO_ACCESS_DENINED"));
+                return;
+            }
+            [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                [PHAssetChangeRequest creationRequestForAssetFromImage:image];
+            } completionHandler:^(BOOL success, NSError *saveError) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (success) {
+                        HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
+                    } else {
+                        HPlusSendError(saveError.localizedDescription ?: LOC(@"SAVE_FAILED"));
+                        HPlusShareItem(image, presenter);
+                    }
+                });
+            }];
+        });
+    } else if (action == PostDownloadActionShare) {
+        HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
+        HPlusShareItem(image, presenter);
+    } else if (action == PostDownloadActionAsk) {
+        UIView *parent = sbGetNotificationParent();
+        [SBSkipNotificationView showDownloadCompleteDialogInView:parent
+                                                        message:LOC(@"DOWNLOAD_COMPLETED")
+                                                    saveHandler:^{
             HPlusRequestPhotoAccess(^(BOOL granted) {
                 if (!granted) {
-                    completion(NO, [NSError errorWithDomain:@"HPlus" code:1 userInfo:@{NSLocalizedDescriptionKey: LOC(@"PHOTO_ACCESS_DENINED")}]);
+                    HPlusSendError(LOC(@"PHOTO_ACCESS_DENINED"));
                     return;
                 }
                 [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
                     [PHAssetChangeRequest creationRequestForAssetFromImage:image];
                 } completionHandler:^(BOOL success, NSError *saveError) {
-                    dispatch_async(dispatch_get_main_queue(), ^{ completion(success, saveError); });
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        if (success) {
+                            HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
+                        } else {
+                            HPlusSendError(saveError.localizedDescription ?: LOC(@"SAVE_FAILED"));
+                        }
+                    });
                 }];
             });
-        },
-        ^{ HPlusShareItem(image, presenter); });
+        } shareHandler:^{
+            HPlusShareItem(image, presenter);
+        } duration:8.0];
+    }
 }
 
-// =========================================================
-// MARK: - Menu presentation (single-line attributed titles)
-// =========================================================
 static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuItem *> *items, UIViewController *presenter, UIView *sender) {
     presenter = HPlusTopViewController(presenter);
-    Class sheetClass = NSClassFromString(@"YTDefaultSheetController");
-    if (sheetClass && [sheetClass respondsToSelector:@selector(sheetControllerWithParentResponder:)]) {
-        YTDefaultSheetController *sheet = [sheetClass sheetControllerWithParentResponder:presenter];
-        Class actionClass = NSClassFromString(@"YTActionSheetAction");
-
-        for (HPlusMenuItem *item in items) {
-            id action = nil;
-            NSAttributedString *attrTitle = HPlusAttributedTitle(item.title, item.subtitle);
-
-            if ([actionClass respondsToSelector:@selector(actionWithAttributedTitle:iconImage:style:handler:)]) {
-                action = ((id (*)(Class, SEL, NSAttributedString *, UIImage *, NSInteger, id))objc_msgSend)(
-                    actionClass, @selector(actionWithAttributedTitle:iconImage:style:handler:),
-                    attrTitle, item.iconImage, 0,
-                    ^(__unused id a) { if (item.handler) item.handler(); });
-            } else if ([actionClass respondsToSelector:@selector(actionWithAttributedTitle:iconImage:handler:)]) {
-                action = ((id (*)(Class, SEL, NSAttributedString *, UIImage *, id))objc_msgSend)(
-                    actionClass, @selector(actionWithAttributedTitle:iconImage:handler:),
-                    attrTitle, item.iconImage,
-                    ^(__unused id a) { if (item.handler) item.handler(); });
-            } else if ([actionClass respondsToSelector:@selector(actionWithAttributedTitle:style:handler:)]) {
-                action = ((id (*)(Class, SEL, NSAttributedString *, NSInteger, id))objc_msgSend)(
-                    actionClass, @selector(actionWithAttributedTitle:style:handler:),
-                    attrTitle, 0,
-                    ^(__unused id a) { if (item.handler) item.handler(); });
-            } else {
-                NSString *combined = item.subtitle.length
-                    ? [NSString stringWithFormat:@"%@  %@", item.title, item.subtitle]
-                    : item.title;
-                if ([actionClass respondsToSelector:@selector(actionWithTitle:iconImage:style:handler:)]) {
-                    action = ((id (*)(Class, SEL, NSString *, UIImage *, NSInteger, id))objc_msgSend)(
-                        actionClass, @selector(actionWithTitle:iconImage:style:handler:),
-                        combined, item.iconImage, 0,
-                        ^(__unused id a) { if (item.handler) item.handler(); });
-                } else if ([actionClass respondsToSelector:@selector(actionWithTitle:style:handler:)]) {
-                    action = ((id (*)(Class, SEL, NSString *, NSInteger, id))objc_msgSend)(
-                        actionClass, @selector(actionWithTitle:style:handler:),
-                        combined, 0,
-                        ^(__unused id a) { if (item.handler) item.handler(); });
-                } else if ([actionClass respondsToSelector:@selector(actionWithTitle:subtitle:iconImage:handler:)]) {
-                    action = ((id (*)(Class, SEL, NSString *, NSString *, UIImage *, id))objc_msgSend)(
-                        actionClass, @selector(actionWithTitle:subtitle:iconImage:handler:),
-                        item.title, item.subtitle, item.iconImage,
-                        ^(__unused id a) { if (item.handler) item.handler(); });
-                }
-            }
-            if (action) [sheet addAction:action];
-        }
-
-        if (player && [sheet respondsToSelector:@selector(addHeaderWithTitle:subtitle:)]) {
-            NSString *author = HPlusAuthorForPlayer(player);
-            NSString *title = HPlusTitleForPlayer(player);
-            if (author.length || title.length) [sheet addHeaderWithTitle:author subtitle:title];
-        }
-
-        if (sender && [sheet respondsToSelector:@selector(presentFromView:animated:completion:)])
-            [sheet presentFromView:sender animated:YES completion:nil];
-        else
-            [sheet presentFromViewController:presenter animated:YES completion:nil];
-        return;
-    }
-
-    // Fallback
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:presenter];
     for (HPlusMenuItem *item in items) {
-        NSString *rowTitle = item.subtitle.length
-            ? [NSString stringWithFormat:@"%@  %@", item.title, item.subtitle]
-            : item.title;
-        [alert addAction:[UIAlertAction actionWithTitle:rowTitle style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-            if (item.handler) item.handler();
-        }]];
+        YTActionSheetAction *action;
+        if (item.subtitle == nil) {
+            action = [%c(YTActionSheetAction) actionWithTitle:item.title iconImage:item.iconImage style:0 handler:^(__unused YTActionSheetAction *action) {
+                item.handler();
+            }];
+        } else {
+            action = [%c(YTActionSheetAction) actionWithTitle:item.title subtitle:item.subtitle iconImage:item.iconImage handler:^(__unused YTActionSheetAction *action) {
+                item.handler();
+            }];
+        }
+        [sheet addAction:action];
     }
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
-    alert.popoverPresentationController.sourceView = sender ?: presenter.view;
-    [presenter presentViewController:alert animated:YES completion:nil];
+    if (player && player != nil) {
+        [sheet addHeaderWithTitle:HPlusAuthorForPlayer(player) subtitle:HPlusTitleForPlayer(player)];
+    }
+    if (sender) {
+        [sheet presentFromView:sender animated:YES completion:nil];
+    } else {
+        [sheet presentFromViewController:presenter animated:YES completion:nil];
+    }
 }
 
-// =========================================================
-// MARK: - HPlusDownloadCoordinator Implementation
-// =========================================================
 @implementation HPlusDownloadCoordinator
 
 + (instancetype)sharedCoordinator {
     static HPlusDownloadCoordinator *coordinator;
     static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{ coordinator = [HPlusDownloadCoordinator new]; });
+    dispatch_once(&onceToken, ^{
+        coordinator = [HPlusDownloadCoordinator new];
+    });
     return coordinator;
 }
 
@@ -1777,6 +978,7 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     self.presenter = presenter;
     self.baseProgressTitle = title;
     self.downloadStartTime = [NSDate timeIntervalSinceReferenceDate];
+
     UIView *pillParent = sbGetNotificationParent();
     __weak typeof(self) weakSelf = self;
     self.progressPill = [YMDownloadProgressView showInView:pillParent
@@ -1791,6 +993,10 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     [self.progressPill updateProgress:progress title:displayTitle subtitle:nil];
 }
 
+// SABR progress with a speed + size subtitle. When the total is known (the formats'
+// contentLength, in self.totalBytes) the percentage and subtitle track downloaded/total
+// like the direct/server path; otherwise they fall back to the segment fraction + a
+// downloaded-so-far figure. Reuses the "X.X MB/s · Y.Y MB" style.
 - (void)updateSABRProgressTitle:(NSString *)title progress:(float)progress bytesDownloaded:(unsigned long long)bytesDownloaded {
     NSTimeInterval elapsed = [NSDate timeIntervalSinceReferenceDate] - self.downloadStartTime;
     double downloadedMB = (double)bytesDownloaded / 1048576.0;
@@ -1798,10 +1004,12 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
 
     NSString *subtitle;
     if (self.totalBytes > 0) {
+        // Real percentage from bytes; subtitle shows downloaded / total.
         progress = fminf(fmaxf((float)bytesDownloaded / (float)self.totalBytes, 0.0f), 1.0f);
         double totalMB = (double)self.totalBytes / 1048576.0;
         subtitle = [NSString stringWithFormat:@"%.1f MB/s · %.1f / %.1f MB", speedMBps, downloadedMB, totalMB];
     } else {
+        // Total unknown → segment-fraction % + downloaded-so-far.
         subtitle = [NSString stringWithFormat:@"%.1f MB/s · %.1f MB", speedMBps, downloadedMB];
     }
 
@@ -1811,22 +1019,25 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
 
 - (void)cancelWithMessage:(NSString *)message {
     if (![NSThread isMainThread]) {
-        dispatch_async(dispatch_get_main_queue(), ^{ [self cancelWithMessage:message]; });
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self cancelWithMessage:message];
+        });
         return;
     }
+
     [self.task cancel];
     [self.metadataTask cancel];
     [self.rangeDownloader cancel];
     [self.exporter cancelExport];
     [YMSABR cancelCurrent];
-    HPlusCancelFFmpegKit();
-
+    
     self.task = nil;
     self.metadataTask = nil;
     self.rangeDownloader = nil;
     self.exporter = nil;
     self.fileCompletion = nil;
     self.downloadCompletionBlock = nil;
+    
     self.active = NO;
     self.cancelled = YES;
     if (self.progressPill) { [self.progressPill dismiss]; self.progressPill = nil; }
@@ -1911,6 +1122,7 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     self.metadataTask = [NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(__unused NSData *data, NSURLResponse *response, __unused NSError *error) {
         __strong typeof(weakSelf) self = weakSelf;
         if (!self) return;
+
         unsigned long long bytes = 0;
         if (response.expectedContentLength > 0) {
             bytes = (unsigned long long)response.expectedContentLength;
@@ -1919,6 +1131,7 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
             if ([header respondsToSelector:@selector(unsignedLongLongValue)])
                 bytes = [header unsignedLongLongValue];
         }
+
         dispatch_async(dispatch_get_main_queue(), ^{
             self.metadataTask = nil;
             completion(bytes);
@@ -1932,20 +1145,28 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     float progress = total ? (float)(self.completedBytes + currentBytes) / (float)total : 0.0f;
     progress = fminf(fmaxf(progress, 0.0f), 1.0f);
 
-    NSTimeInterval elapsed = [NSDate timeIntervalSinceReferenceDate] - self.downloadStartTime;
-    double speedMBps = elapsed > 0 ? ((double)(self.completedBytes + currentBytes) / 1048576.0) / elapsed : 0;
+    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+    NSTimeInterval elapsed = now - self.downloadStartTime;
+    double speedMBps = 0;
+    if (elapsed > 0) {
+        speedMBps = ((double)(self.completedBytes + currentBytes) / 1048576.0) / elapsed;
+    }
     double totalMB = (double)total / 1048576.0;
 
     NSString *title = [NSString stringWithFormat:@"%@ - %ld%%", self.baseProgressTitle ?: @"Downloading", (long)lrintf(progress * 100.0f)];
     NSString *subtitle;
-    if (total > 0) subtitle = [NSString stringWithFormat:@"%.1f MB/s · %.1f MB", speedMBps, totalMB];
-    else subtitle = [NSString stringWithFormat:@"%.1f MB/s", speedMBps];
+    if (total > 0) {
+        subtitle = [NSString stringWithFormat:@"%.1f MB/s · %.1f MB", speedMBps, totalMB];
+    } else {
+        subtitle = [NSString stringWithFormat:@"%.1f MB/s", speedMBps];
+    }
     [self.progressPill updateProgress:progress title:title subtitle:subtitle];
 }
 
 - (void)adjustCurrentExpectedBytesIfNeeded:(unsigned long long)newExpectedBytes {
     unsigned long long oldExpectedBytes = self.currentExpectedBytes;
     if (newExpectedBytes <= oldExpectedBytes) return;
+
     self.currentExpectedBytes = newExpectedBytes;
     if (oldExpectedBytes > 0) {
         self.totalBytes += newExpectedBytes - oldExpectedBytes;
@@ -1955,32 +1176,24 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     }
 }
 
-// =========================================================
-// Video download entry points
-// =========================================================
 - (void)startVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
-    if (self.active) { HPlusSendToast(LOC(@"ALREADY_DOWNLOADING")); return; }
+    if (self.active) {
+        HPlusSendToast(LOC(@"ALREADY_DOWNLOADING"));
+        return;
+    }
     [self startDirectVideoDownloadWithVideoFormat:videoFormat audioFormat:audioFormat fileName:fileName presenter:presenter videoID:vidID];
 }
 
 - (void)startDirectVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
     [self cleanupTemporaryFiles];
-
-    // On-device SABR path (routed through SABRDownload.x)
+    // On-device SABR path. Checked first: on modern YouTube the format URLs are empty
+    // (media flows via SABR), so the URL check below would otherwise abort.
     if (INTFORVAL(DownloadMethod) == DownloadMethodOnDevice) {
         [self startSABRVideoDownloadWithVideoFormat:videoFormat audioFormat:audioFormat fileName:fileName presenter:presenter];
         return;
     }
-
-    // Server path (external)
-    if (INTFORVAL(DownloadMethod) == DownloadMethodServer) {
-        NSString *resolutionStr = [NSString stringWithFormat:@"%d", videoFormat.itag];
-        [self triggerSilentDownloadWithQuality:resolutionStr isAudio:NO videoID:vidID presenter:presenter];
-        return;
-    }
-
-    NSURL *videoURL = HPlusSafeURLFromString(videoFormat.urlString, @"Direct video download: video URL");
-    NSURL *audioURL = HPlusSafeURLFromString(audioFormat.urlString, @"Direct video download: audio URL");
+    NSURL *videoURL = [NSURL URLWithString:videoFormat.urlString];
+    NSURL *audioURL = [NSURL URLWithString:audioFormat.urlString];
     if (!videoURL || !audioURL) {
         HPlusSendError(LOC(@"NO_STREAM_URL"));
         return;
@@ -1990,22 +1203,28 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     self.cancelled = NO;
     self.completedBytes = 0;
     self.totalBytes = videoFormat.contentLength + audioFormat.contentLength;
-    self.videoTempURL = HPlusTemporaryFileURL(HPlusFileExtensionForFormat(videoFormat, @"mp4"));
-    self.audioTempURL = HPlusTemporaryFileURL(HPlusFileExtensionForFormat(audioFormat, @"m4a"));
+    self.videoTempURL = HPlusTemporaryFileURL(HPlusFileExtensionForFormat(videoFormat));
+    self.audioTempURL = HPlusTemporaryFileURL(HPlusFileExtensionForFormat(audioFormat));
     NSString *outputExtension = HPlusMergedVideoOutputExtension(videoFormat, audioFormat);
+    if (INTFORVAL(DownloadMethod) == DownloadMethodServer) {
+        NSString *resolutionStr = [NSString stringWithFormat:@"%d", videoFormat.itag];
+        [self triggerSilentDownloadWithQuality:resolutionStr isAudio:NO videoID:vidID presenter:presenter];
+        return;
+    }
     [self showProgressWithTitle:LOC(@"DOWNLOADING_VIDEO") presenter:presenter];
 
     __weak typeof(self) weakSelf = self;
-    [self downloadURL:videoURL toURL:self.videoTempURL expectedBytes:videoFormat.contentLength headers:videoFormat.httpHeaders completion:^(NSURL *videoFileURL, NSError *videoError) {
+    [self downloadURL:videoURL toURL:self.videoTempURL expectedBytes:videoFormat.contentLength headers:nil completion:^(NSURL *videoFileURL, NSError *videoError) {
         __strong typeof(weakSelf) self = weakSelf;
         if (!self || self.cancelled) return;
         if (videoError) {
             [self failWithError:videoError ?: [NSError errorWithDomain:@"HPlus" code:2 userInfo:@{NSLocalizedDescriptionKey: @"Video download failed"}]];
             return;
         }
-        self.completedBytes += MAX((unsigned long long)videoFormat.contentLength, self.currentBytes);
+
+        self.completedBytes += MAX(videoFormat.contentLength, self.currentBytes);
         [self updateProgressTitle:LOC(@"DOWNLOADING_AUDIO") progress:(self.totalBytes ? (float)self.completedBytes / (float)self.totalBytes : 0.5f)];
-        [self downloadURL:audioURL toURL:self.audioTempURL expectedBytes:audioFormat.contentLength headers:audioFormat.httpHeaders completion:^(NSURL *audioFileURL, NSError *audioError) {
+        [self downloadURL:audioURL toURL:self.audioTempURL expectedBytes:audioFormat.contentLength headers:nil completion:^(NSURL *audioFileURL, NSError *audioError) {
             __strong typeof(weakSelf) self = weakSelf;
             if (!self || self.cancelled) return;
             if (audioError) {
@@ -2018,10 +1237,16 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     }];
 }
 
+// On-device SABR download: fetch the chosen mp4 video + m4a audio itags via the SABR
+// engine (which captures/replays the app's own signed request), then hand the two
+// elementary files to the existing muxer. Additive — the direct/server paths above
+// are untouched.
 - (void)startSABRVideoDownloadWithVideoFormat:(HPlusMediaFormat *)videoFormat audioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter {
     self.active = YES;
     self.cancelled = NO;
     self.completedBytes = 0;
+    // Known total from the formats' contentLength (present even on 21.29 where the
+    // stream URL is empty) → the pill can show a real % + total size. 0 if unknown.
     self.totalBytes = videoFormat.contentLength + audioFormat.contentLength;
     [self showProgressWithTitle:LOC(@"DOWNLOADING_VIDEO") presenter:presenter];
 
@@ -2041,123 +1266,20 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
                 [self failWithError:[NSError errorWithDomain:@"HPlus" code:20 userInfo:@{NSLocalizedDescriptionKey: err ?: LOC(@"DOWNLOAD_FAILED")}]];
                 return;
             }
-            self.videoTempURL = videoURL;
+            self.videoTempURL = videoURL; // so cleanupTemporaryFiles removes them afterwards
             self.audioTempURL = audioURL;
             [self mergeVideoURL:videoURL audioURL:audioURL fileName:fileName outputExtension:@"mp4" durationMs:durationMs presenter:presenter];
         }];
 }
 
-- (void)startDirectSingleVideoDownloadWithFormat:(HPlusMediaFormat *)format fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
-    NSURL *videoURL = HPlusSafeURLFromString(format.urlString, @"Direct single video download");
-    if (!videoURL) { HPlusSendError(LOC(@"NO_STREAM_URL")); return; }
-
-    self.active = YES;
-    self.cancelled = NO;
-    self.completedBytes = 0;
-    self.totalBytes = format.contentLength;
-    NSString *extension = HPlusFileExtensionForFormat(format, @"mp4");
-    BOOL canFinalizeWithAVFoundation = format.durationMs > 0 && HPlusPathExtensionIsPhotosVideo(extension);
-    NSURL *finalURL = HPlusUniqueFileURL(fileName, extension);
-    NSURL *downloadURL = canFinalizeWithAVFoundation ? HPlusTemporaryFileURL(extension) : finalURL;
-    self.videoTempURL = canFinalizeWithAVFoundation ? downloadURL : nil;
-    [self showProgressWithTitle:LOC(@"DOWNLOADING_VIDEO") presenter:presenter];
-
-    __weak typeof(self) weakSelf = self;
-    [self downloadURL:videoURL toURL:downloadURL expectedBytes:format.contentLength headers:format.httpHeaders completion:^(NSURL *fileURL, NSError *error) {
-        __strong typeof(weakSelf) self = weakSelf;
-        if (!self || self.cancelled) return;
-        if (error) {
-            [self failWithError:error ?: [NSError errorWithDomain:@"HPlus" code:8 userInfo:@{NSLocalizedDescriptionKey: @"Video download failed"}]];
-            return;
-        }
-        if (canFinalizeWithAVFoundation) {
-            [self trimSingleVideoURL:fileURL outputURL:finalURL durationMs:format.durationMs presenter:presenter];
-            return;
-        }
-        [self completeWithFileURL:fileURL isVideo:YES presenter:presenter];
-    }];
-}
-
-// =========================================================
-// Audio download entry points
-// =========================================================
-- (void)startAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
-    [self startAudioDownloadWithAudioFormat:audioFormat fileName:fileName presenter:presenter videoID:vidID outputFormat:nil];
-}
-
-- (void)startAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID outputFormat:(HPlusAudioOutputFormat *)outputFormat {
-    if (self.active) { HPlusSendToast(LOC(@"ALREADY_DOWNLOADING")); return; }
-    [self startDirectAudioDownloadWithAudioFormat:audioFormat fileName:fileName presenter:presenter videoID:vidID outputFormat:outputFormat];
-}
-
-- (void)startDirectAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID outputFormat:(HPlusAudioOutputFormat *)outputFormat {
-    [self cleanupTemporaryFiles];
-
-    if (INTFORVAL(DownloadMethod) == DownloadMethodOnDevice) {
-        [self startSABRAudioDownloadWithAudioFormat:audioFormat fileName:fileName presenter:presenter];
-        return;
-    }
-
-    if (INTFORVAL(DownloadMethod) == DownloadMethodServer) {
-        [self triggerSilentDownloadWithQuality:nil isAudio:YES videoID:vidID presenter:presenter];
-        return;
-    }
-
-    NSURL *audioURL = HPlusSafeURLFromString(audioFormat.urlString, @"Direct audio download");
-    if (!audioURL) { HPlusSendError(LOC(@"NO_AUDIO_URL")); return; }
-
-    outputFormat = outputFormat ?: HPlusDefaultAudioOutputFormat();
-    if (!outputFormat.supported) {
-        HPlusSendError([NSString stringWithFormat:@"%@ not supported", outputFormat.title ?: @"Format"]);
-        return;
-    }
-
-    self.active = YES;
-    self.cancelled = NO;
-    self.completedBytes = 0;
-    self.totalBytes = audioFormat.contentLength;
-    BOOL passthrough = HPlusAudioOutputFormatCanPassthrough(outputFormat, audioFormat);
-
-    if (!passthrough && !HPlusFFmpegKitAvailable()) {
-        self.active = NO;
-        NSString *details = HPlusFFmpegKitDiagnosticText(outputFormat, audioFormat, vidID);
-        HPlusRecordDownloadDiagnostic(@"FFmpegKit unavailable for audio conversion", details);
-        NSString *diagnostic = HPlusDownloadDiagnosticText();
-        if (diagnostic.length) {
-            UIPasteboard.generalPasteboard.string = diagnostic;
-            HPlusSendToast(@"FFmpegKit not loaded, diagnostics copied");
-        } else {
-            HPlusSendError([NSString stringWithFormat:@"FFmpegKit required for %@", outputFormat.title ?: @"this format"]);
-        }
-        return;
-    }
-
-    NSURL *finalURL = HPlusUniqueFileURL(fileName, HPlusAudioOutputFileExtension(outputFormat, audioFormat, passthrough));
-    NSURL *downloadURL = passthrough ? finalURL : HPlusTemporaryFileURL(HPlusFileExtensionForFormat(audioFormat, @"m4a"));
-    self.audioTempURL = passthrough ? nil : downloadURL;
-    [self showProgressWithTitle:LOC(@"DOWNLOADING_AUDIO") presenter:presenter];
-
-    __weak typeof(self) weakSelf = self;
-    [self downloadURL:audioURL toURL:downloadURL expectedBytes:audioFormat.contentLength headers:audioFormat.httpHeaders completion:^(NSURL *fileURL, NSError *error) {
-        __strong typeof(weakSelf) self = weakSelf;
-        if (!self || self.cancelled) return;
-        if (error) {
-            [self failWithError:error ?: [NSError errorWithDomain:@"HPlus" code:4 userInfo:@{NSLocalizedDescriptionKey: @"Audio download failed"}]];
-            return;
-        }
-        if (!passthrough) {
-            unsigned long long durationMs = audioFormat.durationMs ?: HPlusDurationMsForURL(fileURL);
-            [self convertAudioURL:fileURL outputURL:finalURL outputFormat:outputFormat durationMs:durationMs presenter:presenter];
-            return;
-        }
-        [self completeWithFileURL:fileURL isVideo:NO presenter:presenter];
-    }];
-}
-
+// On-device SABR audio-only download: fetch the chosen m4a audio itag via SABR, then
+// remux the fragmented-mp4 track into a clean .m4a with AVFoundation (passthrough, no
+// re-encode). No half-length trim: SABR delivers a properly segmented, complete track.
 - (void)startSABRAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter {
     self.active = YES;
     self.cancelled = NO;
     self.completedBytes = 0;
+    // Known total from the format's contentLength (see video path). 0 if unknown.
     self.totalBytes = audioFormat.contentLength;
     [self showProgressWithTitle:LOC(@"DOWNLOADING_AUDIO") presenter:presenter];
 
@@ -2176,11 +1298,12 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
                 [self failWithError:[NSError errorWithDomain:@"HPlus" code:21 userInfo:@{NSLocalizedDescriptionKey: err ?: LOC(@"DOWNLOAD_FAILED")}]];
                 return;
             }
-            self.audioTempURL = audioURL;
+            self.audioTempURL = audioURL; // so cleanupTemporaryFiles removes it afterwards
             [self exportSABRAudioURL:audioURL toURL:finalURL presenter:presenter];
         }];
 }
 
+// Remux a SABR audio track (fragmented mp4) to a clean m4a container, full length.
 - (void)exportSABRAudioURL:(NSURL *)audioURL toURL:(NSURL *)outputURL presenter:(UIViewController *)presenter {
     [self updateProgressTitle:LOC(@"FINA_VIDEO") progress:0.985f];
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:audioURL options:nil];
@@ -2209,6 +1332,69 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     }];
 }
 
+- (void)startAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
+    if (self.active) {
+        HPlusSendToast(LOC(@"ALREADY_DOWNLOADING"));
+        return;
+    }
+    [self startDirectAudioDownloadWithAudioFormat:audioFormat fileName:fileName presenter:presenter videoID:vidID];
+}
+
+- (void)startDirectAudioDownloadWithAudioFormat:(HPlusMediaFormat *)audioFormat fileName:(NSString *)fileName presenter:(UIViewController *)presenter videoID:(NSString *)vidID {
+    [self cleanupTemporaryFiles];
+    // On-device SABR path. Checked first: on modern YouTube the format URLs are empty
+    // (media flows via SABR), so the URL check below would otherwise abort.
+    if (INTFORVAL(DownloadMethod) == DownloadMethodOnDevice) {
+        [self startSABRAudioDownloadWithAudioFormat:audioFormat fileName:fileName presenter:presenter];
+        return;
+    }
+    NSURL *audioURL = [NSURL URLWithString:audioFormat.urlString];
+    if (!audioURL) {
+        HPlusSendError(LOC(@"NO_AUDIO_URL"));
+        return;
+    }
+
+    self.active = YES;
+    self.cancelled = NO;
+    self.completedBytes = 0;
+    self.totalBytes = audioFormat.contentLength;
+
+    NSURL *finalURL = HPlusUniqueFileURL(fileName, @"m4a");
+    NSString *tempFileName = [NSString stringWithFormat:@"Temp_%@", fileName];
+    NSURL *downloadURL = HPlusUniqueFileURL(tempFileName, @"m4a");
+    self.audioTempURL = downloadURL;
+    if (INTFORVAL(DownloadMethod) == DownloadMethodServer) {
+        [self triggerSilentDownloadWithQuality:nil isAudio:YES videoID:vidID presenter:presenter];
+        return;
+    }
+    
+    [self showProgressWithTitle:LOC(@"DOWNLOADING_AUDIO") presenter:presenter];
+    __weak typeof(self) weakSelf = self;
+    
+    [self downloadURL:audioURL toURL:downloadURL expectedBytes:audioFormat.contentLength headers:nil completion:^(NSURL *fileURL, NSError *error) {
+        __strong typeof(weakSelf) self = weakSelf;
+        if (!self || self.cancelled) {
+            [[NSFileManager defaultManager] removeItemAtURL:downloadURL error:nil];
+            return;
+        }
+        if (error) {
+            [[NSFileManager defaultManager] removeItemAtURL:downloadURL error:nil];
+            [self failWithError:error ?: [NSError errorWithDomain:@"HPlus" code:4 userInfo:@{NSLocalizedDescriptionKey: @"Audio download failed"}]];
+            return;
+        }
+        
+        [self trimAudioToHalfLengthAtURL:fileURL toURL:finalURL completion:^(NSError *trimError) {
+            [[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil];
+            if (self.cancelled) return;
+            if (trimError) {
+                [self failWithError:trimError];
+                return;
+            }
+            [self completeWithFileURL:finalURL isVideo:NO presenter:presenter];
+        }];
+    }];
+}
+
 - (void)trimAudioToHalfLengthAtURL:(NSURL *)inputURL toURL:(NSURL *)outputURL completion:(void (^)(NSError *error))completion {
     [self updateProgressTitle:LOC(@"TRIMMING_AUDIO") progress:0.985f];
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:inputURL options:nil];
@@ -2222,10 +1408,11 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
             });
             return;
         }
+        
         CMTime totalDuration = asset.duration;
         CMTime halfDuration = CMTimeMultiplyByFloat64(totalDuration, 0.5);
         CMTimeRange exportTimeRange = CMTimeRangeMake(kCMTimeZero, halfDuration);
-
+        
         AVAssetExportSession *exportSession = [AVAssetExportSession exportSessionWithAsset:asset presetName:AVAssetExportPresetAppleM4A];
         if (!exportSession) {
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -2233,10 +1420,11 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
             });
             return;
         }
+        
         exportSession.outputURL = outputURL;
         exportSession.outputFileType = AVFileTypeAppleM4A;
         exportSession.timeRange = exportTimeRange;
-
+        
         [exportSession exportAsynchronouslyWithCompletionHandler:^{
             dispatch_async(dispatch_get_main_queue(), ^{
                 if (exportSession.status == AVAssetExportSessionStatusCompleted) {
@@ -2249,65 +1437,15 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     }];
 }
 
-// =========================================================
-// Merge + Convert + Finalize
-// =========================================================
 - (void)mergeVideoURL:(NSURL *)videoURL audioURL:(NSURL *)audioURL fileName:(NSString *)fileName outputExtension:(NSString *)outputExtension durationMs:(unsigned long long)durationMs presenter:(UIViewController *)presenter {
     [self updateProgressTitle:LOC(@"MERGING_VID") progress:0.985f];
     NSURL *outputURL = HPlusUniqueFileURL(fileName, outputExtension.length ? outputExtension : @"mp4");
     if (durationMs == 0) durationMs = HPlusDurationMsForURL(videoURL);
 
-    if (HPlusFFmpegKitAvailable()) {
-        __weak typeof(self) weakSelf = self;
-        BOOL started = HPlusStartFFmpegKitMerge(videoURL, audioURL, outputURL, durationMs, ^(float progress) {
-            __strong typeof(weakSelf) self = weakSelf;
-            if (!self || self.cancelled) return;
-            [self updateProgressTitle:LOC(@"MERGING_VID") progress:progress];
-        }, ^(BOOL success, NSError *error) {
-            __strong typeof(weakSelf) self = weakSelf;
-            if (!self || self.cancelled) return;
-            if (success) {
-                [self completeWithFileURL:outputURL isVideo:YES presenter:presenter];
-                return;
-            }
-            [NSFileManager.defaultManager removeItemAtURL:outputURL error:nil];
-            if (HPlusVideoFileCanSaveToPhotos(outputURL)) {
-                [self mergeVideoWithAVFoundationVideoURL:videoURL audioURL:audioURL outputURL:outputURL durationMs:durationMs presenter:presenter fallbackError:error];
-            } else {
-                [self failWithError:error ?: [NSError errorWithDomain:@"HPlus" code:16 userInfo:@{NSLocalizedDescriptionKey: @"FFmpegKit required for this stream"}]];
-            }
-        });
-        if (started) return;
-    }
-
-    if (HPlusVideoFileCanSaveToPhotos(outputURL)) {
+    if (HPlusVideoFileCanUseAVFoundation(outputURL)) {
         [self mergeVideoWithAVFoundationVideoURL:videoURL audioURL:audioURL outputURL:outputURL durationMs:durationMs presenter:presenter fallbackError:nil];
     } else {
-        [self failWithError:[NSError errorWithDomain:@"HPlus" code:16 userInfo:@{NSLocalizedDescriptionKey: @"FFmpegKit required for this stream"}]];
-    }
-}
-
-- (void)convertAudioURL:(NSURL *)inputURL outputURL:(NSURL *)outputURL outputFormat:(HPlusAudioOutputFormat *)outputFormat durationMs:(unsigned long long)durationMs presenter:(UIViewController *)presenter {
-    [self updateProgressTitle:[NSString stringWithFormat:@"Converting to %@", outputFormat.title ?: @"audio"] progress:0.985f];
-    [NSFileManager.defaultManager removeItemAtURL:outputURL error:nil];
-
-    __weak typeof(self) weakSelf = self;
-    BOOL started = HPlusStartFFmpegKitAudioConvert(inputURL, outputURL, outputFormat, durationMs, ^(float progress) {
-        __strong typeof(weakSelf) self = weakSelf;
-        if (!self || self.cancelled) return;
-        [self updateProgressTitle:[NSString stringWithFormat:@"Converting to %@", outputFormat.title ?: @"audio"] progress:progress];
-    }, ^(BOOL success, NSError *error) {
-        __strong typeof(weakSelf) self = weakSelf;
-        if (!self || self.cancelled) return;
-        if (success) {
-            [self completeWithFileURL:outputURL isVideo:NO presenter:presenter];
-            return;
-        }
-        [self failWithError:error ?: [NSError errorWithDomain:@"HPlus" code:14 userInfo:@{NSLocalizedDescriptionKey: @"Conversion failed"}]];
-    });
-
-    if (!started) {
-        [self failWithError:[NSError errorWithDomain:@"HPlus" code:15 userInfo:@{NSLocalizedDescriptionKey: @"Format unavailable"}]];
+        [self failWithError:[NSError errorWithDomain:@"HPlus" code:16 userInfo:@{NSLocalizedDescriptionKey: @"Cannot download audio from this stream"}]];
     }
 }
 
@@ -2333,12 +1471,18 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     AVMutableCompositionTrack *compositionVideo = [composition addMutableTrackWithMediaType:AVMediaTypeVideo preferredTrackID:kCMPersistentTrackID_Invalid];
     [compositionVideo insertTimeRange:CMTimeRangeMake(kCMTimeZero, duration) ofTrack:videoTrack atTime:kCMTimeZero error:&insertError];
     compositionVideo.preferredTransform = videoTrack.preferredTransform;
-    if (insertError) { [self failWithError:insertError]; return; }
+    if (insertError) {
+        [self failWithError:insertError];
+        return;
+    }
 
     AVMutableCompositionTrack *compositionAudio = [composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];
     CMTime audioDuration = HPlusMinUsableDuration(duration, audioTrack.timeRange.duration);
     [compositionAudio insertTimeRange:CMTimeRangeMake(kCMTimeZero, audioDuration) ofTrack:audioTrack atTime:kCMTimeZero error:&insertError];
-    if (insertError) { [self failWithError:insertError]; return; }
+    if (insertError) {
+        [self failWithError:insertError];
+        return;
+    }
 
     AVAssetExportSession *exporter = [[AVAssetExportSession alloc] initWithAsset:composition presetName:AVAssetExportPresetPassthrough];
     exporter.outputURL = outputURL;
@@ -2362,65 +1506,12 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     }];
 }
 
-- (void)trimSingleVideoURL:(NSURL *)inputURL outputURL:(NSURL *)outputURL durationMs:(unsigned long long)durationMs presenter:(UIViewController *)presenter {
-    [self updateProgressTitle:LOC(@"FINA_VIDEO") progress:0.99f];
-    [NSFileManager.defaultManager removeItemAtURL:outputURL error:nil];
-
-    AVURLAsset *asset = [AVURLAsset URLAssetWithURL:inputURL options:nil];
-    AVAssetTrack *videoTrack = [[asset tracksWithMediaType:AVMediaTypeVideo] firstObject];
-    if (!videoTrack) {
-        [self failWithError:[NSError errorWithDomain:@"HPlus" code:10 userInfo:@{NSLocalizedDescriptionKey: @"Cannot finalize video"}]];
-        return;
-    }
-
-    CMTime duration = HPlusExportDuration(asset, nil, durationMs);
-    if (!HPlusCMTimeIsUsable(duration)) {
-        [self failWithError:[NSError errorWithDomain:@"HPlus" code:11 userInfo:@{NSLocalizedDescriptionKey: @"Cannot determine duration"}]];
-        return;
-    }
-
-    AVMutableComposition *composition = [AVMutableComposition composition];
-    NSError *insertError = nil;
-    AVMutableCompositionTrack *compositionVideo = [composition addMutableTrackWithMediaType:AVMediaTypeVideo preferredTrackID:kCMPersistentTrackID_Invalid];
-    [compositionVideo insertTimeRange:CMTimeRangeMake(kCMTimeZero, duration) ofTrack:videoTrack atTime:kCMTimeZero error:&insertError];
-    compositionVideo.preferredTransform = videoTrack.preferredTransform;
-    if (insertError) { [self failWithError:insertError]; return; }
-
-    AVAssetTrack *audioTrack = [[asset tracksWithMediaType:AVMediaTypeAudio] firstObject];
-    if (audioTrack) {
-        CMTime audioDuration = HPlusMinUsableDuration(duration, audioTrack.timeRange.duration);
-        AVMutableCompositionTrack *compositionAudio = [composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];
-        [compositionAudio insertTimeRange:CMTimeRangeMake(kCMTimeZero, audioDuration) ofTrack:audioTrack atTime:kCMTimeZero error:&insertError];
-        if (insertError) { [self failWithError:insertError]; return; }
-    }
-
-    AVAssetExportSession *exporter = [[AVAssetExportSession alloc] initWithAsset:composition presetName:AVAssetExportPresetPassthrough];
-    exporter.outputURL = outputURL;
-    exporter.outputFileType = AVFileTypeMPEG4;
-    exporter.shouldOptimizeForNetworkUse = YES;
-    self.exporter = exporter;
-
-    __weak typeof(self) weakSelf = self;
-    [exporter exportAsynchronouslyWithCompletionHandler:^{
-        dispatch_async(dispatch_get_main_queue(), ^{
-            __strong typeof(weakSelf) self = weakSelf;
-            if (!self) return;
-            self.exporter = nil;
-            if (self.cancelled || exporter.status == AVAssetExportSessionStatusCancelled) return;
-            if (exporter.status == AVAssetExportSessionStatusCompleted) {
-                [self completeWithFileURL:outputURL isVideo:YES presenter:presenter];
-            } else {
-                [self failWithError:exporter.error ?: [NSError errorWithDomain:@"HPlus" code:12 userInfo:@{NSLocalizedDescriptionKey: @"Finalize failed"}]];
-            }
-        });
-    }];
-}
-
 - (void)completeWithFileURL:(NSURL *)fileURL isVideo:(BOOL)isVideo presenter:(UIViewController *)presenter {
     if (self.cancelled) return;
     self.active = NO;
     [self updateProgressTitle:LOC(@"DOWNLOAD_COMPLETED") progress:1.0f];
     if (self.progressPill) { [self.progressPill dismiss]; self.progressPill = nil; }
+
     HPlusHandlePostDownloadFile(fileURL, isVideo, presenter);
 }
 
@@ -2432,140 +1523,6 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
     HPlusSendError(error.localizedDescription ?: LOC(@"DOWNLOAD_FAILED"));
 }
 
-// =========================================================
-// Server path (silent download)
-// =========================================================
-// تنبيه: السيرفرات دي أطراف خارجية غير تابعة لـ Google/YouTube. بيتبعتلها
-// رابط الفيديو فقط (لا كوكيز ولا Authorization header الخاص بحساب المستخدم -
-// شوف startYTDMDownloadWithWatchURL:، الطلب بسيط JSON من غير أي هيدرز حساسة).
-- (NSString *)serverEndpoint {
-    if (INTFORVAL(DownloadServerIndex) == 0) return @"https://appropriatenet2928.tail6a9ca7.ts.net";
-    if (INTFORVAL(DownloadServerIndex) == 1) return @"https://waterserver.freeddns.org";
-    return @"";
-}
-
-- (void)triggerSilentDownloadWithQuality:(NSString *)quality isAudio:(BOOL)isAudio videoID:(NSString *)vidID presenter:(UIViewController *)presenter {
-    if ([self serverEndpoint].length == 0) {
-        HPlusSendError(@"No download server configured.");
-        return;
-    }
-    self.serverPollStartTime = [NSDate timeIntervalSinceReferenceDate];
-    __weak typeof(self) weakSelf = self;
-    [self requestDownloadForVideoId:vidID isAudio:isAudio quality:quality presenter:presenter completion:^(NSURL *localURL, NSString *errorMsg) {
-        __strong typeof(weakSelf) strongSelf = weakSelf;
-        if (!strongSelf || strongSelf.cancelled) return;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (!strongSelf || strongSelf.cancelled) return;
-            if (!localURL) { [strongSelf cancelWithMessage:errorMsg]; return; }
-            [strongSelf completeWithFileURL:localURL isVideo:!isAudio presenter:presenter];
-        });
-    }];
-}
-
-- (void)requestDownloadForVideoId:(NSString *)vId isAudio:(BOOL)isAudio quality:(NSString *)quality presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
-    [self showProgressWithTitle:LOC(@"CONNECTING_TO_SERVER") presenter:presenter];
-    NSString *watchURL = [NSString stringWithFormat:@"https://www.youtube.com/watch?v=%@", vId];
-    [self startYTDMDownloadWithWatchURL:watchURL format:isAudio ? @"audio" : @"video" formatId:quality presenter:presenter completion:completionBlock];
-}
-
-- (void)startYTDMDownloadWithWatchURL:(NSString *)watchURL format:(NSString *)format formatId:(NSString *)formatId presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
-    if (self.cancelled) return;
-    NSURL *requestURL = HPlusSafeURLFromString([[self serverEndpoint] stringByAppendingString:@"/api/download"], @"Server download: init request");
-    if (!requestURL) { completionBlock(nil, @"Invalid server configuration."); return; }
-
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:requestURL];
-    [request setHTTPMethod:@"POST"];
-    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
-
-    NSMutableDictionary *payload = [@{@"url": watchURL, @"format": format} mutableCopy];
-    if (formatId) payload[@"format_id"] = formatId;
-    request.HTTPBody = [NSJSONSerialization dataWithJSONObject:payload options:0 error:nil];
-
-    __weak typeof(self) weakSelf = self;
-    [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        __strong typeof(weakSelf) self = weakSelf;
-        if (!self || self.cancelled) return;
-        if (error || !data) { completionBlock(nil, @"Server unreachable."); return; }
-        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-        if (json[@"job_id"]) {
-            BOOL isAudioDl = [format isEqualToString:@"audio"];
-            [self pollJobStatus:json[@"job_id"] isAudio:isAudioDl presenter:presenter completion:completionBlock];
-        } else {
-            completionBlock(nil, json[@"error"] ?: @"Job init failed.");
-        }
-    }] resume];
-}
-
-- (void)pollJobStatus:(NSString *)jobId isAudio:(BOOL)isAudio presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
-    if (self.cancelled) return;
-
-    // مهلة قصوى لكل عملية polling؛ تمنع الانتظار اللانهائي لو السيرفر عالق.
-    NSTimeInterval elapsed = [NSDate timeIntervalSinceReferenceDate] - self.serverPollStartTime;
-    if (elapsed > HPlusServerDownloadTimeoutSeconds) {
-        completionBlock(nil, @"Server timeout - please try again or use a different download method.");
-        return;
-    }
-
-    NSURL *statusURL = HPlusSafeURLFromString([NSString stringWithFormat:@"%@/api/status/%@", [self serverEndpoint], jobId], @"Server download: poll status");
-    if (!statusURL) { completionBlock(nil, @"Invalid server configuration."); return; }
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:statusURL];
-
-    __weak typeof(self) weakSelf = self;
-    [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        __strong typeof(weakSelf) self = weakSelf;
-        if (!self || self.cancelled) return;
-        if (error || !data) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(HPlusServerPollIntervalSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [self pollJobStatus:jobId isAudio:isAudio presenter:presenter completion:completionBlock];
-            });
-            return;
-        }
-        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-        NSString *status = json[@"status"];
-
-        if ([status isEqualToString:@"done"]) {
-            NSString *singleFileName = json[@"filename"];
-            if (!singleFileName || singleFileName.length == 0)
-                singleFileName = isAudio ? @"downloaded_file.mp3" : @"downloaded_file.mp4";
-            [self downloadSingleFile:singleFileName isAudio:isAudio forJobId:jobId presenter:presenter completion:completionBlock];
-        } else if ([status isEqualToString:@"error"]) {
-            completionBlock(nil, json[@"error"] ?: @"Error.");
-        } else {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self updateProgressTitle:LOC(@"DOWNLOADING_TO_SERVER") progress:0.0f];
-            });
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(HPlusServerPollIntervalSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [self pollJobStatus:jobId isAudio:isAudio presenter:presenter completion:completionBlock];
-            });
-        }
-    }] resume];
-}
-
-- (void)downloadSingleFile:(NSString *)filename isAudio:(BOOL)isAudio forJobId:(NSString *)jobId presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
-    if (self.cancelled) return;
-    self.downloadCompletionBlock = completionBlock;
-    NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
-    self.destinationURL = [NSURL fileURLWithPath:tempPath];
-    self.finishedCurrentFile = NO;
-    self.currentBytes = 0;
-    self.currentExpectedBytes = 0;
-    self.baseProgressTitle = isAudio ? LOC(@"DOWNLOADING_AUDIO") : LOC(@"DOWNLOADING_VIDEO");
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self updateProgressTitle:self.baseProgressTitle progress:0.0f];
-    });
-    NSURL *fileURL = HPlusSafeURLFromString([NSString stringWithFormat:@"%@/api/file/%@", [self serverEndpoint], jobId], @"Server download: fetch file");
-    if (!fileURL) {
-        completionBlock(nil, @"Invalid server configuration.");
-        return;
-    }
-    self.task = [self.session downloadTaskWithURL:fileURL];
-    self.task.taskDescription = filename;
-    [self.task resume];
-}
-
-// =========================================================
-// NSURLSession delegate
-// =========================================================
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
     self.currentBytes = (unsigned long long)MAX(totalBytesWritten, 0);
     if (totalBytesExpectedToWrite > 0)
@@ -2578,11 +1535,13 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location {
     if (self.cancelled) return;
     self.finishedCurrentFile = YES;
+    
     NSURL *destURL = self.destinationURL;
+    
     NSError *error = nil;
     [[NSFileManager defaultManager] removeItemAtURL:destURL error:nil];
     [[NSFileManager defaultManager] moveItemAtURL:location toURL:destURL error:&error];
-
+    
     if (self.downloadCompletionBlock) {
         self.downloadCompletionBlock(error ? nil : destURL, error ? error.localizedDescription : nil);
         self.downloadCompletionBlock = nil;
@@ -2601,21 +1560,142 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
             self.fileCompletion(nil, error);
             self.fileCompletion = nil;
         }
+    }    
+    // We intentionally don't invalidate the shared session here if it's reused.
+}
+
+- (NSString *)serverEndpoint {
+    if (INTFORVAL(DownloadServerIndex) == 0) {
+        return @"https://appropriatenet2928.tail6a9ca7.ts.net/"; // Europe (@AppropriateNet2928)
+    } else if (INTFORVAL(DownloadServerIndex) == 1) {
+        return @"https://waterserver.freeddns.org/"; // Thailand - Asia (@Tonwalter888)
     }
+    return @"";
+}
+
+- (void)triggerSilentDownloadWithQuality:(NSString *)quality isAudio:(BOOL)isAudio videoID:(NSString *)vidID presenter:(UIViewController *)presenter {
+    __weak typeof(self) weakSelf = self;
+    [self requestDownloadForVideoId:vidID isAudio:isAudio quality:quality presenter:presenter completion:^(NSURL *localURL, NSString *errorMsg) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf || strongSelf.cancelled) return;
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (!strongSelf || strongSelf.cancelled) return;
+            if (!localURL) { 
+                [strongSelf cancelWithMessage:errorMsg];
+                return; 
+            }
+            [strongSelf completeWithFileURL:localURL isVideo:!isAudio presenter:presenter];
+        });
+    }];
+}
+
+- (void)requestDownloadForVideoId:(NSString *)vId isAudio:(BOOL)isAudio quality:(NSString *)quality presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
+    [self showProgressWithTitle:LOC(@"CONNECTING_TO_SERVER") presenter:presenter];
+    NSString *watchURL = [NSString stringWithFormat:@"https://www.youtube.com/watch?v=%@", vId];
+    [self startYTDMDownloadWithWatchURL:watchURL format:isAudio ? @"audio" : @"video" formatId:quality presenter:presenter completion:completionBlock];
+}
+
+- (void)startYTDMDownloadWithWatchURL:(NSString *)watchURL format:(NSString *)format formatId:(NSString *)formatId presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
+    if (!self || self.cancelled) return;
+    NSString *urlStr = [[self serverEndpoint] stringByAppendingString:@"/api/download"];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlStr]];
+    [request setHTTPMethod:@"POST"];
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    
+    NSMutableDictionary *payload = [@{@"url": watchURL, @"format": format} mutableCopy];
+    if (formatId) payload[@"format_id"] = formatId;
+    request.HTTPBody = [NSJSONSerialization dataWithJSONObject:payload options:0 error:nil];
+    
+    [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (!self || self.cancelled) return;
+        if (error || !data) { completionBlock(nil, @"Server unreachable."); return; }
+        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+        
+        if (json[@"job_id"]) {
+            BOOL isAudioDl = [format isEqualToString:@"audio"];
+            [self pollJobStatus:json[@"job_id"] isAudio:isAudioDl presenter:presenter completion:completionBlock];
+        }
+        else {
+            completionBlock(nil, json[@"error"] ?: @"Job init failed.");
+        }
+    }] resume];
+}
+
+- (void)pollJobStatus:(NSString *)jobId isAudio:(BOOL)isAudio presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
+    if (!self || self.cancelled) return;
+    
+    NSString *urlStr = [NSString stringWithFormat:@"%@/api/status/%@", [self serverEndpoint], jobId];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlStr]];
+    
+    [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (!self || self.cancelled) return;
+        if (error || !data) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ 
+                [self pollJobStatus:jobId isAudio:isAudio presenter:presenter completion:completionBlock]; 
+            });
+            return;
+        }
+        
+        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+        NSString *status = json[@"status"];
+        
+        if ([status isEqualToString:@"done"]) {
+            NSString *singleFileName = json[@"filename"];
+            
+            if (!singleFileName || singleFileName.length == 0) {
+                singleFileName = isAudio ? @"downloaded_file.mp3" : @"downloaded_file.mp4";
+            }
+            
+            [self downloadSingleFile:singleFileName isAudio:isAudio forJobId:jobId presenter:presenter completion:completionBlock];
+            
+        } else if ([status isEqualToString:@"error"]) {
+            completionBlock(nil, json[@"error"] ?: @"Error.");
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{ 
+                [self updateProgressTitle:LOC(@"DOWNLOADING_TO_SERVER") progress:0.0f]; 
+            });
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ 
+                [self pollJobStatus:jobId isAudio:isAudio presenter:presenter completion:completionBlock]; 
+            });
+        }
+    }] resume];
+}
+
+- (void)downloadSingleFile:(NSString *)filename isAudio:(BOOL)isAudio forJobId:(NSString *)jobId presenter:(UIViewController *)presenter completion:(void (^)(NSURL *localURL, NSString *errorMsg))completionBlock {
+    if (!self || self.cancelled) return;
+    
+    self.downloadCompletionBlock = completionBlock;
+    
+    NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
+    self.destinationURL = [NSURL fileURLWithPath:tempPath];
+    
+    self.finishedCurrentFile = NO;
+    self.currentBytes = 0;
+    self.currentExpectedBytes = 0;
+    self.baseProgressTitle = isAudio ? LOC(@"DOWNLOADING_AUDIO") : LOC(@"DOWNLOADING_VIDEO");
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self updateProgressTitle:self.baseProgressTitle progress:0.0f];
+    });
+
+    NSString *urlString = [NSString stringWithFormat:@"%@/api/file/%@", [self serverEndpoint], jobId];
+    
+    self.task = [self.session downloadTaskWithURL:[NSURL URLWithString:urlString]];
+    self.task.taskDescription = filename;
+    
+    [self.task resume];
 }
 
 @end
 
-// =========================================================
-// MARK: - Thumbnail / Photo helpers
-// =========================================================
-static void HPlusDownloadThumbnail(YTPlayerViewController *player, UIViewController *presenter) {
+static void HPlusShowThumbnailViewer(YTPlayerViewController *player, UIViewController *presenter) {
     NSURL *thumbnailURL = HPlusThumbnailURL(player);
     if (!thumbnailURL) {
         HPlusSendError(LOC(@"NO_THUMBNAIL_FOUND"));
         return;
     }
-    HPlusSendToast(LOC(@"DOWNLOADING_THUMBNAIL"));
+
     [[NSURLSession.sharedSession dataTaskWithURL:thumbnailURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         UIImage *image = data ? [UIImage imageWithData:data] : nil;
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -2623,7 +1703,13 @@ static void HPlusDownloadThumbnail(YTPlayerViewController *player, UIViewControl
                 HPlusSendError(error.localizedDescription ?: LOC(@"THUMBNAIL_FAILED"));
                 return;
             }
-            HPlusHandlePostDownloadImage(image, presenter);
+            
+            HPlusThumbnailViewController *viewerVC = [[HPlusThumbnailViewController alloc] init];
+            viewerVC.thumbnailImage = image;
+            viewerVC.modalPresentationStyle = UIModalPresentationFormSheet;
+            viewerVC.modalTransitionStyle = UIModalTransitionStyleCoverVertical; 
+            
+            [presenter presentViewController:viewerVC animated:YES completion:nil];
         });
     }] resume];
 }
@@ -2634,6 +1720,7 @@ static void HPlusCopyThumbnail(YTPlayerViewController *player, UIViewController 
         HPlusSendError(LOC(@"NO_THUMBNAIL_FOUND"));
         return;
     }
+
     HPlusSendToast(LOC(@"DOWNLOADING_THUMBNAIL"));
     [[NSURLSession.sharedSession dataTaskWithURL:thumbnailURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         UIImage *image = data ? [UIImage imageWithData:data] : nil;
@@ -2648,12 +1735,14 @@ static void HPlusCopyThumbnail(YTPlayerViewController *player, UIViewController 
     }] resume];
 }
 
-static void HPlusShowThumbnailViewer(YTPlayerViewController *player, UIViewController *presenter) {
+static void HPlusDownloadThumbnail(YTPlayerViewController *player, UIViewController *presenter) {
     NSURL *thumbnailURL = HPlusThumbnailURL(player);
     if (!thumbnailURL) {
         HPlusSendError(LOC(@"NO_THUMBNAIL_FOUND"));
         return;
     }
+
+    HPlusSendToast(LOC(@"DOWNLOADING_THUMBNAIL"));
     [[NSURLSession.sharedSession dataTaskWithURL:thumbnailURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         UIImage *image = data ? [UIImage imageWithData:data] : nil;
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -2661,17 +1750,11 @@ static void HPlusShowThumbnailViewer(YTPlayerViewController *player, UIViewContr
                 HPlusSendError(error.localizedDescription ?: LOC(@"THUMBNAIL_FAILED"));
                 return;
             }
-            HPlusThumbnailViewController *viewerVC = [[HPlusThumbnailViewController alloc] init];
-            viewerVC.thumbnailImage = image;
-            viewerVC.modalPresentationStyle = UIModalPresentationFormSheet;
-            [presenter presentViewController:viewerVC animated:YES completion:nil];
+            HPlusHandlePostDownloadImage(image, presenter);
         });
     }] resume];
 }
 
-// =========================================================
-// MARK: - Copy helpers
-// =========================================================
 static void HPlusCopyTextToPasteboard(NSString *text, NSString *successKey) {
     UIPasteboard.generalPasteboard.string = text;
     HPlusSendSuccess(LOC(successKey));
@@ -2680,146 +1763,6 @@ static void HPlusCopyTextToPasteboard(NSString *text, NSString *successKey) {
 static void HPlusCopyImageToPasteboard(UIImage *image, NSString *successKey) {
     UIPasteboard.generalPasteboard.image = image;
     HPlusSendSuccess(LOC(successKey));
-}
-
-// =========================================================
-// MARK: - Menu builders (video / audio / captions / thumbnail / info)
-// =========================================================
-static void HPlusShowVideoQualitySheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
-    NSArray <HPlusMediaFormat *> *videoFormats = HPlusFormatsForPlayer(player, YES);
-    HPlusMediaFormat *audioFormat = HPlusBestAudioFormatForPlayer(player);
-    NSString *title = HPlusTitleForPlayer(player);
-    NSString *videoID = HPlusVideoIDForPlayer(player);
-
-    if (videoFormats.count == 0 || !audioFormat) {
-        HPlusSendError(LOC(@"NO_VID_AUDIO_STREAM_FOUND"));
-        return;
-    }
-
-    NSMutableArray *items = [NSMutableArray array];
-    for (HPlusMediaFormat *format in videoFormats) {
-        NSString *rowTitle = format.qualityLabel.length ? format.qualityLabel : @"Video";
-        NSString *subtitle = HPlusFormatSubtitle(format);
-        [items addObject:[HPlusMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:HPlusYTIconImage(658, NO, nil) handler:^{
-            [[HPlusDownloadCoordinator sharedCoordinator] startVideoDownloadWithVideoFormat:format audioFormat:audioFormat fileName:title presenter:presenter videoID:videoID];
-        }]];
-    }
-    HPlusPresentMenu(player, items, presenter, sender);
-}
-
-static void HPlusShowAudioSourceSheet(YTPlayerViewController *player, HPlusAudioOutputFormat *outputFormat, UIViewController *presenter, UIView *sender) {
-    NSArray <HPlusMediaFormat *> *audioFormats = HPlusFormatsForPlayer(player, NO);
-    NSString *title = HPlusTitleForPlayer(player);
-    NSString *videoID = HPlusVideoIDForPlayer(player);
-    NSMutableArray *items = [NSMutableArray array];
-
-    if (audioFormats.count == 0) {
-        HPlusSendError(LOC(@"NO_AUDIO_STREAM_FOUND"));
-        return;
-    }
-
-    NSUInteger index = 1;
-    for (HPlusMediaFormat *format in audioFormats) {
-        NSString *rowTitle = audioFormats.count == 1 ? @"Audio" : [NSString stringWithFormat:@"Audio %lu", (unsigned long)index++];
-        NSString *subtitle = HPlusFormatSubtitle(format);
-        [items addObject:[HPlusMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:HPlusYTIconImage(21, NO, nil) handler:^{
-            [[HPlusDownloadCoordinator sharedCoordinator] startAudioDownloadWithAudioFormat:format fileName:title presenter:presenter videoID:videoID outputFormat:outputFormat];
-        }]];
-    }
-    HPlusPresentMenu(player, items, presenter, sender);
-}
-
-static void HPlusShowAudioSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
-    NSMutableArray *items = [NSMutableArray array];
-    for (HPlusAudioOutputFormat *format in HPlusAudioOutputFormats()) {
-        [items addObject:[HPlusMenuItem itemWithTitle:format.title subtitle:HPlusAudioOutputSubtitle(format) icon:HPlusYTIconImage(21, NO, nil) handler:^{
-            if (!format.supported) {
-                HPlusSendError(@"DSD export is not supported by bundled FFmpeg.");
-                return;
-            }
-            HPlusShowAudioSourceSheet(player, format, presenter, sender);
-        }]];
-    }
-    HPlusPresentMenu(player, items, presenter, sender);
-}
-
-static void HPlusStartDownloadAudio(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
-    HPlusShowAudioSheet(player, presenter, sender);
-}
-
-static void HPlusShowCaptionsSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
-    NSArray *tracks = HPlusCaptionTracksForPlayer(player);
-    if (tracks.count == 0) {
-        HPlusSendError(LOC(@"NO_CAPTIONS"));
-        return;
-    }
-
-    NSMutableArray *items = [NSMutableArray array];
-    for (id track in tracks) {
-        NSString *baseURL = HPlusStringFromSelector(track, @selector(baseURL));
-        if (baseURL.length == 0) continue;
-
-        NSString *languageCode = HPlusStringFromSelector(track, @selector(languageCode));
-        NSString *vssId = HPlusStringFromSelector(track, @selector(vssId));
-        NSString *nameStr = nil;
-        id nameObj = HPlusObjectFromSelector(track, @selector(name));
-        nameStr = HPlusStringFromSelector(nameObj, @selector(simpleText));
-        if (!nameStr.length) {
-            NSArray *runs = HPlusObjectFromSelector(nameObj, @selector(runsArray));
-            if (runs.count > 0) nameStr = HPlusStringFromSelector(runs.firstObject, @selector(text));
-        }
-        if (!nameStr.length) nameStr = languageCode;
-        if (!nameStr.length) nameStr = vssId;
-
-        [items addObject:[HPlusMenuItem itemWithTitle:nameStr subtitle:languageCode icon:HPlusYTIconImage(50, NO, nil) handler:^{
-            NSString *vttURL = [baseURL stringByAppendingString:@"&fmt=vtt"];
-            NSURL *url = HPlusSafeURLFromString(vttURL, @"Captions download");
-            if (!url) {
-                HPlusSendError(LOC(@"NO_CAPTIONS_URL"));
-                return;
-            }
-            HPlusSendToast(LOC(@"DOWNLOADING_CAPTIONS"));
-            [[NSURLSession.sharedSession dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    if (error || data.length == 0) {
-                        HPlusSendError(LOC(@"CAPTIONS_FAILED"));
-                        return;
-                    }
-                    NSString *title = HPlusTitleForPlayer(player);
-                    NSString *filename = [NSString stringWithFormat:@"%@.%@", title, languageCode ?: @"captions"];
-                    NSURL *tempURL = HPlusUniqueFileURL(filename, @"vtt");
-                    NSError *writeError = nil;
-                    BOOL writeSuccess = [data writeToURL:tempURL options:NSDataWritingAtomic error:&writeError];
-                    if (writeSuccess) {
-                        HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
-                        HPlusShareFile(tempURL, presenter);
-                    } else {
-                        HPlusSendError(writeError.localizedDescription ?: LOC(@"CAPTIONS_FAILED"));
-                    }
-                });
-            }] resume];
-        }]];
-    }
-
-    if (items.count == 0) {
-        HPlusSendError(LOC(@"NO_CAPTIONS_URL"));
-        return;
-    }
-    HPlusPresentMenu(player, items, presenter, sender);
-}
-
-static void HPlusShowThumbnailSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
-    NSMutableArray *items = [NSMutableArray array];
-    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_THUMBNAIL") subtitle:nil icon:HPlusYTIconImage(57, NO, nil) handler:^{
-        HPlusDownloadThumbnail(player, presenter);
-    }]];
-    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SHOW_THUMBNAIL") subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
-        HPlusShowThumbnailViewer(player, presenter);
-    }]];
-    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_THUMBNAIL") subtitle:nil icon:HPlusYTIconImage(250, NO, nil) handler:^{
-        HPlusCopyThumbnail(player, presenter);
-    }]];
-    HPlusPresentMenu(player, items, presenter, sender);
 }
 
 static void HPlusShowCopyVideoInfoSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
@@ -2841,33 +1784,168 @@ static void HPlusShowCopyVideoInfoSheet(YTPlayerViewController *player, UIViewCo
     [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_DESCRIPTION") subtitle:nil icon:HPlusYTIconImage(250, NO, nil) handler:^{
         HPlusCopyTextToPasteboard(description, @"COPIED_DESCRIPTION");
     }]];
-    HPlusPresentMenu(player, items, presenter, sender);
+
+    HPlusPresentMenu(nil, items, presenter, sender);
 }
 
-// =========================================================
-// MARK: - Download manager (main entry)
-// =========================================================
+static void HPlusShowAudioTrackSelectionSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, NSString *fileName, BOOL downloadVideo, HPlusMediaFormat *videoFormat) {
+    NSArray <HPlusMediaFormat *> *audioFormats = HPlusFormatsForPlayer(player, NO);
+    if (audioFormats.count == 0) {
+        HPlusSendError(LOC(@"NO_AUDIO_STREAM_FOUND"));
+        return;
+    }
+
+    // Skip the audio-track chooser for a single format, or the server path (which
+    // can't fetch a chosen track). Direct and on-device SABR both honor the choice.
+    if (audioFormats.count == 1 || INTFORVAL(DownloadMethod) == DownloadMethodServer || INTFORVAL(DownloadMethod) == DownloadMethodOnDevice) {
+        HPlusMediaFormat *selectedFormat = audioFormats.firstObject;
+        if (downloadVideo) {
+            [[HPlusDownloadCoordinator sharedCoordinator] startVideoDownloadWithVideoFormat:videoFormat audioFormat:selectedFormat fileName:fileName presenter:presenter videoID:player.currentVideoID];
+        } else {
+            [[HPlusDownloadCoordinator sharedCoordinator] startAudioDownloadWithAudioFormat:selectedFormat fileName:fileName presenter:presenter videoID:player.currentVideoID];
+        }
+        return;
+    }
+
+    NSMutableArray *items = [NSMutableArray array];
+    for (HPlusMediaFormat *format in audioFormats) {
+        NSString *rowTitle = format.qualityLabel;
+        NSString *subtitle = HPlusFormatSubtitle(format, NO);
+        [items addObject:[HPlusMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:HPlusYTIconImage(906, NO, nil) handler:^{
+            if (downloadVideo) {
+                [[HPlusDownloadCoordinator sharedCoordinator] startVideoDownloadWithVideoFormat:videoFormat audioFormat:format fileName:fileName presenter:presenter videoID:player.currentVideoID];
+            } else {
+                [[HPlusDownloadCoordinator sharedCoordinator] startAudioDownloadWithAudioFormat:format fileName:fileName presenter:presenter videoID:player.currentVideoID];
+            }
+        }]];
+    }
+
+    HPlusPresentMenu(nil, items, presenter, sender);
+}
+
+static void HPlusShowVideoQualitySheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, BOOL isShorts) {
+    NSArray <HPlusMediaFormat *> *videoFormats = HPlusFormatsForPlayer(player, YES);
+    NSString *title = HPlusTitleForPlayer(player);
+
+    if (videoFormats.count == 0) {
+        HPlusSendError(LOC(@"NO_VID_AUDIO_STREAM_FOUND"));
+        return;
+    }
+
+    NSMutableArray *items = [NSMutableArray array];
+    for (HPlusMediaFormat *format in videoFormats) {
+        NSString *rowTitle = format.qualityLabel;
+        NSString *subtitle = HPlusFormatSubtitle(format, YES);
+        if (isShorts) {
+            [items addObject:[HPlusMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:HPlusYTIconImage(769, NO, nil) handler:^{
+                HPlusShowAudioTrackSelectionSheet(player, presenter, sender, title, YES, format);
+            }]];
+        } else {
+            [items addObject:[HPlusMenuItem itemWithTitle:rowTitle subtitle:subtitle icon:HPlusYTIconImage(658, NO, nil) handler:^{
+                HPlusShowAudioTrackSelectionSheet(player, presenter, sender, title, YES, format);
+            }]];
+        }
+    }
+    HPlusPresentMenu(nil, items, presenter, sender);
+}
+
+static void HPlusStartDownloadAudio(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
+    NSString *title = HPlusTitleForPlayer(player);
+    HPlusShowAudioTrackSelectionSheet(player, presenter, sender, title, NO, nil);
+}
+
+static void HPlusShowCaptionsSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
+    NSArray *tracks = HPlusCaptionTracksForPlayer(player);
+    if (tracks.count == 0) {
+        HPlusSendError(LOC(@"NO_CAPTIONS"));
+        return;
+    }
+    
+    NSMutableArray *items = [NSMutableArray array];
+    for (YTICaptionTrackEntry *track in tracks) {
+        NSString *baseURL = track.baseURL;
+        if (baseURL.length == 0) continue;
+        
+        NSString *languageCode = track.languageCode;
+        YTIFormattedString *nameObj = track.name;
+        NSString *nameStr = nameObj.dropdownOptionTitle;
+        
+        [items addObject:[HPlusMenuItem itemWithTitle:nameStr subtitle:languageCode icon:HPlusYTIconImage(50, NO, nil) handler:^{
+            NSString *vttURL = [baseURL stringByAppendingString:@"&fmt=vtt"];
+            NSURL *url = [NSURL URLWithString:vttURL];
+            if (!url) {
+                HPlusSendError(LOC(@"NO_CAPTIONS_URL"));
+                return;
+            }
+            HPlusSendToast(LOC(@"DOWNLOADING_CAPTIONS"));
+            [[NSURLSession.sharedSession dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                if (error || data.length == 0) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        HPlusSendError(LOC(@"CAPTIONS_FAILED"));
+                    });
+                    return;
+                }
+                
+                NSString *title = HPlusTitleForPlayer(player);
+                NSString *filename = [NSString stringWithFormat:@"%@.%@", title, languageCode];
+                NSURL *tempURL = HPlusUniqueFileURL(filename, @"vtt");
+                
+                NSError *writeError = nil;
+                BOOL writeSuccess = [data writeToURL:tempURL options:NSDataWritingAtomic error:&writeError];
+                
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (writeSuccess) {
+                        HPlusSendSuccess(LOC(@"DOWNLOAD_COMPLETED"));
+                        HPlusShareFile(tempURL, presenter);
+                    } else {
+                        HPlusSendError(writeError.localizedDescription ?: LOC(@"CAPTIONS_FAILED"));
+                    }
+                });
+            }] resume];
+        }]];
+    }
+    
+    if (items.count == 0) {
+        HPlusSendError(LOC(@"NO_CAPTIONS_URL"));
+        return;
+    }
+    
+    HPlusPresentMenu(nil, items, presenter, sender);
+}
+
+static void HPlusShowThumbnailSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
+    NSMutableArray *items = [NSMutableArray array];
+
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_THUMBNAIL") subtitle:nil icon:HPlusYTIconImage(57, NO, nil) handler:^{
+        HPlusDownloadThumbnail(player, presenter);
+    }]];
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SHOW_THUMBNAIL") subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
+        HPlusShowThumbnailViewer(player, presenter);
+    }]];
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_THUMBNAIL") subtitle:nil icon:HPlusYTIconImage(250, NO, nil) handler:^{
+        HPlusCopyThumbnail(player, presenter);
+    }]];
+
+    HPlusPresentMenu(nil, items, presenter, sender);
+}
+
 static void HPlusShowDownloadManager(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, BOOL isShorts) {
     if (!player) {
         HPlusSendError(LOC(@"OPEN_VID_BEFORE"));
         return;
     }
-
     NSMutableArray *items = [NSMutableArray array];
     YTSingleVideoController *sgvidcon = player.activeVideo;
     YTSingleVideo *sgvid = sgvidcon.singleVideo;
-    BOOL isLive = NO;
-    if (sgvid && [sgvid respondsToSelector:@selector(isLivePlayback)])
-        isLive = [sgvid isLivePlayback];
 
-    if (!isLive) {
+    if (!sgvid.isLivePlayback) {
         if (isShorts) {
             [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"DOWNLOAD_SHORTS") subtitle:nil icon:HPlusYTIconImage(769, NO, nil) handler:^{
-                HPlusShowVideoQualitySheet(player, presenter, sender);
+                HPlusShowVideoQualitySheet(player, presenter, sender, YES);
             }]];
         } else {
             [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"DOWNLOAD_VIDEO") subtitle:nil icon:HPlusYTIconImage(658, NO, nil) handler:^{
-                HPlusShowVideoQualitySheet(player, presenter, sender);
+                HPlusShowVideoQualitySheet(player, presenter, sender, NO);
             }]];
         }
         [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"DOWNLOAD_AUDIO") subtitle:nil icon:HPlusYTIconImage(21, NO, nil) handler:^{
@@ -2883,196 +1961,9 @@ static void HPlusShowDownloadManager(YTPlayerViewController *player, UIViewContr
     [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_VID_INFO") subtitle:nil icon:HPlusYTIconImage(250, NO, nil) handler:^{
         HPlusShowCopyVideoInfoSheet(player, presenter, sender);
     }]];
-    [items addObject:[HPlusMenuItem itemWithTitle:@"Copy diagnostics" subtitle:@"Copy last error log" icon:HPlusYTIconImage(870, NO, nil) handler:^{
-        HPlusCopyDownloadDiagnostics(presenter);
-    }]];
     HPlusPresentMenu(player, items, presenter, sender);
 }
 
-// =========================================================
-// MARK: - Download button hook
-// =========================================================
-void HPlusConfigureDownloadButton(_ASDisplayView *view) {
-    if (!IS_ENABLED(DownloadManager)) return;
-    if (![view.accessibilityIdentifier isEqualToString:@"id.ui.add_to.offline.button"]) return;
-    if (objc_getAssociatedObject(view, @selector(HPlusDownloadButtonTapped:))) return;
-
-    view.userInteractionEnabled = YES;
-    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(HPlusDownloadButtonTapped:)];
-    tap.cancelsTouchesInView = YES;
-    tap.delaysTouchesBegan = YES;
-    tap.delaysTouchesEnded = YES;
-    [view addGestureRecognizer:tap];
-    objc_setAssociatedObject(view, @selector(HPlusDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-// =========================================================
-// MARK: - Translation dialog (defined locally)
-// =========================================================
-static void HPlusShowTranslationDialog(NSString *text, UIViewController *presenter) {
-    if (!text || text.length == 0 || !presenter) return;
-
-    HPlusTranslationViewController *vc = [[HPlusTranslationViewController alloc] init];
-    vc.originalText = text;
-
-    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
-
-    if (@available(iOS 15.0, *)) {
-        UISheetPresentationController *sheet = nav.sheetPresentationController;
-        if (sheet) {
-            sheet.detents = @[
-                [UISheetPresentationControllerDetent mediumDetent],
-                [UISheetPresentationControllerDetent largeDetent]
-            ];
-            sheet.prefersGrabberVisible = YES;
-            sheet.preferredCornerRadius = 24.0;
-        }
-    } else {
-        nav.modalPresentationStyle = UIModalPresentationFormSheet;
-    }
-    [presenter presentViewController:nav animated:YES completion:nil];
-}
-
-// =========================================================
-// MARK: - Comment / Post long-press helpers
-// =========================================================
-static NSString *HPlusExtractCommentText(UIView *cellView) {
-    if (!cellView) return @"";
-
-    NSString *resultText = @"";
-    NSMutableArray<UIView *> *queue = [NSMutableArray arrayWithObject:cellView];
-    Class asDisplayClass = NSClassFromString(@"_ASDisplayView");
-    Class elmTextExClass = NSClassFromString(@"ELMExpandableTextNode");
-    Class elmTextClass = NSClassFromString(@"ELMTextNode");
-
-    while (queue.count > 0) {
-        UIView *current = queue.firstObject;
-        [queue removeObjectAtIndex:0];
-
-        if (asDisplayClass && [current isKindOfClass:asDisplayClass]) {
-            ASDisplayNode *node = [current performSelector:@selector(keepalive_node)];
-            BOOL isExpandableText = node && elmTextExClass && [node isKindOfClass:elmTextExClass];
-            BOOL isText = node && elmTextClass && [node isKindOfClass:elmTextClass];
-            BOOL isCommentLabel = [current.accessibilityIdentifier isEqualToString:@"id.comment.content.label"];
-
-            if (isText || isExpandableText || isCommentLabel) {
-                resultText = current.accessibilityLabel ?: @"";
-                break;
-            }
-            for (id obj in node.yogaChildren) {
-                if ([obj isKindOfClass:elmTextClass] && [[obj description] containsString:@"id.comment.content.label"]) {
-                    NSAttributedString *text = [obj valueForKey:@"_attributedText"];
-                    resultText = text.string;
-                    break;
-                }
-            }
-        }
-        [queue addObjectsFromArray:current.subviews];
-    }
-    return resultText;
-}
-
-static UIImage *HPlusRenderViewToImage(_ASDisplayView *view) {
-    if (!view || view.bounds.size.width <= 0 || view.bounds.size.height <= 0) return nil;
-    UIColor *realBgColor = isDarkMode(view) ? [%c(YTColor) black3] : [%c(YTColor) white1];
-    UIGraphicsBeginImageContextWithOptions(view.bounds.size, NO, [UIScreen mainScreen].scale);
-    CGContextRef context = UIGraphicsGetCurrentContext();
-    [realBgColor setFill];
-    CGContextFillRect(context, view.bounds);
-    [view drawViewHierarchyInRect:view.bounds afterScreenUpdates:YES];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    return image;
-}
-
-// دالة موحّدة لقوائم "نسخ/ترجمة/حفظ صورة" بتستخدمها لسه تعليقات ومنشورات
-// Backstage، بدل تكرار نفس المنطق حرفيًا في دالتين منفصلتين.
-static void HPlusPresentTextLongPressMenu(_ASDisplayView *view, NSString *translateKey, NSString *copyTextKey, NSString *saveImageKey, NSString *copyImageKey) {
-    NSMutableArray *items = [NSMutableArray array];
-    NSString *text = HPlusExtractCommentText(view);
-
-    if (text.length > 0) {
-        [items addObject:[HPlusMenuItem itemWithTitle:LOC(translateKey) subtitle:nil icon:HPlusYTIconImage(897, NO, nil) handler:^{
-            UIViewController *presenter = HPlusPresenterForSender(view, nil);
-            HPlusShowTranslationDialog(text, presenter);
-        }]];
-        [items addObject:[HPlusMenuItem itemWithTitle:LOC(copyTextKey) subtitle:nil icon:HPlusYTIconImage(243, NO, nil) handler:^{
-            HPlusCopyTextToPasteboard(text, @"COPIED_TO_CLIPBOARD");
-        }]];
-    }
-    [items addObject:[HPlusMenuItem itemWithTitle:LOC(saveImageKey) subtitle:nil icon:HPlusYTIconImage(367, NO, nil) handler:^{
-        UIImage *image = HPlusRenderViewToImage(view);
-        if (image) {
-            UIViewController *p = HPlusPresenterForSender(view, nil);
-            HPlusHandlePostDownloadImage(image, p);
-        }
-    }]];
-    [items addObject:[HPlusMenuItem itemWithTitle:LOC(copyImageKey) subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
-        UIImage *image = HPlusRenderViewToImage(view);
-        if (image) HPlusCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
-    }]];
-
-    UIViewController *presenter = HPlusPresenterForSender(view, nil);
-    if (!presenter) return;
-    HPlusPresentMenu(nil, items, presenter, view);
-}
-
-// =========================================================
-// MARK: - %hook _ASDisplayView
-// =========================================================
-%hook _ASDisplayView
-
-- (void)didMoveToWindow {
-    %orig;
-    if ([self.accessibilityIdentifier isEqualToString:@"id.ui.comment_cell"] && IS_ENABLED(DownloadComment)) {
-        BOOL hasGesture = NO;
-        for (UIGestureRecognizer *g in self.gestureRecognizers) {
-            if ([g.name isEqualToString:@"HPlusCommentLongPress"]) { hasGesture = YES; break; }
-        }
-        if (!hasGesture) {
-            UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusHandleCommentLongPress:)];
-            longPress.name = @"HPlusCommentLongPress";
-            longPress.minimumPressDuration = 0.3;
-            [self addGestureRecognizer:longPress];
-        }
-    } else if ([self.accessibilityIdentifier isEqualToString:@"id.ui.backstage.original_post"] && IS_ENABLED(DownloadPost)) {
-        BOOL hasGesture = NO;
-        for (UIGestureRecognizer *g in self.gestureRecognizers) {
-            if ([g.name isEqualToString:@"HPlusPostLongPress"]) { hasGesture = YES; break; }
-        }
-        if (!hasGesture) {
-            UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusHandlePostLongPress:)];
-            longPress.name = @"HPlusPostLongPress";
-            longPress.minimumPressDuration = 0.3;
-            [self addGestureRecognizer:longPress];
-        }
-    }
-}
-
-%new
-- (void)HPlusDownloadButtonTapped:(UITapGestureRecognizer *)sender {
-    if (sender.state != UIGestureRecognizerStateEnded) return;
-    UIViewController *presenter = HPlusPresenterForSender(self, HPlusCurrentPlayerViewController);
-    YTPlayerViewController *player = HPlusPlayerFromViewController(presenter);
-    HPlusShowDownloadManager(player, presenter, self, NO);
-}
-
-%new
-- (void)HPlusHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
-    if (sender.state != UIGestureRecognizerStateBegan) return;
-    HPlusPresentTextLongPressMenu(self, @"TRANSLATE_COMMENT", @"COPY_COMMENT_TEXT", @"SAVE_COMMENT_IMAGE", @"COPY_COMMENT_IMAGE");
-}
-
-%new
-- (void)HPlusHandlePostLongPress:(UILongPressGestureRecognizer *)sender {
-    if (sender.state != UIGestureRecognizerStateBegan) return;
-    HPlusPresentTextLongPressMenu(self, @"TRANSLATE_POST", @"COPY_POST_TEXT", @"SAVE_POST_IMAGE", @"COPY_POST_IMAGE");
-}
-
-%end
-
-// =========================================================
-// MARK: - %hook YTPlayerViewController
-// =========================================================
 %hook YTPlayerViewController
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -3088,9 +1979,6 @@ static void HPlusPresentTextLongPressMenu(_ASDisplayView *view, NSString *transl
 
 %end
 
-// =========================================================
-// MARK: - Auth header (for download requests)
-// =========================================================
 NSString *HPlusGlobalAuthHeader = nil;
 
 %hook SSOAuthorization
@@ -3123,9 +2011,280 @@ NSString *HPlusGlobalAuthHeader = nil;
 }
 %end
 
-// =========================================================
-// MARK: - %hook YTReelWatchPlaybackOverlayView (Shorts download button)
-// =========================================================
+void HPlusConfigureDownloadButton(_ASDisplayView *view) {
+    if (!IS_ENABLED(DownloadManager)) return;
+    if (objc_getAssociatedObject(view, @selector(HPlusDownloadButtonTapped:))) return;
+
+    if ([view.accessibilityIdentifier isEqualToString:@"id.ui.add_to.offline.button"]) {
+        view.userInteractionEnabled = YES;
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(HPlusDownloadButtonTapped:)];
+        tap.cancelsTouchesInView = YES;
+        tap.delaysTouchesBegan = YES;
+        tap.delaysTouchesEnded = YES;
+        [view addGestureRecognizer:tap];
+        objc_setAssociatedObject(view, @selector(HPlusDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+}
+
+static void HPlusShowTranslationDialog(NSString *text, UIViewController *presenter) {
+    if (!text || text.length == 0 || !presenter) return;
+    
+    HPlusTranslationViewController *vc = [[HPlusTranslationViewController alloc] init];
+    vc.originalText = text;
+    
+    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
+    
+    if (@available(iOS 15.0, *)) {
+        UISheetPresentationController *sheet = nav.sheetPresentationController;
+        if (sheet) {
+            sheet.detents = @[ 
+                [UISheetPresentationControllerDetent mediumDetent],
+                [UISheetPresentationControllerDetent largeDetent]
+            ];
+            sheet.prefersGrabberVisible = YES;
+            sheet.preferredCornerRadius = 24.0;
+        }
+    } else {
+        // Fallback for iOS 14
+        nav.modalPresentationStyle = UIModalPresentationFormSheet;
+    }
+    [presenter presentViewController:nav animated:YES completion:nil];
+}
+
+static NSString *HPlusExtractCommentText(UIView *cellView) {
+    if (!cellView) return @"";
+
+    NSString *resultText = @"";
+    NSMutableArray<UIView *> *queue = [NSMutableArray arrayWithObject:cellView];
+    Class asDisplayClass = NSClassFromString(@"_ASDisplayView");
+    Class elmTextExClass = NSClassFromString(@"ELMExpandableTextNode");
+    Class elmTextClass = NSClassFromString(@"ELMTextNode");
+
+    while (queue.count > 0) {
+        UIView *current = queue.firstObject;
+        [queue removeObjectAtIndex:0];
+
+        if (asDisplayClass && [current isKindOfClass:asDisplayClass]) {
+            ASDisplayNode *node = [current performSelector:@selector(keepalive_node)];
+
+            BOOL isExpandableText = node && elmTextExClass && [node isKindOfClass:elmTextExClass];
+            BOOL isText = node && elmTextClass && [node isKindOfClass:elmTextClass];
+            BOOL isCommentLabel = [current.accessibilityIdentifier isEqualToString:@"id.comment.content.label"];
+
+            if (isText || isExpandableText || isCommentLabel) {
+                resultText = current.accessibilityLabel ?: @"";
+                break;
+            }
+
+            for (id obj in node.yogaChildren) {
+                if ([obj isKindOfClass:elmTextClass] && [[obj description] containsString:@"id.comment.content.label"]) {
+                    NSAttributedString *text = [obj valueForKey:@"_attributedText"];
+                    resultText = text.string;
+                    break;
+                }
+            }
+        }
+
+        [queue addObjectsFromArray:current.subviews];
+    }
+
+    return resultText;
+}
+
+static UIImage *HPlusRenderViewToImage(_ASDisplayView *view) {
+    if (!view || view.bounds.size.width <= 0 || view.bounds.size.height <= 0) return nil;
+    
+    UIColor *realBgColor = isDarkMode(view) ? [%c(YTColor) black3] : [%c(YTColor) white1];  
+    UIGraphicsBeginImageContextWithOptions(view.bounds.size, NO, [UIScreen mainScreen].scale);
+    CGContextRef context = UIGraphicsGetCurrentContext();    
+    [realBgColor setFill];
+    CGContextFillRect(context, view.bounds);
+    [view drawViewHierarchyInRect:view.bounds afterScreenUpdates:YES];
+
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();    
+    return image;
+}
+
+/*
+static UIImage *HPlusExtractPostImage(UIView *cellView) {
+    NSMutableArray<UIView *> *queue = [NSMutableArray arrayWithObject:cellView];
+    Class asDisplayClass = NSClassFromString(@"_ASDisplayView");
+    Class imageZoomNodeClass = NSClassFromString(@"YTImageZoomNode");
+    UIView *targetViewForRender = nil;
+
+    while (queue.count > 0) {
+        UIView *current = queue.firstObject;
+        [queue removeObjectAtIndex:0];
+
+        if (asDisplayClass && [current isKindOfClass:asDisplayClass]) {
+            id node = [current performSelector:@selector(keepalive_node)];
+            
+            if (imageZoomNodeClass && [node isKindOfClass:imageZoomNodeClass]) {
+                if (!targetViewForRender) {
+                    targetViewForRender = current;
+                }
+            }
+        }
+
+        @synchronized (current) {
+            [queue addObjectsFromArray:current.subviews];
+        }
+    }
+
+    if (targetViewForRender && targetViewForRender.bounds.size.width > 0 && targetViewForRender.bounds.size.height > 0) {
+        UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:targetViewForRender.bounds.size];
+        return [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull rendererContext) {
+            [targetViewForRender.layer renderInContext:rendererContext.CGContext];
+        }];
+    }
+
+    return nil;
+}
+*/
+
+%hook _ASDisplayView
+
+- (void)didMoveToWindow {
+    %orig;
+    if ([self.accessibilityIdentifier isEqualToString:@"id.ui.comment_cell"] && IS_ENABLED(DownloadComment)) {
+        BOOL hasGesture = NO;
+        for (UIGestureRecognizer *g in self.gestureRecognizers) {
+            if ([g.name isEqualToString:@"HPlusCommentLongPress"]) {
+                hasGesture = YES;
+                break;
+            }
+        }
+        
+        if (!hasGesture) {
+            UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusHandleCommentLongPress:)];
+            longPress.name = @"HPlusCommentLongPress";
+            longPress.minimumPressDuration = 0.3;
+            [self addGestureRecognizer:longPress];
+        }
+    } else if ([self.accessibilityIdentifier isEqualToString:@"id.ui.backstage.original_post"] && IS_ENABLED(DownloadPost)) {
+        BOOL hasGesture = NO;
+        for (UIGestureRecognizer *g in self.gestureRecognizers) {
+            if ([g.name isEqualToString:@"HPlusPostLongPress"]) {
+                hasGesture = YES;
+                break;
+            }
+        }
+        
+        if (!hasGesture) {
+            UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(HPlusHandlePostLongPress:)];
+            longPress.name = @"HPlusPostLongPress";
+            longPress.minimumPressDuration = 0.3;
+            [self addGestureRecognizer:longPress];
+        }
+    }
+}
+
+%new
+- (void)HPlusHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
+    if (sender.state != UIGestureRecognizerStateBegan) return;
+
+    NSMutableArray *items = [NSMutableArray array];
+    NSString *commentText = HPlusExtractCommentText(self);
+
+    if (commentText && commentText.length > 0) {
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"TRANSLATE_COMMENT") subtitle:nil icon:HPlusYTIconImage(897, NO, nil) handler:^{
+            UIViewController *presenter = HPlusPresenterForSender(self, nil);
+            HPlusShowTranslationDialog(commentText, presenter);
+        }]];
+
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_COMMENT_TEXT") subtitle:nil icon:HPlusYTIconImage(243, NO, nil) handler:^{
+            HPlusCopyTextToPasteboard(commentText, @"COPIED_TO_CLIPBOARD");
+        }]];
+    }
+
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_COMMENT_IMAGE") subtitle:nil icon:HPlusYTIconImage(367, NO, nil) handler:^{
+        UIImage *image = HPlusRenderViewToImage(self);
+        if (image) {
+            UIViewController *p = HPlusPresenterForSender(self, nil);
+            HPlusHandlePostDownloadImage(image, p);
+        }
+    }]];
+
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_COMMENT_IMAGE") subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
+        UIImage *image = HPlusRenderViewToImage(self);
+        if (image) {
+            HPlusCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
+        }
+    }]];
+
+    UIViewController *presenter = HPlusPresenterForSender(self, nil);
+    if (!presenter) return;
+
+    HPlusPresentMenu(nil, items, presenter, self);
+}
+
+%new
+- (void)HPlusHandlePostLongPress:(UILongPressGestureRecognizer *)sender {
+    if (sender.state != UIGestureRecognizerStateBegan) return;
+
+    NSMutableArray *items = [NSMutableArray array];
+    NSString *commentText = HPlusExtractCommentText(self);
+
+    if (commentText && commentText.length > 0) {
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"TRANSLATE_POST") subtitle:nil icon:HPlusYTIconImage(897, NO, nil) handler:^{
+            UIViewController *presenter = HPlusPresenterForSender(self, nil);
+            HPlusShowTranslationDialog(commentText, presenter);
+        }]];
+
+        [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_POST_TEXT") subtitle:nil icon:HPlusYTIconImage(243, NO, nil) handler:^{
+            HPlusCopyTextToPasteboard(commentText, @"COPIED_TO_CLIPBOARD");
+        }]];
+    }
+
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_POST_IMAGE") subtitle:nil icon:HPlusYTIconImage(367, NO, nil) handler:^{
+        UIImage *image = HPlusRenderViewToImage(self);
+        if (image) {
+            UIViewController *p = HPlusPresenterForSender(self, nil);
+            HPlusHandlePostDownloadImage(image, p);
+        }
+    }]];
+
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_POST_IMAGE") subtitle:nil icon:HPlusYTIconImage(208, NO, nil) handler:^{
+        UIImage *image = HPlusRenderViewToImage(self);
+        if (image) {
+            HPlusCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
+        }
+    }]];
+
+    /*
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"SAVE_CURRENT_IMAGE") subtitle:nil icon:HPlusYTIconImage(367, YES, [UIColor systemPurpleColor]) handler:^{
+        UIImage *image = HPlusExtractPostImage(self);
+        if (image) {
+            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil);
+            HPlusSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
+        }
+    }]];
+
+    [items addObject:[HPlusMenuItem itemWithTitle:LOC(@"COPY_CURRENT_IMAGE") subtitle:nil icon:HPlusYTIconImage(208, YES, [UIColor systemPurpleColor]) handler:^{
+        UIImage *image = HPlusExtractPostImage(self);
+        if (image) {
+            HPlusCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
+        }
+    }]];
+    */
+
+    UIViewController *presenter = HPlusPresenterForSender(self, nil);
+    if (!presenter) return;
+
+    HPlusPresentMenu(nil, items, presenter, self);
+}
+
+%new
+- (void)HPlusDownloadButtonTapped:(UITapGestureRecognizer *)sender {
+    if (sender.state != UIGestureRecognizerStateEnded) return;
+    UIViewController *presenter = HPlusPresenterForSender(self, HPlusCurrentPlayerViewController);
+    YTPlayerViewController *player = HPlusPlayerFromViewController(presenter);
+    HPlusShowDownloadManager(player, presenter, self, NO);
+}
+
+%end
+
 %hook YTReelWatchPlaybackOverlayView
 
 - (void)layoutSubviews {
@@ -3144,17 +2303,20 @@ NSString *HPlusGlobalAuthHeader = nil;
         [downloadBtn enableNewTouchFeedback];
         [self addSubview:downloadBtn];
     }
-    CGFloat btnWidth = HPlusShortsDownloadBtnWidth;
-    CGFloat btnHeight = HPlusShortsDownloadBtnHeight;
-    YTReelElementAsyncComponentView *pov = HPlusObjectFromSelector(self, NSSelectorFromString(@"_playerOverlayView"));
-    YTReelElementAsyncComponentView *actionBar = HPlusObjectFromSelector(self, NSSelectorFromString(@"_actionBarComponentView"));
+    CGFloat btnWidth = 64.0;
+    CGFloat btnHeight = 60.0;
+    YTReelElementAsyncComponentView *pov = nil;
+    @try {
+        pov = [self valueForKey:@"_playerOverlayView"];
+    } @catch (...) {}
+    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
     CGFloat X = [UIScreen mainScreen].bounds.size.width - actionBar.frame.origin.x - btnWidth;
     CGFloat Y = 0.0;
     if (pov == nil) {
-        Y = actionBar.frame.origin.y - HPlusShortsDownloadBtnOffsetNoOverlay;
-        btnHeight = btnHeight + HPlusShortsDownloadBtnExtraHeightNoOverlay;
+        Y = actionBar.frame.origin.y - 76.0;
+        btnHeight = btnHeight + 16.0;
     } else {
-        Y = pov.frame.origin.y - HPlusShortsDownloadBtnOffsetWithOverlay;
+        Y = pov.frame.origin.y - 60.0;
     }
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
@@ -3170,9 +2332,6 @@ NSString *HPlusGlobalAuthHeader = nil;
 
 %end
 
-// =========================================================
-// MARK: - Overlay button registration (%ctor)
-// =========================================================
 %ctor {
     %init;
     YMOverlayButtonSpec *download = [[YMOverlayButtonSpec alloc] init];
