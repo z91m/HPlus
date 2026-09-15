@@ -39,7 +39,6 @@
 @property (nonatomic, assign) int itag;
 @property (nonatomic, assign) int resolution;
 @property (nonatomic, assign) BOOL video;
-@property (nonatomic, assign) BOOL isAutoDubbed;
 @end
 
 @implementation HPlusMediaFormat
@@ -178,8 +177,8 @@ static void HPlusApplyDownloadHeaders(NSMutableURLRequest *request, NSDictionary
         _completion = [completion copy];
         _pendingChunks = [NSMutableArray array];
         _tasks = [NSMutableSet set];
-        _stateQueue = dispatch_queue_create("com.youmod.download.range.state", DISPATCH_QUEUE_SERIAL);
-        _fileQueue = dispatch_queue_create("com.youmod.download.range.file", DISPATCH_QUEUE_SERIAL);
+        _stateQueue = dispatch_queue_create("com.hplus.download.range.state", DISPATCH_QUEUE_SERIAL);
+        _fileQueue = dispatch_queue_create("com.hplus.download.range.file", DISPATCH_QUEUE_SERIAL);
 
         NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
         configuration.HTTPMaximumConnectionsPerHost = HPlusFastDownloadConcurrency;
@@ -685,15 +684,15 @@ static HPlusMediaFormat *HPlusMediaFormatFromStream(YTIFormatStream *stream, BOO
     format.qualityLabel = stream.qualityLabel;
     if ([stream.qualityLabel hasSuffix:@"HDR"]) return nil;
     if (!video) {
-    YTIAudioTrack *audio = stream.audioTrack;
-    NSString *audioidp = audio.id_p;
-    if (audio.hasId_p) {
-        if (audio.isAutoDubbed) return nil;   // امسح أي مسار مدبلج مهما كانت لغته
-        format.qualityLabel = audio.displayName;
-        format.idp = audioidp;
+        YTIAudioTrack *audio = stream.audioTrack;
+        NSString *audioidp = audio.id_p;
+        if (audio.hasId_p) {
+            if (INTFORVAL(AudioPreferIndex) == 1 && ![audioidp hasSuffix:@".4"]) return nil;
+            if (INTFORVAL(AudioPreferIndex) == 2 && ![audioidp hasPrefix:@"en"]) return nil;
+            format.qualityLabel = audio.displayName;
+            format.idp = audioidp;
+        }
     }
-    format.isAutoDubbed = audio.isAutoDubbed;
-}
     format.contentLength = stream.contentLength;
     format.durationMs = stream.approxDurationMs;
     format.itag = stream.itag;
@@ -715,9 +714,6 @@ static NSArray <HPlusMediaFormat *> *HPlusFormatsForPlayer(YTPlayerViewControlle
             NSInteger leftFPS = left.fps;
             NSInteger rightFPS = right.fps;
             if (leftFPS != rightFPS) return leftFPS > rightFPS ? NSOrderedAscending : NSOrderedDescending;
-        } else {
-            if (left.isAutoDubbed != right.isAutoDubbed)
-                return left.isAutoDubbed ? NSOrderedDescending : NSOrderedAscending;
         }
         
         BOOL leftMP4 = HPlusFormatLooksMP4Family(left);
@@ -2314,7 +2310,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         pov = [self valueForKey:@"_playerOverlayView"];
     } @catch (...) {}
     YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
-    CGFloat X = [UIScreen mainScreen].bounds.size.width - actionBar.frame.origin.x - btnWidth;
+    CGFloat X = actionBar.frame.origin.x;
     CGFloat Y = 0.0;
     if (pov == nil) {
         Y = actionBar.frame.origin.y - 76.0;

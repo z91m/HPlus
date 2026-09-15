@@ -29,7 +29,7 @@
 // hop here before touching shared state.
 static dispatch_queue_t SABRQueue(void) {
     static dispatch_queue_t q; static dispatch_once_t o;
-    dispatch_once(&o, ^{ q = dispatch_queue_create("youmod.sabr", DISPATCH_QUEUE_SERIAL); });
+    dispatch_once(&o, ^{ q = dispatch_queue_create("hplus.sabr", DISPATCH_QUEUE_SERIAL); });
     return q;
 }
 

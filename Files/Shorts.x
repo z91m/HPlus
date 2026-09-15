@@ -68,6 +68,7 @@ static BOOL isFullscreenEnabled = NO;
     YTIAudioTrack *matchedTrack = nil;
 
     if (INTFORVAL(AudioTrack) == 1) {
+        // Loop for all tracks
         for (YTIAudioTrack *track in availableTracks) {
             if ([track.id_p hasSuffix:@".4"]) {
                 matchedTrack = track;
@@ -75,6 +76,7 @@ static BOOL isFullscreenEnabled = NO;
             }
         }
     } else if (INTFORVAL(AudioTrack) == 2) {
+        // Loop for all tracks
         for (YTIAudioTrack *track in availableTracks) {
             if ([track.id_p hasPrefix:userTargetLang]) {
                 matchedTrack = track;
@@ -82,6 +84,7 @@ static BOOL isFullscreenEnabled = NO;
             }
         }
 
+        // Check if it's dubbed
         if (matchedTrack && [matchedTrack isAutoDubbed] && IS_ENABLED(NoDubbedAudioTrack)) matchedTrack = nil;
 
         if (!matchedTrack && IS_ENABLED(NoDubbedAudioTrack)) {
@@ -94,6 +97,7 @@ static BOOL isFullscreenEnabled = NO;
         }
     }
 
+    // If found, change to it
     if (matchedTrack) {
         [pv setAudioTrack:matchedTrack source:0];
     }
@@ -118,26 +122,26 @@ static BOOL isFullscreenEnabled = NO;
 
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
-static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
-    NSDictionary *possibleIds = @{
-        @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
+static void HPlusFilterShortsButtons(_ASDisplayView *self, NSString *iden) {
+    NSDictionary *buttonsList = @{
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
-        @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
-        @"id.reel_remix_button": @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"eml.reel_channel_bar.channel_name": @(IS_ENABLED(RemoveShortsChannelName)),
-        @"decorated-avatar-id": @(IS_ENABLED(RemoveShortsChannelName)),
-        @"eml.compact_subscribe_button": @(IS_ENABLED(RemoveShortsChannelName)),
-        @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
-        @"id.reel_footer_analytics_button": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
         @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
-    for (NSString *target in possibleIds) {
-        if ([iden containsString:target] && [possibleIds[target] boolValue]) {
-            self.hidden = YES;
-            self.userInteractionEnabled = NO;
+    for (NSString *button in buttonsList) {
+        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
+            _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
+            ASDisplayNode *node = mainView.keepalive_node;
+            for (_ASDisplayView *view in node.yogaChildren) {
+                if ([[view description] containsString:button]) {
+                    [node removeYogaChild:view];
+                    [self removeFromSuperview];
+                    break;
+                }
+            }
             break;
         }
     }
@@ -183,7 +187,6 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
     HPlusConfigureDownloadButton(self);
     NSString *iden = self.accessibilityIdentifier;
     if (!iden || iden.length == 0) return;
-    
     NSDictionary *elements = @{
         @"product_sticker.main_target": @(IS_ENABLED(HideShortsProducts)),
         @"product_sticker.secondary_target": @(IS_ENABLED(HideShortsProducts)),
@@ -197,7 +200,6 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
         [self.superview removeFromSuperview];
         return;
     }
-    
     
     HPlusFilterShortsButtons(self, iden);
     HPlusFilterShortsPausedHeader(self, iden);

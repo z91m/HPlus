@@ -1,8 +1,8 @@
 // Settings.x
-
+// Thanks to the original codes from YTUHD by PoomSmart - https://github.com/PoomSmart/YTUHD/blob/0e735616fd8fc6546339da7fdc78466f16f23ffd/Settings.x
 #import "Headers.h"
 
-#define TweakName @"Hamad Plus"
+#define TweakName @"HPlus"
 
 #define YMLOC(x) [HPlusBundle() localizedStringForKey:x value:nil table:nil]
 #define STRINGIFY(x) #x
@@ -102,7 +102,8 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     YTSettingsViewController *settingsViewController = [self valueForKey:@"_settingsViewControllerDelegate"];
 
     // Tweak Version (at the top)
-    YTSettingsSectionItem *tweakVersion = [YTSettingsSectionItemClass itemWithTitle:@"Hamad Plus v1.0.0"
+    // Thanks to the original codes from YTweaks by fosterbarnes - https://github.com/fosterbarnes/YTweaks/blob/e921591a89b87256a2b37c4788bd99282f70d9c2/Settings.x
+    YTSettingsSectionItem *tweakVersion = [YTSettingsSectionItemClass itemWithTitle:@"HPlus v2.0.0"
         titleDescription:nil
         accessibilityIdentifier:nil
         detailTextBlock:nil
@@ -122,13 +123,24 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         }];
     [sectionItems addObject:github];
 
+    // Issues
+    YTSettingsSectionItem *issues = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"NEW_ISSUES")
+        titleDescription:YMLOC(@"NEW_ISSUES_DESC") // Found bug or Feature request -> Report Issues
+        accessibilityIdentifier:nil
+        detailTextBlock:nil
+        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
+            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/HPlus/issues/new/choose"]];
+        }
+    ];
+    [sectionItems addObject:issues];
+
     // Sources codes
     YTSettingsSectionItem *sourceCodes = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"SOURCE_CODES")
         titleDescription:YMLOC(@"SOURCE_CODES_DESC") // Take a look
         accessibilityIdentifier:nil
         detailTextBlock:nil
         selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/z91m/HPlus"]];
+            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/HPlus"]];
         }
     ];
     [sectionItems addObject:sourceCodes];
@@ -277,7 +289,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             [YMPicker(YMLOC(@"CAPTION_TRACK_SELECT"), YMLOC(@"CAPTION_TRACK_SELECT_DESC"), CaptionTrackLangIndex, getAllSystemLanguageTitles(), 0) visibleWhenKey:CaptionTrack equals:2],
             [YMToggle(YMLOC(@"DISABLES_CAPTION_TRACK"), YMLOC(@"DISABLES_CAPTION_TRACK_DESC"), DisablesCaptionTrack) visibleWhenKey:CaptionTrack equals:2],
             YMHeader(@""),
-            YMPicker(YMLOC(@"HOLD_TO_SPEED"), YMLOC(@"HOLD_TO_SPEED_DESC"), HoldToSpeedIndex, (@[YMLOC(@"DEFAULT"), @"0.25x", @"0.5x", @"0.75x", @"1x", @"1.25x", @"1.5x", @"1.75x", @"2x", @"3x", @"4x", @"5x", @"7.5x", @"10x"]), 0),
+            YMPicker(YMLOC(@"HOLD_TO_SPEED"), YMLOC(@"HOLD_TO_SPEED_DESC"), HoldToSpeedIndex, (@[YMLOC(@"DEFAULT"), @"0.25x", @"0.5x", @"0.75x", @"1x", @"1.25x", @"1.5x", @"1.75x", @"2x", @"3x", @"4x", @"5x"]), 0),
             [YMToggle(YMLOC(@"LOCK_SPEED"), YMLOC(@"LOCK_SPEED_DESC"), LockSpeed) visibleWhenKey:HoldToSpeedIndex isGreaterThan:0],
             YMHeader(YMLOC(@"INTERFACE")),
             YMAction(YMLOC(@"MANAGE_OVERLAY_BUTTONS"), YMLOC(@"MANAGE_OVERLAY_BUTTONS_DESC"), ^(UIViewController *vc) {
@@ -323,7 +335,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"SKIP_FORWARD"), YMLOC(@"SKIP_FORWARD_DESC"), SkipForwardEnabled),
             [YMSlider(YMLOC(@"FORWARD_SECONDS"), nil, ForwardSeconds, 5, 60, 5, 10) visibleWhenBoolKey:SkipForwardEnabled],
             YMHeader(YMLOC(@"PLAYER_ACTIONS")),
-            YMPicker(YMLOC(@"DEFAULT_SPEED"), YMLOC(@"DEFAULT_SPEED_DESC"), AutoSpeedIndex, (@[YMLOC(@"DISABLED"), @"0.25x", @"0.5x", @"0.75x", @"1x", @"1.25x", @"1.5x", @"1.75x", @"2x", @"3x", @"4x", @"5x", @"7.5x", @"10x"]), 0),
+            YMPicker(YMLOC(@"DEFAULT_SPEED"), YMLOC(@"DEFAULT_SPEED_DESC"), AutoSpeedIndex, (@[YMLOC(@"DISABLED"), @"0.25x", @"0.5x", @"0.75x", @"1x", @"1.25x", @"1.5x", @"1.75x", @"2x", @"3x", @"4x", @"5x"]), 0),
             YMToggle(YMLOC(@"FORCE_MINIPLAYER"), YMLOC(@"FORCE_MINIPLAYER_DESC"), ForceMiniPlayer),
             YMToggle(YMLOC(@"HIDE_CONTENT_WARNING"), YMLOC(@"HIDE_CONTENT_WARNING_DESC"), HideContentWarning),
             YMToggle(YMLOC(@"STOP_AUTOPLAY_VIDEO"), YMLOC(@"STOP_AUTOPLAY_VIDEO_DESC"), StopAutoplayVideo),
@@ -376,9 +388,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"HIDE_SHORTS_PRODUCT"), YMLOC(@"HIDE_SHORTS_PRODUCT_DESC"), HideShortsProducts),
             YMToggle(YMLOC(@"HIDE_SHORTS_RECBAR"), YMLOC(@"HIDE_SHORTS_RECBAR_DESC"), HideShortsRecbar),
             YMToggle(YMLOC(@"HIDE_SHORTS_DISCLOSURE"), YMLOC(@"HIDE_SHORTS_DISCLOSURE_DESC"), RemoveShortsDisclosure),
-            YMToggle(YMLOC(@"REMOVE_SHORTS_TITLE_BUTTON"), YMLOC(@"REMOVE_SHORTS_TITLE_BUTTON_DESC"), RemoveShortsTitleButton),
             YMToggle(YMLOC(@"REMOVE_SHORTS_LIKE_BUTTON"), YMLOC(@"REMOVE_SHORTS_LIKE_BUTTON_DESC"), RemoveShortsLikeButton),
-            YMToggle(YMLOC(@"REMOVE_SHORTS_SAVE_BUTTON"), YMLOC(@"REMOVE_SHORTS_SAVE_BUTTON_DESC"), RemoveShortsSaveButton),
             YMToggle(YMLOC(@"REMOVE_SHORTS_COMMENT_BUTTON"), YMLOC(@"REMOVE_SHORTS_COMMENT_BUTTON_DESC"), RemoveShortsCommentButton),
             YMToggle(YMLOC(@"REMOVE_SHORTS_SHARE_BUTTON"), YMLOC(@"REMOVE_SHORTS_SHARE_BUTTON_DESC"), RemoveShortsShareButton),
             YMToggle(YMLOC(@"REMOVE_SHORTS_REMIX_BUTTON"), YMLOC(@"REMOVE_SHORTS_REMIX_BUTTON_DESC"), RemoveShortsRemixButton),
@@ -387,9 +397,6 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_LIVE_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_LIVE_BUTTON_DESC"), RemoveShortsPausedLiveButton),
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_LENS_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_LENS_BUTTON_DESC"), RemoveShortsPausedLensButton),
             YMToggle(YMLOC(@"REMOVE_SHORTS_PAUSED_TRENDS_BUTTON"), YMLOC(@"REMOVE_SHORTS_PAUSED_TRENDS_BUTTON_DESC"), RemoveShortsPausedTrendsButton),
-            YMToggle(YMLOC(@"REMOVE_SHORTS_RELATED_VIDEO"), YMLOC(@"REMOVE_SHORTS_RELATED_VIDEO_DESC"), RemoveShortsRelatedVideo),
-            YMToggle(YMLOC(@"REMOVE_SHORTS_CHANNEL_NAME"), YMLOC(@"REMOVE_SHORTS_CHANNEL_NAME_DESC"), RemoveShortsChannelName),
-            YMToggle(YMLOC(@"REMOVE_SHORTS_SOUND_BUTTON"), YMLOC(@"REMOVE_SHORTS_SOUND_BUTTON_DESC"), RemoveShortsSoundButton),
     ];
     YMRegisterSettingsGroup(YMLOC(@"SHORTS"), shortsItems);
     YTSettingsSectionItem *shortsgroup = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"SHORTS") accessibilityIdentifier:nil detailTextBlock:nil selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {

@@ -70,7 +70,7 @@
 #import <YouTubeHeader/YTReelElementAsyncComponentView.h>
 
 // For Settings.x and SponsorBlockSettings.x
-#import <PSHeader/Misc.h>
+#import <roothide.h>
 #import <YouTubeHeader/YTSettingsGroupData.h>
 #import <YouTubeHeader/YTSettingsSectionItem.h>
 #import <YouTubeHeader/YTSettingsSectionItemManager.h>
@@ -111,7 +111,6 @@
 #define AudioPreferIndex @"HPlusAudioPreferIndex"
 #define DownloadComment @"HPlusDownloadComment"
 #define DownloadPost @"HPlusDownloadPost"
-#define DownloadPreferDRCAudio @"HPlusDownloadPreferDRCAudio"
 // Cache
 #define AutoClearCache @"HPlusAutoClearCache"
 // Appearance
@@ -124,7 +123,7 @@
 #define HideSearch @"HPlusHideSearchButton"
 #define HideVoiceSearch @"HPlusHideVoiceSearchButton"
 #define HideCastButtonNav @"HPlusHideCastButtonNavigationBar"
-// Feed 
+// Feed
 #define HideSubbar @"HPlusHideSubbar"
 #define HideHoriShelf @"HPlusHideHoriShelf"
 #define HideGenMusicShelf @"HPlusHideGenMusicShelf"
@@ -231,11 +230,6 @@
 #define RemoveShortsPausedLensButton @"HPlusRemoveShortsPausedLensButton"
 #define RemoveShortsPausedTrendsButton @"HPlusRemoveShortsPausedTrendsButton"
 #define RemoveShortsDisclosure @"HPlusRemoveShortsDisclosure"
-#define RemoveShortsTitleButton @"HPlusRemoveShortsTitleButton"
-#define RemoveShortsSaveButton @"HPlusRemoveShortsSaveButton"
-#define RemoveShortsRelatedVideo @"HPlusRemoveShortsRelatedVideo"
-#define RemoveShortsChannelName @"HPlusRemoveShortsChannelName"
-#define RemoveShortsSoundButton @"HPlusRemoveShortsSoundButton"
 // Tab bar
 #define DefaultTab @"HPlusDefaultStartupTab"
 #define TabOrder @"HPlusTabOrder"
