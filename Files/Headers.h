@@ -47,6 +47,7 @@
 #import <YouTubeHeader/YTTypeStyle.h>
 #import <YouTubeHeader/YTModularPlayerBarController.h>
 #import <dlfcn.h>
+#import <PSHeader/Misc.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 #import <netinet/in.h>
 #import <YouTubeHeader/YTAppViewControllerImpl.h>
@@ -230,6 +231,11 @@
 #define RemoveShortsPausedLensButton @"HPlusRemoveShortsPausedLensButton"
 #define RemoveShortsPausedTrendsButton @"HPlusRemoveShortsPausedTrendsButton"
 #define RemoveShortsDisclosure @"HPlusRemoveShortsDisclosure"
+#define RemoveShortsSaveButton @"HPlusRemoveShortsSaveButton"
+#define RemoveShortsTitleButton @"HPlusRemoveShortsTitleButton"
+#define RemoveShortsSoundButton @"HPlusRemoveShortsSoundButton"
+#define RemoveShortsChannelName @"HPlusRemoveShortsChannelName"
+#define RemoveShortsRelatedVideo @"HPlusRemoveShortsRelatedVideo"
 // Tab bar
 #define DefaultTab @"HPlusDefaultStartupTab"
 #define TabOrder @"HPlusTabOrder"
