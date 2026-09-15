@@ -10,6 +10,5 @@ TWEAK_NAME = HPlus
 $(TWEAK_NAME)_FRAMEWORKS = UIKit Foundation AudioToolbox MediaPlayer
 $(TWEAK_NAME)_CFLAGS = -fobjc-arc
 $(TWEAK_NAME)_FILES = $(wildcard Files/*.x)
-$(TWEAK_NAME)_INSTALL_PATH = /Library/MobileSubstrate/DynamicLibraries
 
 include $(THEOS_MAKE_PATH)/tweak.mk
