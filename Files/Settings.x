@@ -140,7 +140,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         accessibilityIdentifier:nil
         detailTextBlock:nil
         selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/HPlus"]];
+            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/z91m/HPlus"]];
         }
     ];
     [sectionItems addObject:sourceCodes];
