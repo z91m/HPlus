@@ -1,9 +1,9 @@
-Package: dev.water888.hplus
+Package: dev.hamad.hplus
 Name: HPlus
-Version: 2.0.0
+Version: 1.0.0
 Architecture: iphoneos-arm
 Description: A lightweight YouTube enhancer
-Maintainer: Tonwalter888, G Rohit
-Author: Tonwalter888
+Maintainer: Hamad
+Author: Hamad
 Section: Tweaks
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 14.0)
