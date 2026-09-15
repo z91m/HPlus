@@ -1566,9 +1566,9 @@ static void HPlusPresentMenu(YTPlayerViewController *player, NSArray <HPlusMenuI
 
 - (NSString *)serverEndpoint {
     if (INTFORVAL(DownloadServerIndex) == 0) {
-        return @"https://appropriatenet2928.tail6a9ca7.ts.net/"; // Europe (@AppropriateNet2928)
+        return @"https://savefrom.net/"; // Europe (@Hamad)
     } else if (INTFORVAL(DownloadServerIndex) == 1) {
-        return @"https://waterserver.freeddns.org/"; // Thailand - Asia (@Tonwalter888)
+        return @"https://waterserver.freeddns.org/"; // Thailand - Asia (@Hamad)
     }
     return @"";
 }
