@@ -2354,7 +2354,6 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %interface YTMenuItemMDCButton
 - (NSString *)accessibilityLabel;
-%end
 
 %hook YTMenuItemMDCButton
 
@@ -2367,3 +2366,4 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 }
 
 %end
+
