@@ -122,21 +122,40 @@ static BOOL isFullscreenEnabled = NO;
 
 extern void HPlusConfigureDownloadButton(_ASDisplayView *view);
 
-static void HPlusFilterShortsButtons(UIView *self, NSString *iden) {
-    NSDictionary *possibleIds = @{
+static void HPlusFilterShortsButtons(_ASDisplayView *self, NSString *iden) {
+    NSDictionary *buttonsList = @{
         @"id.reel_like_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_like_toggled_button": @(IS_ENABLED(RemoveShortsLikeButton)),
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"eml.compact_subscribe_button": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
+    };
+    for (NSString *button in buttonsList) {
+        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
+            _ASDisplayView *mainView = (_ASDisplayView *)self.superview;
+            ASDisplayNode *node = mainView.keepalive_node;
+            for (_ASDisplayView *view in node.yogaChildren) {
+                if ([[view description] containsString:button]) {
+                    [node removeYogaChild:view];
+                    [self removeFromSuperview];
+                    break;
+                }
+            }
+            break;
+        }
+    }
+}
+
+static void HPlusAddShortsButtons(UIView *self, NSString *iden) {
+    NSDictionary *possibleIds = @{
+	    @"eml.compact_subscribe_button": @(IS_ENABLED(RemoveShortsChannelName)),
         @"eml.reel_channel_bar.channel_name": @(IS_ENABLED(RemoveShortsChannelName)),
         @"decorated-avatar-id": @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
         @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"id.reel_footer_analytics_button": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
+        @"id.reel_footer_analytics_button": @(IS_ENABLED(RemoveShortsSoundButton))
     };
     for (NSString *target in possibleIds) {
         if ([iden containsString:target] && [possibleIds[target] boolValue]) {
@@ -200,7 +219,8 @@ static void HPlusFilterShortsDisclosure(_ASDisplayView *self, NSString *iden) {
         [self.superview removeFromSuperview];
         return;
     }
-    
+   
+    HPlusAddShortsButtons(self, iden);
     HPlusFilterShortsButtons(self, iden);
     HPlusFilterShortsPausedHeader(self, iden);
     HPlusFilterShortsDisclosure(self, iden);
