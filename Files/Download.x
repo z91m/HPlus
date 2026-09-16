@@ -2332,17 +2332,12 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
-%interface YTMenuItemMDCButton
-- (NSString *)accessibilityLabel;
-
 %hook YTMenuItemMDCButton
 
 - (void)didTapButton:(id)sender {
     YTPlayerViewController *player = HPlusCurrentPlayerViewController;
     UIViewController *presenter = HPlusPresenterForSender(sender, player);
     HPlusShowDownloadManager(player, presenter, sender, NO);
-
-    // %orig(sender);
 }
 
 %end
