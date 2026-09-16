@@ -2352,11 +2352,13 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     YMRegisterOverlayButton(download);
 }
 
+%interface YTMenuItemMDCButton
+- (NSString *)accessibilityLabel;
+%end
+
 %hook YTMenuItemMDCButton
 
 - (void)didTapButton:(id)sender {
-    NSString *buttonText = [self accessibilityLabel];
-    
     YTPlayerViewController *player = HPlusCurrentPlayerViewController;
     UIViewController *presenter = HPlusPresenterForSender(sender, player);
     HPlusShowDownloadManager(player, presenter, sender, NO);
