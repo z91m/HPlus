@@ -687,7 +687,7 @@ static HPlusMediaFormat *HPlusMediaFormatFromStream(YTIFormatStream *stream, BOO
         YTIAudioTrack *audio = stream.audioTrack;
         NSString *audioidp = audio.id_p;
         if (audio.hasId_p) {
-            if (INTFORVAL(AudioPreferIndex) == 1 && ![audioidp hasSuffix:@".4"]) return nil;
+            if (INTFORVAL(AudioPreferIndex) == 1 && ![audioidp hasSuffix:@"ar"]) return nil;
             if (INTFORVAL(AudioPreferIndex) == 2 && ![audioidp hasPrefix:@"en"]) return nil;
             format.qualityLabel = audio.displayName;
             format.idp = audioidp;
