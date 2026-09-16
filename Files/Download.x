@@ -2351,3 +2351,17 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     };
     YMRegisterOverlayButton(download);
 }
+
+%hook YTMenuItemMDCButton
+
+- (void)didTapButton:(id)sender {
+    NSString *buttonText = [self accessibilityLabel];
+    
+    YTPlayerViewController *player = HPlusCurrentPlayerViewController;
+    UIViewController *presenter = HPlusPresenterForSender(sender, player);
+    HPlusShowDownloadManager(player, presenter, sender, NO);
+
+    // %orig(sender);
+}
+
+%end
