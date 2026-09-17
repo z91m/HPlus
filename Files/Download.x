@@ -2332,6 +2332,12 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
+@interface UIView (HPlusDownloadMenu)
+- (void)hplus_injectDownloadButton;
+- (UIScrollView *)hplus_findScrollView;
+- (void)hplus_menuDownloadTapped:(UIButton *)sender;
+@end
+
 // ============================================================
 //  زر محقون في قائمة النقاط الثلاث ⋮
 // ============================================================
