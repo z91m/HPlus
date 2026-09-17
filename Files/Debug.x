@@ -1,9 +1,9 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
-#import <os/log.h>
+#import <os/log.h> // 🟢 تم إضافة مكتبة السجلات الرسمية
 
-Associated Object
+// مفتاح فريد للـ Associated Object
 static char kHPlusGestureKey;
 
 @interface HPlusDebugHelper : NSObject
