@@ -2332,12 +2332,92 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
-%hook YTMenuItemMDCButton
+// ============================================================
+//  زر محقون في قائمة النقاط الثلاث ⋮
+// ============================================================
+%hook UIView
 
-- (void)didTapButton:(id)sender {
+- (void)didMoveToWindow {
+    %orig;
+
+    if (![NSStringFromClass([self class]) isEqualToString:@"YTDialogContainerScrollView"]) return;
+    if (!self.window) return;
+    if ([self viewWithTag:99887766]) return;
+    if (!IS_ENABLED(DownloadManager)) return;
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.15 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        [self hplus_injectDownloadButton];
+    });
+}
+
+%new
+- (void)hplus_injectDownloadButton {
+    YTPlayerViewController *player = HPlusCurrentPlayerViewController;
+    if (!player) return;
+
+    UIScrollView *scrollView = [self hplus_findScrollView];
+    if (!scrollView) return;
+
+    CGFloat width  = scrollView.frame.size.width ?: self.frame.size.width;
+    CGFloat height = 48.0;
+
+    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    btn.tag = 99887766;
+    btn.frame = CGRectMake(0, scrollView.contentSize.height, width, height);
+    btn.backgroundColor = [UIColor clearColor];
+    btn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+    btn.imageEdgeInsets = UIEdgeInsetsMake(0, 16, 0, 0);
+
+    UIImageSymbolConfiguration *cfg = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightRegular];
+    UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:cfg]
+                     imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    [btn setImage:icon forState:UIControlStateNormal];
+    btn.tintColor = [UIColor whiteColor];
+
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(50, 0, width - 60, height)];
+    label.text = LOC(@"DOWNLOAD_BUTTON") ?: @"تحميل بواسطة HPlus";
+    label.textColor = [UIColor whiteColor];
+    label.font = [UIFont systemFontOfSize:15 weight:UIFontWeightRegular];
+    label.userInteractionEnabled = NO;
+    [btn addSubview:label];
+
+    [btn addTarget:self
+            action:@selector(hplus_menuDownloadTapped:)
+  forControlEvents:UIControlEventTouchUpInside];
+
+    [scrollView addSubview:btn];
+
+    CGSize cs = scrollView.contentSize;
+    cs.height += height;
+    scrollView.contentSize = cs;
+}
+
+%new
+- (UIScrollView *)hplus_findScrollView {
+    for (UIView *sub in self.subviews) {
+        if ([sub isKindOfClass:[UIScrollView class]]) return (UIScrollView *)sub;
+        for (UIView *s2 in sub.subviews) {
+            if ([s2 isKindOfClass:[UIScrollView class]]) return (UIScrollView *)s2;
+            for (UIView *s3 in s2.subviews) {
+                if ([s3 isKindOfClass:[UIScrollView class]]) return (UIScrollView *)s3;
+            }
+        }
+    }
+    return nil;
+}
+
+%new
+- (void)hplus_menuDownloadTapped:(UIButton *)sender {
     YTPlayerViewController *player = HPlusCurrentPlayerViewController;
     UIViewController *presenter = HPlusPresenterForSender(sender, player);
-    HPlusShowDownloadManager(player, presenter, sender, NO);
+    YTPlayerViewController *resolved = HPlusPlayerFromViewController(presenter)
+                                        ?: player
+                                        ?: HPlusCurrentPlayerViewController;
+
+    [presenter dismissViewControllerAnimated:YES completion:^{
+        HPlusShowDownloadManager(resolved, presenter, sender, NO);
+    }];
 }
 
 %end
