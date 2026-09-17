@@ -17,6 +17,7 @@ static char kHPlusGestureKey;
 - (NSString *)getFrameInfoForView:(UIView *)view;
 - (NSString *)getAdditionalInfoForView:(UIView *)view;
 - (NSString *)extractIdentifierFromView:(UIView *)view;
+- (UIView *)nearestLogicalElementForView:(UIView *)view maxDepth:(int)maxDepth;
 - (BOOL)shouldIgnoreView:(UIView *)view;
 @end
 
@@ -411,17 +412,40 @@ static char kHPlusGestureKey;
     return nil;
 }
 
+// 🔧 جديد: يلقى أقرب عنصر تفاعلي حقيقي (Button/Control/Cell) صاعدًا من الـ view،
+// بحد أقصى معين، بدل الصعود العشوائي لكل الشجرة. هذا يمنع اختلاط عنصر بعنصر آخر
+// مجاور له تحت نفس الأب.
+- (UIView *)nearestLogicalElementForView:(UIView *)view maxDepth:(int)maxDepth {
+    UIView *currentV = view;
+    int depth = 0;
+    UIView *lastValid = view;
+    while (currentV != nil && depth < maxDepth) {
+        if ([currentV isKindOfClass:[UIControl class]] ||
+            [currentV isKindOfClass:[UITableViewCell class]] ||
+            [currentV isKindOfClass:[UICollectionViewCell class]]) {
+            return currentV; // وجدنا عنصر منطقي حقيقي، رجّعه فورًا
+        }
+        lastValid = currentV;
+        currentV = currentV.superview;
+        depth++;
+    }
+    return lastValid; // ما لقينا شيء تفاعلي واضح، رجّع أقرب شيء وصلنا له
+}
+
 - (NSString *)extractIdentifierFromView:(UIView *)view {
     if (!view) return nil;
-    
-    // البحث الصاعد عن accessibilityIdentifier
-    UIView *currentV = view;
-    while (currentV != nil) {
-        if (currentV.accessibilityIdentifier.length > 0) {
-            return currentV.accessibilityIdentifier;
-        }
-        currentV = currentV.superview;
+
+    // 1. افحص الـ view المستهدف نفسه أولاً (مو الأب مباشرة)
+    if (view.accessibilityIdentifier.length > 0) {
+        return view.accessibilityIdentifier;
     }
+
+    // 2. جرب أقرب عنصر منطقي (زر/سيل) بدل الصعود بلا حد للأعلى
+    UIView *logicalElement = [self nearestLogicalElementForView:view maxDepth:4];
+    if (logicalElement != view && logicalElement.accessibilityIdentifier.length > 0) {
+        return logicalElement.accessibilityIdentifier;
+    }
+
     return nil;
 }
 
@@ -430,27 +454,29 @@ static char kHPlusGestureKey;
     
     NSMutableString *info = [NSMutableString string];
     
-    // البحث الصاعد عن معلومات الوصول
-    UIView *currentV = view;
-    NSString *identifier = nil;
-    NSString *label = nil;
-    NSString *value = nil;
-    NSString *hint = nil;
+    // 🔧 معدّل: افحص الـ view المستهدف نفسه فقط أولاً، ثم أقرب عنصر منطقي
+    // بحد أقصى 4 مستويات، بدل الصعود بلا حد لكل شجرة الـ superview.
+    NSString *identifier = view.accessibilityIdentifier;
+    NSString *label = view.accessibilityLabel;
+    NSString *value = view.accessibilityValue;
+    NSString *hint = view.accessibilityHint;
     
-    while (currentV != nil) {
-        if (!identifier && currentV.accessibilityIdentifier.length > 0) {
-            identifier = currentV.accessibilityIdentifier;
+    if (!identifier.length || !label.length || !value.length || !hint.length) {
+        UIView *logicalElement = [self nearestLogicalElementForView:view maxDepth:4];
+        if (logicalElement != view) {
+            if (!identifier.length && logicalElement.accessibilityIdentifier.length > 0) {
+                identifier = logicalElement.accessibilityIdentifier;
+            }
+            if (!label.length && logicalElement.accessibilityLabel.length > 0) {
+                label = logicalElement.accessibilityLabel;
+            }
+            if (!value.length && logicalElement.accessibilityValue.length > 0) {
+                value = logicalElement.accessibilityValue;
+            }
+            if (!hint.length && logicalElement.accessibilityHint.length > 0) {
+                hint = logicalElement.accessibilityHint;
+            }
         }
-        if (!label && currentV.accessibilityLabel.length > 0) {
-            label = currentV.accessibilityLabel;
-        }
-        if (!value && currentV.accessibilityValue.length > 0) {
-            value = currentV.accessibilityValue;
-        }
-        if (!hint && currentV.accessibilityHint.length > 0) {
-            hint = currentV.accessibilityHint;
-        }
-        currentV = currentV.superview;
     }
     
     if (identifier.length > 0) {
@@ -535,12 +561,17 @@ static char kHPlusGestureKey;
     UIWindow *window = (UIWindow *)sender.view;
     CGPoint point = [sender locationInView:window];
     
-    // تحديد العنصر المضغوط عليه
-    UIView *targetView = [window hitTest:point withEvent:nil];
-    if (!targetView) return;
+    // تحديد العنصر المضغوط عليه (قد يكون view داخلي عميق مثل _ASDisplayView)
+    UIView *hitView = [window hitTest:point withEvent:nil];
+    if (!hitView) return;
     
     // تجاهل عناصر النظام
-    if ([self shouldIgnoreView:targetView]) return;
+    if ([self shouldIgnoreView:hitView]) return;
+    
+    // 🔧 جديد: نحدد أقرب عنصر منطقي فعلي (Button/Control/Cell) بدل الاعتماد
+    // على نتيجة hitTest الخام مباشرة، لأنها كثيرًا ترجع طبقة عرض داخلية
+    // بدل العنصر التفاعلي الحقيقي اللي المستخدم يقصده.
+    UIView *targetView = [self nearestLogicalElementForView:hitView maxDepth:4];
     
     // جمع كل المعلومات
     NSString *classChain = [self getClassChainForView:targetView];
@@ -576,6 +607,9 @@ static char kHPlusGestureKey;
     NSString *bestToCopy = identifier.length > 0 ? identifier : 
                           (extractedText.length > 0 ? extractedText : 
                            NSStringFromClass([targetView class]));
+    
+    // 🔧 جديد: اطبع النتيجة في سجل النظام (يظهر عبر idevicesyslog/Console.app)
+    NSLog(@"[HPlusInspector] %@", message);
     
     // إنشاء الـ Alert
     UIAlertController *alert = [UIAlertController 
