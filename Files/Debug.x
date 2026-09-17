@@ -1,8 +1,9 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
+#import <os/log.h>
 
-// مفتاح فريد للـ Associated Object
+Associated Object
 static char kHPlusGestureKey;
 
 @interface HPlusDebugHelper : NSObject
@@ -30,7 +31,6 @@ static char kHPlusGestureKey;
 
 - (void)becomeKeyWindow {
     %orig;
-    // تأخير قصير جداً مع فحص
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), 
                   dispatch_get_main_queue(), ^{
         [[HPlusDebugHelper sharedInstance] setupGestureForWindow:self];
@@ -55,7 +55,6 @@ static char kHPlusGestureKey;
     
     NSString *className = NSStringFromClass([view class]);
     
-    // تجاهل نوافذ النظام الحساسة فقط
     NSArray *ignoredClasses = @[
         @"_UIAlertControllerView",
         @"_UIKeyboardLayout",
@@ -77,7 +76,6 @@ static char kHPlusGestureKey;
 - (void)setupGestureForWindow:(UIWindow *)window {
     if (!window) return;
     
-    // تجاهل نوافذ النظام
     if ([self shouldIgnoreView:window]) return;
     
     NSString *windowClass = NSStringFromClass([window class]);
@@ -86,29 +84,25 @@ static char kHPlusGestureKey;
         return;
     }
     
-    // فحص باستخدام Associated Object (أكثر أماناً وموثوقية)
     id existingGesture = objc_getAssociatedObject(window, &kHPlusGestureKey);
-    if (existingGesture) return; // النافذة لديها الـ Gesture بالفعل
+    if (existingGesture) return;
     
-    // إنشاء Long Press Gesture
     UILongPressGestureRecognizer *longPress = 
         [[UILongPressGestureRecognizer alloc] 
          initWithTarget:self 
          action:@selector(handleLongPress:)];
-    longPress.minimumPressDuration = 0.4; // مدة الضغط المطلوبة
-    longPress.cancelsTouchesInView = NO; // لا يمنع التفاعل الطبيعي
+    longPress.minimumPressDuration = 0.4;
+    longPress.cancelsTouchesInView = NO;
     longPress.delaysTouchesBegan = NO;
     longPress.delaysTouchesEnded = NO;
     [window addGestureRecognizer:longPress];
     
-    // حفظ المرجع لمنع التكرار
     objc_setAssociatedObject(window, &kHPlusGestureKey, longPress, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (UIViewController *)topViewController {
     UIViewController *topVC = nil;
     
-    // البحث في جميع النوافذ
     for (UIWindow *window in [UIApplication sharedApplication].windows) {
         if (window.isKeyWindow && !window.hidden && window.rootViewController) {
             topVC = window.rootViewController;
@@ -116,7 +110,6 @@ static char kHPlusGestureKey;
         }
     }
     
-    // إذا لم نجد، نبحث في Scenes (iOS 13+)
     if (!topVC) {
         if (@available(iOS 13.0, *)) {
             NSSet *connectedScenes = [UIApplication sharedApplication].connectedScenes;
@@ -135,7 +128,6 @@ static char kHPlusGestureKey;
         }
     }
     
-    // إذا لم نجد، نستخدم أول نافذة متاحة
     if (!topVC) {
         for (UIWindow *window in [UIApplication sharedApplication].windows) {
             if (!window.hidden && window.rootViewController) {
@@ -147,17 +139,14 @@ static char kHPlusGestureKey;
     
     if (!topVC) return nil;
     
-    // الصعود لأعلى View Controller
     while (topVC.presentedViewController) {
         topVC = topVC.presentedViewController;
     }
     
-    // إذا كان Navigation Controller
     if ([topVC isKindOfClass:[UINavigationController class]]) {
         topVC = [(UINavigationController *)topVC visibleViewController];
     }
     
-    // إذا كان Tab Bar Controller
     if ([topVC isKindOfClass:[UITabBarController class]]) {
         topVC = [(UITabBarController *)topVC selectedViewController];
         if ([topVC isKindOfClass:[UINavigationController class]]) {
@@ -165,7 +154,6 @@ static char kHPlusGestureKey;
         }
     }
     
-    // إذا كان Split View Controller
     if ([topVC isKindOfClass:[UISplitViewController class]]) {
         UISplitViewController *splitVC = (UISplitViewController *)topVC;
         topVC = splitVC.viewControllers.lastObject;
@@ -184,7 +172,6 @@ static char kHPlusGestureKey;
     UIView *tempView = view;
     int depth = 0;
     
-    // بناء سلسلة الوراثة حتى 6 مستويات
     while (tempView != nil && depth < 6) {
         if (chain.length > 0) {
             [chain appendString:@"\n     ↓ "];
@@ -200,169 +187,35 @@ static char kHPlusGestureKey;
 - (NSString *)extractTextFromView:(UIView *)view {
     if (!view) return nil;
     
-    // 1. UILabel - النصوص العادية
     if ([view isKindOfClass:[UILabel class]]) {
         UILabel *label = (UILabel *)view;
-        if (label.text.length > 0) {
-            return label.text;
-        }
+        if (label.text.length > 0) return label.text;
     }
     
-    // 2. UITextField - حقول الإدخال
     if ([view isKindOfClass:[UITextField class]]) {
         UITextField *textField = (UITextField *)view;
-        if (textField.text.length > 0) {
-            return textField.text;
-        }
+        if (textField.text.length > 0) return textField.text;
         if (textField.placeholder.length > 0) {
             return [NSString stringWithFormat:@"Placeholder: %@", textField.placeholder];
         }
     }
     
-    // 3. UITextView - النصوص الطويلة
     if ([view isKindOfClass:[UITextView class]]) {
         UITextView *textView = (UITextView *)view;
-        if (textView.text.length > 0) {
-            return textView.text;
-        }
+        if (textView.text.length > 0) return textView.text;
     }
     
-    // 4. UIButton - الأزرار
     if ([view isKindOfClass:[UIButton class]]) {
         UIButton *button = (UIButton *)view;
-        
-        NSString *currentTitle = [button currentTitle];
-        if (currentTitle.length > 0) {
-            return currentTitle;
-        }
-        
-        NSAttributedString *attributedTitle = [button currentAttributedTitle];
-        if (attributedTitle.string.length > 0) {
-            return attributedTitle.string;
-        }
-        
-        if (button.titleLabel.text.length > 0) {
-            return button.titleLabel.text;
-        }
-        
-        NSString *normalTitle = [button titleForState:UIControlStateNormal];
-        if (normalTitle.length > 0) {
-            return normalTitle;
-        }
-        
-        NSString *selectedTitle = [button titleForState:UIControlStateSelected];
-        if (selectedTitle.length > 0) {
-            return selectedTitle;
-        }
+        if (button.currentTitle.length > 0) return button.currentTitle;
+        if (button.currentAttributedTitle.string.length > 0) return button.currentAttributedTitle.string;
+        if (button.titleLabel.text.length > 0) return button.titleLabel.text;
     }
     
-    // 5. UISegmentedControl - المؤشرات
-    if ([view isKindOfClass:[UISegmentedControl class]]) {
-        UISegmentedControl *segmented = (UISegmentedControl *)view;
-        NSInteger selectedIndex = segmented.selectedSegmentIndex;
-        if (selectedIndex >= 0 && selectedIndex < segmented.numberOfSegments) {
-            NSString *title = [segmented titleForSegmentAtIndex:selectedIndex];
-            if (title.length > 0) {
-                return [NSString stringWithFormat:@"Segment [%ld]: %@", (long)selectedIndex, title];
-            }
-        }
-    }
-    
-    // 6. UISwitch - المفاتيح
-    if ([view isKindOfClass:[UISwitch class]]) {
-        UISwitch *switchControl = (UISwitch *)view;
-        return [NSString stringWithFormat:@"Switch: %@", switchControl.isOn ? @"ON" : @"OFF"];
-    }
-    
-    // 7. UISlider - المنزلقات
-    if ([view isKindOfClass:[UISlider class]]) {
-        UISlider *slider = (UISlider *)view;
-        return [NSString stringWithFormat:@"Slider: %.2f", slider.value];
-    }
-    
-    // 8. UIProgressView - أشرطة التقدم
-    if ([view isKindOfClass:[UIProgressView class]]) {
-        UIProgressView *progress = (UIProgressView *)view;
-        return [NSString stringWithFormat:@"Progress: %.2f", progress.progress];
-    }
-    
-    // 9. UIStepper - عدادات
-    if ([view isKindOfClass:[UIStepper class]]) {
-        UIStepper *stepper = (UIStepper *)view;
-        return [NSString stringWithFormat:@"Stepper: %.2f", stepper.value];
-    }
-    
-    // 10. UITableViewCell - خلايا الجداول
-    if ([view isKindOfClass:[UITableViewCell class]]) {
-        UITableViewCell *cell = (UITableViewCell *)view;
-        
-        NSString *mainText = cell.textLabel.text;
-        NSString *detailText = cell.detailTextLabel.text;
-        
-        if (mainText.length > 0 && detailText.length > 0) {
-            return [NSString stringWithFormat:@"%@ - %@", mainText, detailText];
-        } else if (mainText.length > 0) {
-            return mainText;
-        } else if (detailText.length > 0) {
-            return detailText;
-        }
-    }
-    
-    // 11. UICollectionViewCell - خلايا المجموعات
-    if ([view isKindOfClass:[UICollectionViewCell class]]) {
-        UICollectionViewCell *cell = (UICollectionViewCell *)view;
-        
-        // البحث في contentView أولاً
-        for (UIView *subview in cell.contentView.subviews) {
-            NSString *subviewText = [self extractTextFromView:subview];
-            if (subviewText.length > 0) {
-                return subviewText;
-            }
-        }
-        
-        // ثم البحث في الخلية نفسها
-        for (UIView *subview in cell.subviews) {
-            if (subview != cell.contentView) {
-                NSString *subviewText = [self extractTextFromView:subview];
-                if (subviewText.length > 0) {
-                    return subviewText;
-                }
-            }
-        }
-    }
-    
-    // 12. فحص عام لأي View يستجيب للـ text
     if ([view respondsToSelector:@selector(text)]) {
         id textValue = [view performSelector:@selector(text)];
         if ([textValue isKindOfClass:[NSString class]] && [(NSString *)textValue length] > 0) {
             return textValue;
-        }
-    }
-    
-    // 13. فحص attributedText
-    if ([view respondsToSelector:@selector(attributedText)]) {
-        id attributedText = [view performSelector:@selector(attributedText)];
-        if ([attributedText respondsToSelector:@selector(string)]) {
-            NSString *string = [attributedText performSelector:@selector(string)];
-            if (string.length > 0) {
-                return string;
-            }
-        }
-    }
-    
-    // 14. فحص title
-    if ([view respondsToSelector:@selector(title)]) {
-        id titleValue = [view performSelector:@selector(title)];
-        if ([titleValue isKindOfClass:[NSString class]] && [(NSString *)titleValue length] > 0) {
-            return titleValue;
-        }
-    }
-    
-    // 15. فحص currentTitle
-    if ([view respondsToSelector:@selector(currentTitle)]) {
-        id currentTitle = [view performSelector:@selector(currentTitle)];
-        if ([currentTitle isKindOfClass:[NSString class]] && [(NSString *)currentTitle length] > 0) {
-            return currentTitle;
         }
     }
     
@@ -372,43 +225,13 @@ static char kHPlusGestureKey;
 - (NSString *)getImageInfoForView:(UIView *)view {
     if (!view) return nil;
     
-    // UIImageView - الصور
     if ([view isKindOfClass:[UIImageView class]]) {
         UIImageView *imgView = (UIImageView *)view;
         if (imgView.image) {
-            NSMutableString *info = [NSMutableString string];
-            [info appendFormat:@"Size: %.0fx%.0f", 
-             imgView.image.size.width, 
-             imgView.image.size.height];
-            
-            if (imgView.image.scale > 1) {
-                [info appendFormat:@" @%.1fx", imgView.image.scale];
-            }
-            
-            if (imgView.image.images.count > 1) {
-                [info appendFormat:@" | Frames: %lu", 
-                 (unsigned long)imgView.image.images.count];
-            }
-            
-            return info;
+            return [NSString stringWithFormat:@"Size: %.0fx%.0f", 
+                    imgView.image.size.width, imgView.image.size.height];
         }
     }
-    
-    // UIButton مع صورة
-    if ([view isKindOfClass:[UIButton class]]) {
-        UIButton *button = (UIButton *)view;
-        if (button.currentImage) {
-            return [NSString stringWithFormat:@"Image: %.0fx%.0f", 
-                    button.currentImage.size.width, 
-                    button.currentImage.size.height];
-        }
-        if (button.currentBackgroundImage) {
-            return [NSString stringWithFormat:@"Background: %.0fx%.0f", 
-                    button.currentBackgroundImage.size.width, 
-                    button.currentBackgroundImage.size.height];
-        }
-    }
-    
     return nil;
 }
 
@@ -431,64 +254,34 @@ static char kHPlusGestureKey;
 
 - (NSString *)extractIdentifierFromView:(UIView *)view {
     if (!view) return nil;
-
-    if (view.accessibilityIdentifier.length > 0) {
-        return view.accessibilityIdentifier;
-    }
-
+    if (view.accessibilityIdentifier.length > 0) return view.accessibilityIdentifier;
+    
     UIView *logicalElement = [self nearestLogicalElementForView:view maxDepth:4];
     if (logicalElement != view && logicalElement.accessibilityIdentifier.length > 0) {
         return logicalElement.accessibilityIdentifier;
     }
-
     return nil;
 }
 
 - (NSString *)getAccessibilityInfoForView:(UIView *)view {
     if (!view) return nil;
-    
     NSMutableString *info = [NSMutableString string];
     
     NSString *identifier = view.accessibilityIdentifier;
     NSString *label = view.accessibilityLabel;
-    NSString *value = view.accessibilityValue;
-    NSString *hint = view.accessibilityHint;
     
-    if (!identifier.length || !label.length || !value.length || !hint.length) {
+    if (!identifier.length || !label.length) {
         UIView *logicalElement = [self nearestLogicalElementForView:view maxDepth:4];
         if (logicalElement != view) {
-            if (!identifier.length && logicalElement.accessibilityIdentifier.length > 0) {
-                identifier = logicalElement.accessibilityIdentifier;
-            }
-            if (!label.length && logicalElement.accessibilityLabel.length > 0) {
-                label = logicalElement.accessibilityLabel;
-            }
-            if (!value.length && logicalElement.accessibilityValue.length > 0) {
-                value = logicalElement.accessibilityValue;
-            }
-            if (!hint.length && logicalElement.accessibilityHint.length > 0) {
-                hint = logicalElement.accessibilityHint;
-            }
+            if (!identifier.length) identifier = logicalElement.accessibilityIdentifier;
+            if (!label.length) label = logicalElement.accessibilityLabel;
         }
     }
     
-    if (identifier.length > 0) {
-        [info appendFormat:@"ID: %@", identifier];
-    }
-    
+    if (identifier.length > 0) [info appendFormat:@"ID: %@", identifier];
     if (label.length > 0) {
         if (info.length > 0) [info appendString:@" | "];
         [info appendFormat:@"Label: %@", label];
-    }
-    
-    if (value.length > 0) {
-        if (info.length > 0) [info appendString:@" | "];
-        [info appendFormat:@"Value: %@", value];
-    }
-    
-    if (hint.length > 0) {
-        if (info.length > 0) [info appendString:@" | "];
-        [info appendFormat:@"Hint: %@", hint];
     }
     
     return info.length > 0 ? info : nil;
@@ -496,52 +289,19 @@ static char kHPlusGestureKey;
 
 - (NSString *)getFrameInfoForView:(UIView *)view {
     if (!view) return nil;
-    
-    return [NSString stringWithFormat:@"Frame: (%.0f, %.0f, %.0f, %.0f) | Bounds: (%.0f, %.0f, %.0f, %.0f)",
-            view.frame.origin.x,
-            view.frame.origin.y,
-            view.frame.size.width,
-            view.frame.size.height,
-            view.bounds.origin.x,
-            view.bounds.origin.y,
-            view.bounds.size.width,
-            view.bounds.size.height];
+    return [NSString stringWithFormat:@"Frame: (%.0f, %.0f, %.0f, %.0f)",
+            view.frame.origin.x, view.frame.origin.y,
+            view.frame.size.width, view.frame.size.height];
 }
 
 - (NSString *)getAdditionalInfoForView:(UIView *)view {
     if (!view) return nil;
-    
-    NSMutableString *info = [NSMutableString string];
-    
-    [info appendFormat:@"Alpha: %.2f | Hidden: %@ | UserInteraction: %@",
-     view.alpha,
-     view.hidden ? @"Yes" : @"No",
-     view.userInteractionEnabled ? @"Yes" : @"No"];
-    
-    if (view.tag != 0) {
-        [info appendFormat:@" | Tag: %ld", (long)view.tag];
-    }
-    
-    if (view.backgroundColor && 
-        ![view.backgroundColor isEqual:[UIColor clearColor]]) {
-        UIColor *color = view.backgroundColor;
-        CGFloat red = 0, green = 0, blue = 0, alpha = 0;
-        if ([color getRed:&red green:&green blue:&blue alpha:&alpha]) {
-            [info appendFormat:@" | BG: RGB(%.0f, %.0f, %.0f)", 
-             red * 255, green * 255, blue * 255];
-        }
-    }
-    
-    if (view.layer.cornerRadius > 0) {
-        [info appendFormat:@" | Corner: %.1f", view.layer.cornerRadius];
-    }
-    
-    return info;
+    return [NSString stringWithFormat:@"Alpha: %.2f | Hidden: %@",
+            view.alpha, view.hidden ? @"Yes" : @"No"];
 }
 
 - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
-    
     if (![sender.view isKindOfClass:[UIWindow class]]) return;
     
     UIWindow *window = (UIWindow *)sender.view;
@@ -549,47 +309,30 @@ static char kHPlusGestureKey;
     
     UIView *hitView = [window hitTest:point withEvent:nil];
     if (!hitView) return;
-    
     if ([self shouldIgnoreView:hitView]) return;
     
     UIView *targetView = [self nearestLogicalElementForView:hitView maxDepth:4];
     
     NSString *classChain = [self getClassChainForView:targetView];
-    NSString *accessibilityInfo = [self getAccessibilityInfoForView:targetView];
     NSString *extractedText = [self extractTextFromView:targetView];
-    NSString *imageInfo = [self getImageInfoForView:targetView];
     NSString *frameInfo = [self getFrameInfoForView:targetView];
-    NSString *additionalInfo = [self getAdditionalInfoForView:targetView];
     NSString *identifier = [self extractIdentifierFromView:targetView];
     
     NSMutableString *message = [NSMutableString string];
-    
     [message appendFormat:@"🎯 Target Class: %@\n\n", NSStringFromClass([targetView class])];
     [message appendFormat:@"📊 Class Hierarchy:\n%@\n\n", classChain];
-    
-    if (identifier.length > 0) {
-        [message appendFormat:@"🔑 ID: %@\n\n", identifier];
-    } else if (accessibilityInfo.length > 0) {
-        [message appendFormat:@"🔑 %@\n\n", accessibilityInfo];
-    }
-    
+    if (identifier.length > 0) [message appendFormat:@"🔑 ID: %@\n\n", identifier];
     [message appendFormat:@"📝 Text: %@\n\n", (extractedText.length > 0) ? extractedText : @"(None)"];
-    
-    if (imageInfo) {
-        [message appendFormat:@"🖼️ %@\n\n", imageInfo];
-    }
-    
-    [message appendFormat:@"📍 %@\n\n", frameInfo];
-    [message appendFormat:@"⚙️ %@\n", additionalInfo];
+    [message appendFormat:@"📍 %@\n", frameInfo];
     
     NSString *bestToCopy = identifier.length > 0 ? identifier : 
                           (extractedText.length > 0 ? extractedText : 
                            NSStringFromClass([targetView class]));
     
-    // 🟢 الحل الأول: طباعة البيانات بوضوح تام على اللابتوب (بدون حجب <private>)
-    fprintf(stderr, "[HPlusInspector] %s\n", [message UTF8String]);
+    // 🟢 الحل الصحيح: طباعة السجل عبر os_log بصيغة public لكي يظهر في idevicesyslog بوضوح وبدون <private>
+    os_log(OS_LOG_DEFAULT, "[HPlusInspector] %{public}@", message);
     
-    // 🟢 الحل الثاني: إظهار النافذة المنبهة على شاشة الجوال (Alert)
+    // إظهار النافذة المنبهة على الجوال
     UIAlertController *alert = [UIAlertController 
         alertControllerWithTitle:@"🔍 HPlus Inspector" 
         message:message 
@@ -613,20 +356,8 @@ static char kHPlusGestureKey;
     
     dispatch_async(dispatch_get_main_queue(), ^{
         UIViewController *topVC = [self topViewController];
-        
         if (topVC) {
             [topVC presentViewController:alert animated:YES completion:nil];
-        } else {
-            UIWindow *alertWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-            alertWindow.rootViewController = [[UIViewController alloc] init];
-            alertWindow.windowLevel = UIWindowLevelAlert + 1;
-            alertWindow.backgroundColor = [UIColor clearColor];
-            [alertWindow makeKeyAndVisible];
-            
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), 
-                          dispatch_get_main_queue(), ^{
-                [alertWindow.rootViewController presentViewController:alert animated:YES completion:nil];
-            });
         }
     });
 }
