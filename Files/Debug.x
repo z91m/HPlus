@@ -412,9 +412,6 @@ static char kHPlusGestureKey;
     return nil;
 }
 
-// 🔧 جديد: يلقى أقرب عنصر تفاعلي حقيقي (Button/Control/Cell) صاعدًا من الـ view،
-// بحد أقصى معين، بدل الصعود العشوائي لكل الشجرة. هذا يمنع اختلاط عنصر بعنصر آخر
-// مجاور له تحت نفس الأب.
 - (UIView *)nearestLogicalElementForView:(UIView *)view maxDepth:(int)maxDepth {
     UIView *currentV = view;
     int depth = 0;
@@ -423,24 +420,22 @@ static char kHPlusGestureKey;
         if ([currentV isKindOfClass:[UIControl class]] ||
             [currentV isKindOfClass:[UITableViewCell class]] ||
             [currentV isKindOfClass:[UICollectionViewCell class]]) {
-            return currentV; // وجدنا عنصر منطقي حقيقي، رجّعه فورًا
+            return currentV;
         }
         lastValid = currentV;
         currentV = currentV.superview;
         depth++;
     }
-    return lastValid; // ما لقينا شيء تفاعلي واضح، رجّع أقرب شيء وصلنا له
+    return lastValid;
 }
 
 - (NSString *)extractIdentifierFromView:(UIView *)view {
     if (!view) return nil;
 
-    // 1. افحص الـ view المستهدف نفسه أولاً (مو الأب مباشرة)
     if (view.accessibilityIdentifier.length > 0) {
         return view.accessibilityIdentifier;
     }
 
-    // 2. جرب أقرب عنصر منطقي (زر/سيل) بدل الصعود بلا حد للأعلى
     UIView *logicalElement = [self nearestLogicalElementForView:view maxDepth:4];
     if (logicalElement != view && logicalElement.accessibilityIdentifier.length > 0) {
         return logicalElement.accessibilityIdentifier;
@@ -454,8 +449,6 @@ static char kHPlusGestureKey;
     
     NSMutableString *info = [NSMutableString string];
     
-    // 🔧 معدّل: افحص الـ view المستهدف نفسه فقط أولاً، ثم أقرب عنصر منطقي
-    // بحد أقصى 4 مستويات، بدل الصعود بلا حد لكل شجرة الـ superview.
     NSString *identifier = view.accessibilityIdentifier;
     NSString *label = view.accessibilityLabel;
     NSString *value = view.accessibilityValue;
@@ -504,7 +497,6 @@ static char kHPlusGestureKey;
 - (NSString *)getFrameInfoForView:(UIView *)view {
     if (!view) return nil;
     
-    // معلومات الإطار والحدود
     return [NSString stringWithFormat:@"Frame: (%.0f, %.0f, %.0f, %.0f) | Bounds: (%.0f, %.0f, %.0f, %.0f)",
             view.frame.origin.x,
             view.frame.origin.y,
@@ -521,18 +513,15 @@ static char kHPlusGestureKey;
     
     NSMutableString *info = [NSMutableString string];
     
-    // معلومات أساسية
     [info appendFormat:@"Alpha: %.2f | Hidden: %@ | UserInteraction: %@",
      view.alpha,
      view.hidden ? @"Yes" : @"No",
      view.userInteractionEnabled ? @"Yes" : @"No"];
     
-    // Tag إذا وجد
     if (view.tag != 0) {
         [info appendFormat:@" | Tag: %ld", (long)view.tag];
     }
     
-    // لون الخلفية (بطريقة آمنة)
     if (view.backgroundColor && 
         ![view.backgroundColor isEqual:[UIColor clearColor]]) {
         UIColor *color = view.backgroundColor;
@@ -543,7 +532,6 @@ static char kHPlusGestureKey;
         }
     }
     
-    // Corner Radius إذا وجد
     if (view.layer.cornerRadius > 0) {
         [info appendFormat:@" | Corner: %.1f", view.layer.cornerRadius];
     }
@@ -552,28 +540,20 @@ static char kHPlusGestureKey;
 }
 
 - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
-    // التأكد من أن الضغطة في البداية فقط
     if (sender.state != UIGestureRecognizerStateBegan) return;
     
-    // التأكد من أن الـ View هو UIWindow
     if (![sender.view isKindOfClass:[UIWindow class]]) return;
     
     UIWindow *window = (UIWindow *)sender.view;
     CGPoint point = [sender locationInView:window];
     
-    // تحديد العنصر المضغوط عليه (قد يكون view داخلي عميق مثل _ASDisplayView)
     UIView *hitView = [window hitTest:point withEvent:nil];
     if (!hitView) return;
     
-    // تجاهل عناصر النظام
     if ([self shouldIgnoreView:hitView]) return;
     
-    // 🔧 جديد: نحدد أقرب عنصر منطقي فعلي (Button/Control/Cell) بدل الاعتماد
-    // على نتيجة hitTest الخام مباشرة، لأنها كثيرًا ترجع طبقة عرض داخلية
-    // بدل العنصر التفاعلي الحقيقي اللي المستخدم يقصده.
     UIView *targetView = [self nearestLogicalElementForView:hitView maxDepth:4];
     
-    // جمع كل المعلومات
     NSString *classChain = [self getClassChainForView:targetView];
     NSString *accessibilityInfo = [self getAccessibilityInfoForView:targetView];
     NSString *extractedText = [self extractTextFromView:targetView];
@@ -582,7 +562,6 @@ static char kHPlusGestureKey;
     NSString *additionalInfo = [self getAdditionalInfoForView:targetView];
     NSString *identifier = [self extractIdentifierFromView:targetView];
     
-    // بناء الرسالة
     NSMutableString *message = [NSMutableString string];
     
     [message appendFormat:@"🎯 Target Class: %@\n\n", NSStringFromClass([targetView class])];
@@ -603,47 +582,41 @@ static char kHPlusGestureKey;
     [message appendFormat:@"📍 %@\n\n", frameInfo];
     [message appendFormat:@"⚙️ %@\n", additionalInfo];
     
-    // تحديد أفضل نص للنسخ
     NSString *bestToCopy = identifier.length > 0 ? identifier : 
                           (extractedText.length > 0 ? extractedText : 
                            NSStringFromClass([targetView class]));
     
-    // 🔧 جديد: اطبع النتيجة في سجل النظام (يظهر عبر idevicesyslog/Console.app)
-    NSLog(@"[HPlusInspector] %@", message);
+    // 🟢 الحل الأول: طباعة البيانات بوضوح تام على اللابتوب (بدون حجب <private>)
+    fprintf(stderr, "[HPlusInspector] %s\n", [message UTF8String]);
     
-    // إنشاء الـ Alert
+    // 🟢 الحل الثاني: إظهار النافذة المنبهة على شاشة الجوال (Alert)
     UIAlertController *alert = [UIAlertController 
         alertControllerWithTitle:@"🔍 HPlus Inspector" 
         message:message 
         preferredStyle:UIAlertControllerStyleAlert];
     
-    // زر نسخ المعلومات الأساسية
     [alert addAction:[UIAlertAction actionWithTitle:@"📋 Copy Info" 
         style:UIAlertActionStyleDefault 
         handler:^(UIAlertAction * _Nonnull action) {
             [UIPasteboard generalPasteboard].string = bestToCopy;
         }]];
     
-    // زر نسخ كل المعلومات
     [alert addAction:[UIAlertAction actionWithTitle:@"📄 Copy All" 
         style:UIAlertActionStyleDefault 
         handler:^(UIAlertAction * _Nonnull action) {
             [UIPasteboard generalPasteboard].string = message;
         }]];
     
-    // زر الإغلاق
     [alert addAction:[UIAlertAction actionWithTitle:@"👌 OK" 
         style:UIAlertActionStyleCancel 
         handler:nil]];
     
-    // عرض التنبيه بأمان
     dispatch_async(dispatch_get_main_queue(), ^{
         UIViewController *topVC = [self topViewController];
         
         if (topVC) {
             [topVC presentViewController:alert animated:YES completion:nil];
         } else {
-            // Fallback: إنشاء نافذة جديدة
             UIWindow *alertWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
             alertWindow.rootViewController = [[UIViewController alloc] init];
             alertWindow.windowLevel = UIWindowLevelAlert + 1;
