@@ -2334,13 +2334,14 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 // ============================================================
 //  زر محقون في قائمة النقاط الثلاث ⋮
-//  (نفس وظيفة الزر العائم بالضبط)
 // ============================================================
-%hook YTDialogContainerScrollView
+%hook UIView
 
 - (void)didMoveToWindow {
     %orig;
 
+    // نتأكد أن هذا الـ View هو YTDialogContainerScrollView
+    if (![NSStringFromClass([self class]) isEqualToString:@"YTDialogContainerScrollView"]) return;
     if (!self.window) return;
     if ([self viewWithTag:99887766]) return;
     if (!IS_ENABLED(DownloadManager)) return;
@@ -2353,7 +2354,6 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %new
 - (void)hplus_injectDownloadButton {
-    // فقط في قائمة المشغّل
     YTPlayerViewController *player = HPlusCurrentPlayerViewController;
     if (!player) return;
 
@@ -2370,14 +2370,12 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     btn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
     btn.imageEdgeInsets = UIEdgeInsetsMake(0, 16, 0, 0);
 
-    // أيقونة
     UIImageSymbolConfiguration *cfg = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightRegular];
     UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:cfg]
                      imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     [btn setImage:icon forState:UIControlStateNormal];
     btn.tintColor = [UIColor whiteColor];
 
-    // نص
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(50, 0, width - 60, height)];
     label.text = LOC(@"DOWNLOAD_BUTTON") ?: @"تحميل بواسطة HPlus";
     label.textColor = [UIColor whiteColor];
@@ -2385,7 +2383,6 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     label.userInteractionEnabled = NO;
     [btn addSubview:label];
 
-    // الإجراء
     [btn addTarget:self
             action:@selector(hplus_menuDownloadTapped:)
   forControlEvents:UIControlEventTouchUpInside];
@@ -2411,7 +2408,6 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     return nil;
 }
 
-// نفس منطق الزر العائم بالضبط
 %new
 - (void)hplus_menuDownloadTapped:(UIButton *)sender {
     YTPlayerViewController *player = HPlusCurrentPlayerViewController;
@@ -2420,9 +2416,15 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
                                         ?: player
                                         ?: HPlusCurrentPlayerViewController;
 
-    [self dismissViewControllerAnimated:YES completion:^{
+    // لو الـ view الحالي هو presentedViewController — أغلقه
+    UIViewController *vc = [self _viewControllerForAncestor];
+    if (vc && vc.presentingViewController) {
+        [vc dismissViewControllerAnimated:YES completion:^{
+            HPlusShowDownloadManager(resolved, presenter, sender, NO);
+        }];
+    } else {
         HPlusShowDownloadManager(resolved, presenter, sender, NO);
-    }];
+    }
 }
 
 %end
