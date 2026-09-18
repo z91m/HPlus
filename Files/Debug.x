@@ -1,6 +1,8 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
+#import <os/log.h>
+#import "Headers.h"
 
 // مفتاح فريد للـ Associated Object
 static char kHPlusGestureKey;
