@@ -330,7 +330,7 @@ static char kHPlusGestureKey;
                            NSStringFromClass([targetView class]));
     
     // 🟢 الحل الصحيح: طباعة السجل عبر os_log بصيغة public لكي يظهر في idevicesyslog بوضوح وبدون <private>
-    os_log(OS_LOG_DEFAULT, "[HPlusInspector] %{public}@", message);
+        os_log(OS_LOG_DEFAULT, "[HPlusInspector] %{public}s", [message UTF8String]);
     
     // إظهار النافذة المنبهة على الجوال
     UIAlertController *alert = [UIAlertController 
