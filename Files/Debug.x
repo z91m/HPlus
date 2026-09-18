@@ -8,7 +8,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <CoreMedia/CoreMedia.h>
 
-Associated Object
+// مفتاح فريد للـ Associated Object
 static char kHPlusGestureKey;
 
 @interface HPlusDebugHelper : NSObject
@@ -634,4 +634,4 @@ static char kHPlusGestureKey;
 
 %ctor {
     [HPlusDebugHelper sharedInstance];
-}
+}}
