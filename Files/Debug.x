@@ -3,7 +3,6 @@
 #import <objc/runtime.h>
 #import <os/log.h>
 #import "Headers.h"
-#import <rootleaks.h>
 #import <Preferences/Preferences.h>
 #import <AVFoundation/AVFoundation.h>
 #import <CoreMedia/CoreMedia.h>
