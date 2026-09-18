@@ -1,3 +1,4 @@
+
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
@@ -7,207 +8,143 @@
 #import <AVFoundation/AVFoundation.h>
 #import <CoreMedia/CoreMedia.h>
 
-static char kHPlusTapGestureKey;
-static char kHPlusLongPressGestureKey;
+Associated Object
+static char kHPlusGestureKey;
 
-#pragma mark - Inspector Core
-
-@interface HPlusInspector : NSObject
+@interface HPlusDebugHelper : NSObject
 + (instancetype)sharedInstance;
-- (void)setupGesturesForWindow:(UIWindow *)window;
+- (void)handleLongPress:(UILongPressGestureRecognizer *)sender;
+- (void)setupGestureForWindow:(UIWindow *)window;
 - (UIViewController *)topViewController;
-- (NSString *)formattedReportForView:(UIView *)view;
-- (void)logConciseForView:(UIView *)view;
-- (void)logFullForView:(UIView *)view;
-- (NSString *)describeView:(UIView *)view;
-- (NSString *)innerTextForView:(UIView *)view;
-- (NSString *)bestIdentifierFromView:(UIView *)view;
+- (NSString *)getClassChainForView:(UIView *)view;
+- (NSString *)extractTextFromView:(UIView *)view;
+- (NSString *)getImageInfoForView:(UIView *)view;
+- (NSString *)getAccessibilityInfoForView:(UIView *)view;
+- (NSString *)getFrameInfoForView:(UIView *)view;
+- (NSString *)getAdditionalInfoForView:(UIView *)view;
+- (NSString *)extractIdentifierFromView:(UIView *)view;
+- (BOOL)shouldIgnoreView:(UIView *)view;
 @end
-
-#pragma mark - Hook
 
 %hook UIWindow
 
 - (void)makeKeyAndVisible {
     %orig;
-    [[HPlusInspector sharedInstance] setupGesturesForWindow:self];
+    [[HPlusDebugHelper sharedInstance] setupGestureForWindow:self];
 }
 
 - (void)becomeKeyWindow {
     %orig;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)),
-                   dispatch_get_main_queue(), ^{
-        [[HPlusInspector sharedInstance] setupGesturesForWindow:self];
+    // تأخير قصير جداً مع فحص
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), 
+                  dispatch_get_main_queue(), ^{
+        [[HPlusDebugHelper sharedInstance] setupGestureForWindow:self];
     });
 }
 
 %end
 
-#pragma mark - Implementation
-
-@implementation HPlusInspector
+@implementation HPlusDebugHelper
 
 + (instancetype)sharedInstance {
-    static HPlusInspector *instance = nil;
+    static HPlusDebugHelper *sharedInstance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        instance = [[HPlusInspector alloc] init];
+        sharedInstance = [[HPlusDebugHelper alloc] init];
     });
-    return instance;
+    return sharedInstance;
 }
 
-#pragma mark - Gesture Setup
+- (BOOL)shouldIgnoreView:(UIView *)view {
+    if (!view) return YES;
+    
+    NSString *className = NSStringFromClass([view class]);
+    
+    // تجاهل نوافذ النظام الحساسة فقط
+    NSArray *ignoredClasses = @[
+        @"_UIAlertControllerView",
+        @"_UIKeyboardLayout",
+        @"_UIRemoteKeyboardPlaceholderView",
+        @"UIAlertController",
+        @"UIKeyboard",
+        @"UIRemoteKeyboard"
+    ];
+    
+    for (NSString *ignoredClass in ignoredClasses) {
+        if ([className containsString:ignoredClass]) {
+            return YES;
+        }
+    }
+    
+    return NO;
+}
 
-- (void)setupGesturesForWindow:(UIWindow *)window {
+- (void)setupGestureForWindow:(UIWindow *)window {
     if (!window) return;
     
-    // تجاهل النوافذ الخاصة بالتنبيهات والكيبورد
+    // تجاهل نوافذ النظام
+    if ([self shouldIgnoreView:window]) return;
+    
     NSString *windowClass = NSStringFromClass([window class]);
-    if ([windowClass containsString:@"Alert"] ||
-        [windowClass containsString:@"Keyboard"] ||
-        [windowClass containsString:@"TextEffects"] ||
-        [windowClass containsString:@"StatusBar"]) {
+    if ([windowClass containsString:@"Alert"] || 
+        [windowClass containsString:@"Keyboard"]) {
         return;
     }
     
-    // ضغطة واحدة (Tap)
-    if (!objc_getAssociatedObject(window, &kHPlusTapGestureKey)) {
-        UITapGestureRecognizer *tap =
-            [[UITapGestureRecognizer alloc] initWithTarget:self
-                                                    action:@selector(handleTap:)];
-        tap.cancelsTouchesInView = NO;
-        tap.delaysTouchesBegan = NO;
-        tap.delaysTouchesEnded = NO;
-        tap.numberOfTapsRequired = 1;
-        tap.numberOfTouchesRequired = 1;
-        [window addGestureRecognizer:tap];
-        objc_setAssociatedObject(window, &kHPlusTapGestureKey, tap,
-                                 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
+    // فحص باستخدام Associated Object (أكثر أماناً وموثوقية)
+    id existingGesture = objc_getAssociatedObject(window, &kHPlusGestureKey);
+    if (existingGesture) return; // النافذة لديها الـ Gesture بالفعل
     
-    // ضغطة مطولة (Long Press)
-    if (!objc_getAssociatedObject(window, &kHPlusLongPressGestureKey)) {
-        UILongPressGestureRecognizer *longPress =
-            [[UILongPressGestureRecognizer alloc] initWithTarget:self
-                                                          action:@selector(handleLongPress:)];
-        longPress.minimumPressDuration = 0.5;
-        longPress.cancelsTouchesInView = NO;
-        longPress.delaysTouchesBegan = NO;
-        longPress.delaysTouchesEnded = NO;
-        [window addGestureRecognizer:longPress];
-        objc_setAssociatedObject(window, &kHPlusLongPressGestureKey, longPress,
-                                 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
+    // إنشاء Long Press Gesture
+    UILongPressGestureRecognizer *longPress = 
+        [[UILongPressGestureRecognizer alloc] 
+         initWithTarget:self 
+         action:@selector(handleLongPress:)];
+    longPress.minimumPressDuration = 0.4; // مدة الضغط المطلوبة
+    longPress.cancelsTouchesInView = NO; // لا يمنع التفاعل الطبيعي
+    longPress.delaysTouchesBegan = NO;
+    longPress.delaysTouchesEnded = NO;
+    [window addGestureRecognizer:longPress];
+    
+    // حفظ المرجع لمنع التكرار
+    objc_setAssociatedObject(window, &kHPlusGestureKey, longPress, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
-
-#pragma mark - Handlers
-
-// ضغطة واحدة → طباعة فقط في الكونسول (سطر بسطر)
-- (void)handleTap:(UITapGestureRecognizer *)sender {
-    if (sender.state != UIGestureRecognizerStateRecognized) return;
-    if (![sender.view isKindOfClass:[UIWindow class]]) return;
-    
-    UIWindow *window = (UIWindow *)sender.view;
-    CGPoint point = [sender locationInView:window];
-    UIView *hitView = [window hitTest:point withEvent:nil];
-    if (!hitView) return;
-    
-    [self logConciseForView:hitView];
-}
-
-// ضغطة مطولة → Alert على الجوال + طباعة في الكونسول
-- (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
-    if (sender.state != UIGestureRecognizerStateBegan) return;
-    if (![sender.view isKindOfClass:[UIWindow class]]) return;
-    
-    UIWindow *window = (UIWindow *)sender.view;
-    CGPoint point = [sender locationInView:window];
-    UIView *hitView = [window hitTest:point withEvent:nil];
-    if (!hitView) return;
-    
-    // التقرير الكامل للـ Alert
-    NSString *report = [self formattedReportForView:hitView];
-    
-    // سجل في الكونسول سطر بسطر
-    [self logFullForView:hitView];
-    
-    // استخرج المعلومات المهمة للنسخ السريع
-    NSString *bestID = [self bestIdentifierFromView:hitView];
-    NSString *bestClass = NSStringFromClass([hitView class]);
-    NSString *idOnly = bestID.length ? bestID : @"(no id)";
-    NSString *classOnly = bestClass.length ? bestClass : @"(no class)";
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        UIViewController *topVC = [self topViewController];
-        if (!topVC) return;
-        
-        UIAlertController *alert =
-            [UIAlertController alertControllerWithTitle:@"🔍 HPlus Inspector"
-                                                message:report
-                                         preferredStyle:UIAlertControllerStyleAlert];
-        
-        // 1️⃣ نسخ الـ ID فقط
-        [alert addAction:[UIAlertAction actionWithTitle:@"🔑 Copy ID Only"
-                                                  style:UIAlertActionStyleDefault
-                                                handler:^(UIAlertAction *action) {
-            [UIPasteboard generalPasteboard].string = idOnly;
-        }]];
-        
-        // 2️⃣ نسخ الكلاس فقط
-        [alert addAction:[UIAlertAction actionWithTitle:@"🏷 Copy Class Only"
-                                                  style:UIAlertActionStyleDefault
-                                                handler:^(UIAlertAction *action) {
-            [UIPasteboard generalPasteboard].string = classOnly;
-        }]];
-        
-        // 3️⃣ نسخ الـ ID + الكلاس معاً
-        [alert addAction:[UIAlertAction actionWithTitle:@"🔑🏷 Copy ID + Class"
-                                                  style:UIAlertActionStyleDefault
-                                                handler:^(UIAlertAction *action) {
-            NSString *combined = [NSString stringWithFormat:@"%@ | %@", idOnly, classOnly];
-            [UIPasteboard generalPasteboard].string = combined;
-        }]];
-        
-        // 4️⃣ نسخ كل المعلومات
-        [alert addAction:[UIAlertAction actionWithTitle:@"📋 Copy All"
-                                                  style:UIAlertActionStyleDefault
-                                                handler:^(UIAlertAction *action) {
-            [UIPasteboard generalPasteboard].string = report;
-        }]];
-        
-        // 5️⃣ إغلاق
-        [alert addAction:[UIAlertAction actionWithTitle:@"👌 OK"
-                                                  style:UIAlertActionStyleCancel
-                                                handler:nil]];
-        
-        [topVC presentViewController:alert animated:YES completion:nil];
-    });
-}
-
-#pragma mark - Top ViewController
 
 - (UIViewController *)topViewController {
     UIViewController *topVC = nil;
     
-    if (@available(iOS 13.0, *)) {
-        for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-            if (![scene isKindOfClass:[UIWindowScene class]]) continue;
-            if (scene.activationState != UISceneActivationStateForegroundActive) continue;
-            UIWindowScene *ws = (UIWindowScene *)scene;
-            for (UIWindow *w in ws.windows) {
-                if (w.isKeyWindow && w.rootViewController) {
-                    topVC = w.rootViewController;
-                    break;
-                }
-            }
-            if (topVC) break;
+    // البحث في جميع النوافذ
+    for (UIWindow *window in [UIApplication sharedApplication].windows) {
+        if (window.isKeyWindow && !window.hidden && window.rootViewController) {
+            topVC = window.rootViewController;
+            break;
         }
     }
     
+    // إذا لم نجد، نبحث في Scenes (iOS 13+)
     if (!topVC) {
-        for (UIWindow *w in [UIApplication sharedApplication].windows) {
-            if (w.isKeyWindow && w.rootViewController) {
-                topVC = w.rootViewController;
+        if (@available(iOS 13.0, *)) {
+            NSSet *connectedScenes = [UIApplication sharedApplication].connectedScenes;
+            for (UIScene *scene in connectedScenes) {
+                if ([scene isKindOfClass:[UIWindowScene class]]) {
+                    UIWindowScene *windowScene = (UIWindowScene *)scene;
+                    for (UIWindow *window in windowScene.windows) {
+                        if (window.isKeyWindow && window.rootViewController) {
+                            topVC = window.rootViewController;
+                            break;
+                        }
+                    }
+                    if (topVC) break;
+                }
+            }
+        }
+    }
+    
+    // إذا لم نجد، نستخدم أول نافذة متاحة
+    if (!topVC) {
+        for (UIWindow *window in [UIApplication sharedApplication].windows) {
+            if (!window.hidden && window.rootViewController) {
+                topVC = window.rootViewController;
                 break;
             }
         }
@@ -215,337 +152,486 @@ static char kHPlusLongPressGestureKey;
     
     if (!topVC) return nil;
     
+    // الصعود لأعلى View Controller
     while (topVC.presentedViewController) {
         topVC = topVC.presentedViewController;
     }
     
+    // إذا كان Navigation Controller
     if ([topVC isKindOfClass:[UINavigationController class]]) {
         topVC = [(UINavigationController *)topVC visibleViewController];
     }
+    
+    // إذا كان Tab Bar Controller
     if ([topVC isKindOfClass:[UITabBarController class]]) {
         topVC = [(UITabBarController *)topVC selectedViewController];
         if ([topVC isKindOfClass:[UINavigationController class]]) {
             topVC = [(UINavigationController *)topVC visibleViewController];
         }
     }
+    
+    // إذا كان Split View Controller
     if ([topVC isKindOfClass:[UISplitViewController class]]) {
-        topVC = [(UISplitViewController *)topVC viewControllers].lastObject;
+        UISplitViewController *splitVC = (UISplitViewController *)topVC;
+        topVC = splitVC.viewControllers.lastObject;
         if ([topVC isKindOfClass:[UINavigationController class]]) {
             topVC = [(UINavigationController *)topVC visibleViewController];
         }
     }
+    
     return topVC;
 }
 
-#pragma mark - View Description
-
-// وصف مختصر لعنصر واحد
-- (NSString *)describeView:(UIView *)view {
-    if (!view) return @"(nil)";
+- (NSString *)getClassChainForView:(UIView *)view {
+    if (!view) return @"(None)";
     
-    NSMutableString *s = [NSMutableString string];
-    [s appendFormat:@"%@", NSStringFromClass([view class])];
+    NSMutableString *chain = [NSMutableString string];
+    UIView *tempView = view;
+    int depth = 0;
     
-    NSString *ident = view.accessibilityIdentifier;
-    NSString *label = view.accessibilityLabel;
-    NSString *value = nil;
-    if ([view respondsToSelector:@selector(accessibilityValue)]) {
-        id v = [view accessibilityValue];
-        if ([v isKindOfClass:[NSString class]] && [v length] > 0) value = v;
+    // بناء سلسلة الوراثة حتى 6 مستويات
+    while (tempView != nil && depth < 6) {
+        if (chain.length > 0) {
+            [chain appendString:@"\n     ↓ "];
+        }
+        [chain appendString:NSStringFromClass([tempView class])];
+        tempView = tempView.superview;
+        depth++;
     }
     
-    if (ident.length)  [s appendFormat:@" | id=%@", ident];
-    if (label.length)  [s appendFormat:@" | label=%@", label];
-    if (value.length)  [s appendFormat:@" | value=%@", value];
-    
-    NSString *innerText = [self innerTextForView:view];
-    if (innerText.length) [s appendFormat:@" | text=%@", innerText];
-    
-    return s;
+    return chain;
 }
 
-// يبحث عن نص داخل العنصر أو أبنائه
-- (NSString *)innerTextForView:(UIView *)view {
+- (NSString *)extractTextFromView:(UIView *)view {
     if (!view) return nil;
     
+    // 1. UILabel - النصوص العادية
     if ([view isKindOfClass:[UILabel class]]) {
-        NSString *t = ((UILabel *)view).text;
-        return t.length ? t : nil;
+        UILabel *label = (UILabel *)view;
+        if (label.text.length > 0) {
+            return label.text;
+        }
     }
+    
+    // 2. UITextField - حقول الإدخال
     if ([view isKindOfClass:[UITextField class]]) {
-        UITextField *tf = (UITextField *)view;
-        if (tf.text.length) return tf.text;
-        if (tf.placeholder.length) return tf.placeholder;
-        return nil;
+        UITextField *textField = (UITextField *)view;
+        if (textField.text.length > 0) {
+            return textField.text;
+        }
+        if (textField.placeholder.length > 0) {
+            return [NSString stringWithFormat:@"Placeholder: %@", textField.placeholder];
+        }
     }
+    
+    // 3. UITextView - النصوص الطويلة
     if ([view isKindOfClass:[UITextView class]]) {
-        NSString *t = ((UITextView *)view).text;
-        return t.length ? t : nil;
+        UITextView *textView = (UITextView *)view;
+        if (textView.text.length > 0) {
+            return textView.text;
+        }
     }
+    
+    // 4. UIButton - الأزرار
     if ([view isKindOfClass:[UIButton class]]) {
-        UIButton *b = (UIButton *)view;
-        if (b.currentTitle.length) return b.currentTitle;
-        if (b.titleLabel.text.length) return b.titleLabel.text;
+        UIButton *button = (UIButton *)view;
+        
+        NSString *currentTitle = [button currentTitle];
+        if (currentTitle.length > 0) {
+            return currentTitle;
+        }
+        
+        NSAttributedString *attributedTitle = [button currentAttributedTitle];
+        if (attributedTitle.string.length > 0) {
+            return attributedTitle.string;
+        }
+        
+        if (button.titleLabel.text.length > 0) {
+            return button.titleLabel.text;
+        }
+        
+        NSString *normalTitle = [button titleForState:UIControlStateNormal];
+        if (normalTitle.length > 0) {
+            return normalTitle;
+        }
+        
+        NSString *selectedTitle = [button titleForState:UIControlStateSelected];
+        if (selectedTitle.length > 0) {
+            return selectedTitle;
+        }
     }
     
-    // استخدام IMP بدل performSelector لتجنب تحذير ARC
-    SEL textSel = NSSelectorFromString(@"text");
-    if ([view respondsToSelector:textSel]) {
-        @try {
-            IMP imp = [view methodForSelector:textSel];
-            NSString *(*func)(id, SEL) = (void *)imp;
-            NSString *t = func(view, textSel);
-            if ([t isKindOfClass:[NSString class]] && t.length) return t;
-        } @catch (__unused NSException *e) {}
+    // 5. UISegmentedControl - المؤشرات
+    if ([view isKindOfClass:[UISegmentedControl class]]) {
+        UISegmentedControl *segmented = (UISegmentedControl *)view;
+        NSInteger selectedIndex = segmented.selectedSegmentIndex;
+        if (selectedIndex >= 0 && selectedIndex < segmented.numberOfSegments) {
+            NSString *title = [segmented titleForSegmentAtIndex:selectedIndex];
+            if (title.length > 0) {
+                return [NSString stringWithFormat:@"Segment [%ld]: %@", (long)selectedIndex, title];
+            }
+        }
     }
     
-    for (UIView *sub in view.subviews) {
-        NSString *t = [self innerTextForView:sub];
-        if (t.length) return t;
+    // 6. UISwitch - المفاتيح
+    if ([view isKindOfClass:[UISwitch class]]) {
+        UISwitch *switchControl = (UISwitch *)view;
+        return [NSString stringWithFormat:@"Switch: %@", switchControl.isOn ? @"ON" : @"OFF"];
     }
+    
+    // 7. UISlider - المنزلقات
+    if ([view isKindOfClass:[UISlider class]]) {
+        UISlider *slider = (UISlider *)view;
+        return [NSString stringWithFormat:@"Slider: %.2f", slider.value];
+    }
+    
+    // 8. UIProgressView - أشرطة التقدم
+    if ([view isKindOfClass:[UIProgressView class]]) {
+        UIProgressView *progress = (UIProgressView *)view;
+        return [NSString stringWithFormat:@"Progress: %.2f", progress.progress];
+    }
+    
+    // 9. UIStepper - عدادات
+    if ([view isKindOfClass:[UIStepper class]]) {
+        UIStepper *stepper = (UIStepper *)view;
+        return [NSString stringWithFormat:@"Stepper: %.2f", stepper.value];
+    }
+    
+    // 10. UITableViewCell - خلايا الجداول
+    if ([view isKindOfClass:[UITableViewCell class]]) {
+        UITableViewCell *cell = (UITableViewCell *)view;
+        
+        NSString *mainText = cell.textLabel.text;
+        NSString *detailText = cell.detailTextLabel.text;
+        
+        if (mainText.length > 0 && detailText.length > 0) {
+            return [NSString stringWithFormat:@"%@ - %@", mainText, detailText];
+        } else if (mainText.length > 0) {
+            return mainText;
+        } else if (detailText.length > 0) {
+            return detailText;
+        }
+    }
+    
+    // 11. UICollectionViewCell - خلايا المجموعات
+    if ([view isKindOfClass:[UICollectionViewCell class]]) {
+        UICollectionViewCell *cell = (UICollectionViewCell *)view;
+        
+        // البحث في contentView أولاً
+        for (UIView *subview in cell.contentView.subviews) {
+            NSString *subviewText = [self extractTextFromView:subview];
+            if (subviewText.length > 0) {
+                return subviewText;
+            }
+        }
+        
+        // ثم البحث في الخلية نفسها
+        for (UIView *subview in cell.subviews) {
+            if (subview != cell.contentView) {
+                NSString *subviewText = [self extractTextFromView:subview];
+                if (subviewText.length > 0) {
+                    return subviewText;
+                }
+            }
+        }
+    }
+    
+    // 12. فحص عام لأي View يستجيب للـ text
+    if ([view respondsToSelector:@selector(text)]) {
+        id textValue = [view performSelector:@selector(text)];
+        if ([textValue isKindOfClass:[NSString class]] && [(NSString *)textValue length] > 0) {
+            return textValue;
+        }
+    }
+    
+    // 13. فحص attributedText
+    if ([view respondsToSelector:@selector(attributedText)]) {
+        id attributedText = [view performSelector:@selector(attributedText)];
+        if ([attributedText respondsToSelector:@selector(string)]) {
+            NSString *string = [attributedText performSelector:@selector(string)];
+            if (string.length > 0) {
+                return string;
+            }
+        }
+    }
+    
+    // 14. فحص title
+    if ([view respondsToSelector:@selector(title)]) {
+        id titleValue = [view performSelector:@selector(title)];
+        if ([titleValue isKindOfClass:[NSString class]] && [(NSString *)titleValue length] > 0) {
+            return titleValue;
+        }
+    }
+    
+    // 15. فحص currentTitle
+    if ([view respondsToSelector:@selector(currentTitle)]) {
+        id currentTitle = [view performSelector:@selector(currentTitle)];
+        if ([currentTitle isKindOfClass:[NSString class]] && [(NSString *)currentTitle length] > 0) {
+            return currentTitle;
+        }
+    }
+    
     return nil;
 }
 
-#pragma mark - Logging (Console)
-
-// طباعة سطر بسطر للضغط العادي
-- (void)logConciseForView:(UIView *)view {
-    NSLog(@"[HPlusInspector][TAP] ========== TAP @ %@ ==========", [NSDate date]);
-    NSLog(@"[HPlusInspector][TAP] 📍 Hit chain (deepest → topmost):");
-    
-    UIView *v = view;
-    int depth = 0;
-    while (v && depth < 20) {
-        NSLog(@"[HPlusInspector][TAP]   [%d] %@ | frame=(%.0f,%.0f,%.0f,%.0f) | alpha=%.2f | hidden=%@",
-              depth,
-              [self describeView:v],
-              v.frame.origin.x, v.frame.origin.y,
-              v.frame.size.width, v.frame.size.height,
-              v.alpha,
-              v.hidden ? @"YES" : @"NO");
-        v = v.superview;
-        depth++;
-    }
-    
-    NSString *bestID = [self bestIdentifierFromView:view];
-    NSLog(@"[HPlusInspector][TAP] 🎯 Best ID: %@", bestID.length ? bestID : @"(none)");
-    NSLog(@"[HPlusInspector][TAP] 🏷 Best Class: %@", NSStringFromClass([view class]));
-    NSLog(@"[HPlusInspector][TAP] ==========================================");
-}
-
-// طباعة سطر بسطر للضغط المطول
-- (void)logFullForView:(UIView *)view {
-    NSLog(@"[HPlusInspector][LONG] ===== HPlus Inspector =====");
-    
-    // 1. العنصر المضغوط
-    NSLog(@"[HPlusInspector][LONG] 📍 Class: %@", NSStringFromClass([view class]));
-    NSLog(@"[HPlusInspector][LONG] 📍 Frame: (%.0f, %.0f, %.0f, %.0f)",
-        view.frame.origin.x, view.frame.origin.y,
-        view.frame.size.width, view.frame.size.height);
-    NSLog(@"[HPlusInspector][LONG] 📍 Alpha: %.2f | Hidden: %@ | Opaque: %@",
-        view.alpha, view.hidden ? @"YES" : @"NO", view.isOpaque ? @"YES" : @"NO");
-    
-    // 2. Accessibility
-    NSLog(@"[HPlusInspector][LONG] ♿️ Identifier: %@",
-        view.accessibilityIdentifier.length ? view.accessibilityIdentifier : @"(none)");
-    NSLog(@"[HPlusInspector][LONG] ♿️ Label: %@",
-        view.accessibilityLabel.length ? view.accessibilityLabel : @"(none)");
-    if ([view respondsToSelector:@selector(accessibilityValue)]) {
-        id v = [view accessibilityValue];
-        NSLog(@"[HPlusInspector][LONG] ♿️ Value: %@", v ?: @"(none)");
-    }
-    if ([view respondsToSelector:@selector(accessibilityHint)]) {
-        id h = [view accessibilityHint];
-        NSLog(@"[HPlusInspector][LONG] ♿️ Hint: %@", h ?: @"(none)");
-    }
-    NSLog(@"[HPlusInspector][LONG] ♿️ isAccessibilityElement: %@",
-        view.isAccessibilityElement ? @"YES" : @"NO");
-    
-    // 3. Text
-    NSString *text = [self innerTextForView:view];
-    if (text.length) {
-        NSLog(@"[HPlusInspector][LONG] 📝 Text: %@", text);
-    }
-    
-    // 4. Image info
-    if ([view isKindOfClass:[UIImageView class]]) {
-        UIImage *img = ((UIImageView *)view).image;
-        if (img) {
-            NSLog(@"[HPlusInspector][LONG] 🖼 Image: %.0fx%.0f",
-                img.size.width, img.size.height);
-        }
-    }
-    
-    // 5. Hierarchy
-    NSLog(@"[HPlusInspector][LONG] 📊 Class hierarchy (deep → top):");
-    UIView *v = view;
-    int depth = 0;
-    while (v && depth < 15) {
-        NSLog(@"[HPlusInspector][LONG] 📊   %@%@",
-            [@"" stringByPaddingToLength:depth * 2 withString:@" " startingAtIndex:0],
-            [self describeView:v]);
-        v = v.superview;
-        depth++;
-    }
-    
-    // 6. Best ID
-    NSString *bestID = [self bestIdentifierFromView:view];
-    NSLog(@"[HPlusInspector][LONG] ⚙️ Best ID: %@", bestID.length ? bestID : @"(none)");
-    
-    // 7. Subviews
-    if (view.subviews.count > 0) {
-        NSLog(@"[HPlusInspector][LONG] 👶 Subviews (%lu):",
-              (unsigned long)view.subviews.count);
-        int i = 0;
-        for (UIView *sub in view.subviews) {
-            if (i >= 8) {
-                NSLog(@"[HPlusInspector][LONG] 👶   ... +%lu more",
-                    (unsigned long)(view.subviews.count - i));
-                break;
-            }
-            NSLog(@"[HPlusInspector][LONG] 👶   [%d] %@", i, [self describeView:sub]);
-            i++;
-        }
-    }
-    
-    // 8. Responder chain
-    NSLog(@"[HPlusInspector][LONG] 🔗 Responder chain:");
-    UIResponder *r = view;
-    int rc = 0;
-    while (r && rc < 8) {
-        NSLog(@"[HPlusInspector][LONG] 🔗   %@%@",
-            [@"" stringByPaddingToLength:rc * 2 withString:@" " startingAtIndex:0],
-            NSStringFromClass([r class]));
-        r = r.nextResponder;
-        rc++;
-    }
-    
-    NSLog(@"[HPlusInspector][LONG] =============================");
-}
-
-#pragma mark - Best ID extraction
-
-- (NSString *)bestIdentifierFromView:(UIView *)view {
+- (NSString *)getImageInfoForView:(UIView *)view {
     if (!view) return nil;
     
-    if (view.accessibilityIdentifier.length) return view.accessibilityIdentifier;
-    
-    for (UIView *sub in view.subviews) {
-        NSString *id_ = [self bestIdentifierFromView:sub];
-        if (id_.length) return id_;
+    // UIImageView - الصور
+    if ([view isKindOfClass:[UIImageView class]]) {
+        UIImageView *imgView = (UIImageView *)view;
+        if (imgView.image) {
+            NSMutableString *info = [NSMutableString string];
+            [info appendFormat:@"Size: %.0fx%.0f", 
+             imgView.image.size.width, 
+             imgView.image.size.height];
+            
+            if (imgView.image.scale > 1) {
+                [info appendFormat:@" @%.1fx", imgView.image.scale];
+            }
+            
+            if (imgView.image.images.count > 1) {
+                [info appendFormat:@" | Frames: %lu", 
+                 (unsigned long)imgView.image.images.count];
+            }
+            
+            return info;
+        }
     }
     
-    UIView *parent = view.superview;
-    int depth = 0;
-    while (parent && depth < 6) {
-        if (parent.accessibilityIdentifier.length) return parent.accessibilityIdentifier;
-        parent = parent.superview;
-        depth++;
+    // UIButton مع صورة
+    if ([view isKindOfClass:[UIButton class]]) {
+        UIButton *button = (UIButton *)view;
+        if (button.currentImage) {
+            return [NSString stringWithFormat:@"Image: %.0fx%.0f", 
+                    button.currentImage.size.width, 
+                    button.currentImage.size.height];
+        }
+        if (button.currentBackgroundImage) {
+            return [NSString stringWithFormat:@"Background: %.0fx%.0f", 
+                    button.currentBackgroundImage.size.width, 
+                    button.currentBackgroundImage.size.height];
+        }
     }
-    
-    NSString *text = [self innerTextForView:view];
-    if (text.length) return text;
     
     return nil;
 }
 
-#pragma mark - Full Report (للـ Alert فقط)
+- (NSString *)extractIdentifierFromView:(UIView *)view {
+    if (!view) return nil;
+    
+    // البحث الصاعد عن accessibilityIdentifier
+    UIView *currentV = view;
+    while (currentV != nil) {
+        if (currentV.accessibilityIdentifier.length > 0) {
+            return currentV.accessibilityIdentifier;
+        }
+        currentV = currentV.superview;
+    }
+    return nil;
+}
 
-- (NSString *)formattedReportForView:(UIView *)view {
-    NSMutableString *s = [NSMutableString string];
-    [s appendString:@"🎯 ===== HPlus Inspector =====\n\n"];
+- (NSString *)getAccessibilityInfoForView:(UIView *)view {
+    if (!view) return nil;
     
-    // 1. العنصر المضغوط
-    [s appendString:@"📍 Tapped view:\n"];
-    [s appendFormat:@"  Class: %@\n", NSStringFromClass([view class])];
-    [s appendFormat:@"  Frame: (%.0f, %.0f, %.0f, %.0f)\n",
-        view.frame.origin.x, view.frame.origin.y,
-        view.frame.size.width, view.frame.size.height];
-    [s appendFormat:@"  Alpha: %.2f | Hidden: %@ | Opaque: %@\n",
-        view.alpha, view.hidden ? @"YES" : @"NO", view.isOpaque ? @"YES" : @"NO"];
+    NSMutableString *info = [NSMutableString string];
     
-    // 2. Accessibility
-    [s appendString:@"\n♿️ Accessibility:\n"];
-    [s appendFormat:@"  Identifier: %@\n",
-        view.accessibilityIdentifier.length ? view.accessibilityIdentifier : @"(none)"];
-    [s appendFormat:@"  Label: %@\n",
-        view.accessibilityLabel.length ? view.accessibilityLabel : @"(none)"];
-    if ([view respondsToSelector:@selector(accessibilityValue)]) {
-        id v = [view accessibilityValue];
-        [s appendFormat:@"  Value: %@\n", v ?: @"(none)"];
-    }
-    if ([view respondsToSelector:@selector(accessibilityHint)]) {
-        id h = [view accessibilityHint];
-        [s appendFormat:@"  Hint: %@\n", h ?: @"(none)"];
-    }
-    [s appendFormat:@"  isAccessibilityElement: %@\n",
-        view.isAccessibilityElement ? @"YES" : @"NO"];
+    // البحث الصاعد عن معلومات الوصول
+    UIView *currentV = view;
+    NSString *identifier = nil;
+    NSString *label = nil;
+    NSString *value = nil;
+    NSString *hint = nil;
     
-    // 3. Text
-    NSString *text = [self innerTextForView:view];
-    if (text.length) {
-        [s appendFormat:@"\n📝 Text: %@\n", text];
+    while (currentV != nil) {
+        if (!identifier && currentV.accessibilityIdentifier.length > 0) {
+            identifier = currentV.accessibilityIdentifier;
+        }
+        if (!label && currentV.accessibilityLabel.length > 0) {
+            label = currentV.accessibilityLabel;
+        }
+        if (!value && currentV.accessibilityValue.length > 0) {
+            value = currentV.accessibilityValue;
+        }
+        if (!hint && currentV.accessibilityHint.length > 0) {
+            hint = currentV.accessibilityHint;
+        }
+        currentV = currentV.superview;
     }
     
-    // 4. Image info
-    if ([view isKindOfClass:[UIImageView class]]) {
-        UIImage *img = ((UIImageView *)view).image;
-        if (img) {
-            [s appendFormat:@"\n🖼 Image: %.0fx%.0f\n", img.size.width, img.size.height];
+    if (identifier.length > 0) {
+        [info appendFormat:@"ID: %@", identifier];
+    }
+    
+    if (label.length > 0) {
+        if (info.length > 0) [info appendString:@" | "];
+        [info appendFormat:@"Label: %@", label];
+    }
+    
+    if (value.length > 0) {
+        if (info.length > 0) [info appendString:@" | "];
+        [info appendFormat:@"Value: %@", value];
+    }
+    
+    if (hint.length > 0) {
+        if (info.length > 0) [info appendString:@" | "];
+        [info appendFormat:@"Hint: %@", hint];
+    }
+    
+    return info.length > 0 ? info : nil;
+}
+
+- (NSString *)getFrameInfoForView:(UIView *)view {
+    if (!view) return nil;
+    
+    // معلومات الإطار والحدود
+    return [NSString stringWithFormat:@"Frame: (%.0f, %.0f, %.0f, %.0f) | Bounds: (%.0f, %.0f, %.0f, %.0f)",
+            view.frame.origin.x,
+            view.frame.origin.y,
+            view.frame.size.width,
+            view.frame.size.height,
+            view.bounds.origin.x,
+            view.bounds.origin.y,
+            view.bounds.size.width,
+            view.bounds.size.height];
+}
+
+- (NSString *)getAdditionalInfoForView:(UIView *)view {
+    if (!view) return nil;
+    
+    NSMutableString *info = [NSMutableString string];
+    
+    // معلومات أساسية
+    [info appendFormat:@"Alpha: %.2f | Hidden: %@ | UserInteraction: %@",
+     view.alpha,
+     view.hidden ? @"Yes" : @"No",
+     view.userInteractionEnabled ? @"Yes" : @"No"];
+    
+    // Tag إذا وجد
+    if (view.tag != 0) {
+        [info appendFormat:@" | Tag: %ld", (long)view.tag];
+    }
+    
+    // لون الخلفية (بطريقة آمنة)
+    if (view.backgroundColor && 
+        ![view.backgroundColor isEqual:[UIColor clearColor]]) {
+        UIColor *color = view.backgroundColor;
+        CGFloat red = 0, green = 0, blue = 0, alpha = 0;
+        if ([color getRed:&red green:&green blue:&blue alpha:&alpha]) {
+            [info appendFormat:@" | BG: RGB(%.0f, %.0f, %.0f)", 
+             red * 255, green * 255, blue * 255];
         }
     }
     
-    // 5. Hierarchy
-    [s appendString:@"\n📊 Class hierarchy (deep → top):\n"];
-    UIView *v = view;
-    int depth = 0;
-    while (v && depth < 15) {
-        [s appendFormat:@"  %@%@\n",
-            [@"" stringByPaddingToLength:depth * 2 withString:@" " startingAtIndex:0],
-            [self describeView:v]];
-        v = v.superview;
-        depth++;
+    // Corner Radius إذا وجد
+    if (view.layer.cornerRadius > 0) {
+        [info appendFormat:@" | Corner: %.1f", view.layer.cornerRadius];
     }
     
-    // 6. Best ID
-    NSString *bestID = [self bestIdentifierFromView:view];
-    [s appendFormat:@"\n⚙️ Best ID: %@\n", bestID.length ? bestID : @"(none)"];
+    return info;
+}
+
+- (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
+    // التأكد من أن الضغطة في البداية فقط
+    if (sender.state != UIGestureRecognizerStateBegan) return;
     
-    // 7. Subviews
-    if (view.subviews.count > 0) {
-        [s appendFormat:@"\n👶 Subviews (%lu):\n", (unsigned long)view.subviews.count];
-        int i = 0;
-        for (UIView *sub in view.subviews) {
-            if (i >= 8) {
-                [s appendFormat:@"  ... +%lu more\n",
-                    (unsigned long)(view.subviews.count - i)];
-                break;
-            }
-            [s appendFormat:@"  [%d] %@\n", i, [self describeView:sub]];
-            i++;
+    // التأكد من أن الـ View هو UIWindow
+    if (![sender.view isKindOfClass:[UIWindow class]]) return;
+    
+    UIWindow *window = (UIWindow *)sender.view;
+    CGPoint point = [sender locationInView:window];
+    
+    // تحديد العنصر المضغوط عليه
+    UIView *targetView = [window hitTest:point withEvent:nil];
+    if (!targetView) return;
+    
+    // تجاهل عناصر النظام
+    if ([self shouldIgnoreView:targetView]) return;
+    
+    // جمع كل المعلومات
+    NSString *classChain = [self getClassChainForView:targetView];
+    NSString *accessibilityInfo = [self getAccessibilityInfoForView:targetView];
+    NSString *extractedText = [self extractTextFromView:targetView];
+    NSString *imageInfo = [self getImageInfoForView:targetView];
+    NSString *frameInfo = [self getFrameInfoForView:targetView];
+    NSString *additionalInfo = [self getAdditionalInfoForView:targetView];
+    NSString *identifier = [self extractIdentifierFromView:targetView];
+    
+    // بناء الرسالة
+    NSMutableString *message = [NSMutableString string];
+    
+    [message appendFormat:@"🎯 Target Class: %@\n\n", NSStringFromClass([targetView class])];
+    [message appendFormat:@"📊 Class Hierarchy:\n%@\n\n", classChain];
+    
+    if (identifier.length > 0) {
+        [message appendFormat:@"🔑 ID: %@\n\n", identifier];
+    } else if (accessibilityInfo.length > 0) {
+        [message appendFormat:@"🔑 %@\n\n", accessibilityInfo];
+    }
+    
+    [message appendFormat:@"📝 Text: %@\n\n", (extractedText.length > 0) ? extractedText : @"(None)"];
+    
+    if (imageInfo) {
+        [message appendFormat:@"🖼️ %@\n\n", imageInfo];
+    }
+    
+    [message appendFormat:@"📍 %@\n\n", frameInfo];
+    [message appendFormat:@"⚙️ %@\n", additionalInfo];
+    
+    // تحديد أفضل نص للنسخ
+    NSString *bestToCopy = identifier.length > 0 ? identifier : 
+                          (extractedText.length > 0 ? extractedText : 
+                           NSStringFromClass([targetView class]));
+    
+    // إنشاء الـ Alert
+    UIAlertController *alert = [UIAlertController 
+        alertControllerWithTitle:@"🔍 HPlus Inspector" 
+        message:message 
+        preferredStyle:UIAlertControllerStyleAlert];
+    
+    // زر نسخ المعلومات الأساسية
+    [alert addAction:[UIAlertAction actionWithTitle:@"📋 Copy Info" 
+        style:UIAlertActionStyleDefault 
+        handler:^(UIAlertAction * _Nonnull action) {
+            [UIPasteboard generalPasteboard].string = bestToCopy;
+        }]];
+    
+    // زر نسخ كل المعلومات
+    [alert addAction:[UIAlertAction actionWithTitle:@"📄 Copy All" 
+        style:UIAlertActionStyleDefault 
+        handler:^(UIAlertAction * _Nonnull action) {
+            [UIPasteboard generalPasteboard].string = message;
+        }]];
+    
+    // زر الإغلاق
+    [alert addAction:[UIAlertAction actionWithTitle:@"👌 OK" 
+        style:UIAlertActionStyleCancel 
+        handler:nil]];
+    
+    // عرض التنبيه بأمان
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *topVC = [self topViewController];
+        
+        if (topVC) {
+            [topVC presentViewController:alert animated:YES completion:nil];
+        } else {
+            // Fallback: إنشاء نافذة جديدة
+            UIWindow *alertWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+            alertWindow.rootViewController = [[UIViewController alloc] init];
+            alertWindow.windowLevel = UIWindowLevelAlert + 1;
+            alertWindow.backgroundColor = [UIColor clearColor];
+            [alertWindow makeKeyAndVisible];
+            
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), 
+                          dispatch_get_main_queue(), ^{
+                [alertWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+            });
         }
-    }
-    
-    // 8. Responder chain
-    [s appendString:@"\n🔗 Responder chain:\n"];
-    UIResponder *r = view;
-    int rc = 0;
-    while (r && rc < 8) {
-        [s appendFormat:@"  %@%@\n",
-            [@"" stringByPaddingToLength:rc * 2 withString:@" " startingAtIndex:0],
-            NSStringFromClass([r class])];
-        r = r.nextResponder;
-        rc++;
-    }
-    
-    [s appendString:@"\n============================="];
-    return s;
+    });
 }
 
 @end
 
-#pragma mark - Constructor
-
 %ctor {
-    [HPlusInspector sharedInstance];
+    [HPlusDebugHelper sharedInstance];
 }
