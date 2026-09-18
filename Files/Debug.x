@@ -454,4 +454,4 @@ static char kHPlusLongPressGestureKey;
 
 %ctor {
     [HPlusInspector sharedInstance];
-}}
+}
