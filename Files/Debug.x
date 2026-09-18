@@ -1,12 +1,6 @@
-
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
-#import <os/log.h>
-#import "Headers.h"
-#import <Preferences/Preferences.h>
-#import <AVFoundation/AVFoundation.h>
-#import <CoreMedia/CoreMedia.h>
 
 // مفتاح فريد للـ Associated Object
 static char kHPlusGestureKey;
@@ -634,4 +628,4 @@ static char kHPlusGestureKey;
 
 %ctor {
     [HPlusDebugHelper sharedInstance];
-}}
+}
