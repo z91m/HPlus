@@ -287,10 +287,14 @@ static char kHPlusLongPressGestureKey;
         if (b.titleLabel.text.length) return b.titleLabel.text;
     }
     
-    if ([view respondsToSelector:NSSelectorFromString(@"text")]) {
+    // ✅ الطريقة الصحيحة بدون تحذير ARC: استخدام IMP بدل performSelector
+    SEL textSel = NSSelectorFromString(@"text");
+    if ([view respondsToSelector:textSel]) {
         @try {
-            id t = [view performSelector:NSSelectorFromString(@"text")];
-            if ([t isKindOfClass:[NSString class]] && [(NSString *)t length]) return t;
+            IMP imp = [view methodForSelector:textSel];
+            NSString *(*func)(id, SEL) = (void *)imp;
+            NSString *t = func(view, textSel);
+            if ([t isKindOfClass:[NSString class]] && t.length) return t;
         } @catch (__unused NSException *e) {}
     }
     
