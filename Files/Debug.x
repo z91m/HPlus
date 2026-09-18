@@ -17,7 +17,8 @@ static char kHPlusLongPressGestureKey;
 - (void)setupGesturesForWindow:(UIWindow *)window;
 - (UIViewController *)topViewController;
 - (NSString *)formattedReportForView:(UIView *)view;
-- (NSString *)conciseReportForView:(UIView *)view;
+- (void)logConciseForView:(UIView *)view;
+- (void)logFullForView:(UIView *)view;
 - (NSString *)describeView:(UIView *)view;
 - (NSString *)innerTextForView:(UIView *)view;
 - (NSString *)bestIdentifierFromView:(UIView *)view;
@@ -101,7 +102,7 @@ static char kHPlusLongPressGestureKey;
 
 #pragma mark - Handlers
 
-// ضغطة واحدة → طباعة فقط في الكونسول
+// ضغطة واحدة → طباعة فقط في الكونسول (سطر بسطر)
 - (void)handleTap:(UITapGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateRecognized) return;
     if (![sender.view isKindOfClass:[UIWindow class]]) return;
@@ -111,11 +112,10 @@ static char kHPlusLongPressGestureKey;
     UIView *hitView = [window hitTest:point withEvent:nil];
     if (!hitView) return;
     
-    NSString *report = [self conciseReportForView:hitView];
-    os_log(OS_LOG_DEFAULT, "[HPlusInspector][TAP] %{public}@", report);
+    [self logConciseForView:hitView];
 }
 
-// ضغطة مطولة → عرض Alert بالمعلومات الكاملة + 5 أزرار نسخ
+// ضغطة مطولة → Alert على الجوال + طباعة في الكونسول
 - (void)handleLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
     if (![sender.view isKindOfClass:[UIWindow class]]) return;
@@ -125,16 +125,17 @@ static char kHPlusLongPressGestureKey;
     UIView *hitView = [window hitTest:point withEvent:nil];
     if (!hitView) return;
     
+    // التقرير الكامل للـ Alert
     NSString *report = [self formattedReportForView:hitView];
+    
+    // سجل في الكونسول سطر بسطر
+    [self logFullForView:hitView];
     
     // استخرج المعلومات المهمة للنسخ السريع
     NSString *bestID = [self bestIdentifierFromView:hitView];
     NSString *bestClass = NSStringFromClass([hitView class]);
     NSString *idOnly = bestID.length ? bestID : @"(no id)";
     NSString *classOnly = bestClass.length ? bestClass : @"(no class)";
-    
-    // اطبع نسخة في الكونسول أيضاً
-    os_log(OS_LOG_DEFAULT, "[HPlusInspector][LONG] %{public}@", report);
     
     dispatch_async(dispatch_get_main_queue(), ^{
         UIViewController *topVC = [self topViewController];
@@ -287,7 +288,7 @@ static char kHPlusLongPressGestureKey;
         if (b.titleLabel.text.length) return b.titleLabel.text;
     }
     
-    // ✅ الطريقة الصحيحة بدون تحذير ARC: استخدام IMP بدل performSelector
+    // استخدام IMP بدل performSelector لتجنب تحذير ARC
     SEL textSel = NSSelectorFromString(@"text");
     if ([view respondsToSelector:textSel]) {
         @try {
@@ -305,32 +306,121 @@ static char kHPlusLongPressGestureKey;
     return nil;
 }
 
-#pragma mark - Concise Report (Tap)
+#pragma mark - Logging (Console)
 
-- (NSString *)conciseReportForView:(UIView *)view {
-    NSMutableString *s = [NSMutableString string];
-    [s appendFormat:@"\n=== TAP @ %@ ===\n", [NSDate date]];
-    [s appendString:@"📍 Hit chain (from deepest to topmost):\n"];
+// طباعة سطر بسطر للضغط العادي
+- (void)logConciseForView:(UIView *)view {
+    NSLog(@"[HPlusInspector][TAP] ========== TAP @ %@ ==========", [NSDate date]);
+    NSLog(@"[HPlusInspector][TAP] 📍 Hit chain (deepest → topmost):");
     
     UIView *v = view;
     int depth = 0;
     while (v && depth < 20) {
-        [s appendFormat:@"  [%d] %@ | frame=(%.0f,%.0f,%.0f,%.0f) | alpha=%.2f hidden=%@\n",
-            depth,
-            [self describeView:v],
-            v.frame.origin.x, v.frame.origin.y,
-            v.frame.size.width, v.frame.size.height,
-            v.alpha,
-            v.hidden ? @"YES" : @"NO"];
+        NSLog(@"[HPlusInspector][TAP]   [%d] %@ | frame=(%.0f,%.0f,%.0f,%.0f) | alpha=%.2f | hidden=%@",
+              depth,
+              [self describeView:v],
+              v.frame.origin.x, v.frame.origin.y,
+              v.frame.size.width, v.frame.size.height,
+              v.alpha,
+              v.hidden ? @"YES" : @"NO");
         v = v.superview;
         depth++;
     }
     
     NSString *bestID = [self bestIdentifierFromView:view];
-    [s appendFormat:@"🎯 Best ID: %@\n", bestID.length ? bestID : @"(none)"];
-    [s appendFormat:@"🏷 Best Class: %@\n", NSStringFromClass([view class])];
+    NSLog(@"[HPlusInspector][TAP] 🎯 Best ID: %@", bestID.length ? bestID : @"(none)");
+    NSLog(@"[HPlusInspector][TAP] 🏷 Best Class: %@", NSStringFromClass([view class]));
+    NSLog(@"[HPlusInspector][TAP] ==========================================");
+}
+
+// طباعة سطر بسطر للضغط المطول
+- (void)logFullForView:(UIView *)view {
+    NSLog(@"[HPlusInspector][LONG] ===== HPlus Inspector =====");
     
-    return s;
+    // 1. العنصر المضغوط
+    NSLog(@"[HPlusInspector][LONG] 📍 Class: %@", NSStringFromClass([view class]));
+    NSLog(@"[HPlusInspector][LONG] 📍 Frame: (%.0f, %.0f, %.0f, %.0f)",
+        view.frame.origin.x, view.frame.origin.y,
+        view.frame.size.width, view.frame.size.height);
+    NSLog(@"[HPlusInspector][LONG] 📍 Alpha: %.2f | Hidden: %@ | Opaque: %@",
+        view.alpha, view.hidden ? @"YES" : @"NO", view.isOpaque ? @"YES" : @"NO");
+    
+    // 2. Accessibility
+    NSLog(@"[HPlusInspector][LONG] ♿️ Identifier: %@",
+        view.accessibilityIdentifier.length ? view.accessibilityIdentifier : @"(none)");
+    NSLog(@"[HPlusInspector][LONG] ♿️ Label: %@",
+        view.accessibilityLabel.length ? view.accessibilityLabel : @"(none)");
+    if ([view respondsToSelector:@selector(accessibilityValue)]) {
+        id v = [view accessibilityValue];
+        NSLog(@"[HPlusInspector][LONG] ♿️ Value: %@", v ?: @"(none)");
+    }
+    if ([view respondsToSelector:@selector(accessibilityHint)]) {
+        id h = [view accessibilityHint];
+        NSLog(@"[HPlusInspector][LONG] ♿️ Hint: %@", h ?: @"(none)");
+    }
+    NSLog(@"[HPlusInspector][LONG] ♿️ isAccessibilityElement: %@",
+        view.isAccessibilityElement ? @"YES" : @"NO");
+    
+    // 3. Text
+    NSString *text = [self innerTextForView:view];
+    if (text.length) {
+        NSLog(@"[HPlusInspector][LONG] 📝 Text: %@", text);
+    }
+    
+    // 4. Image info
+    if ([view isKindOfClass:[UIImageView class]]) {
+        UIImage *img = ((UIImageView *)view).image;
+        if (img) {
+            NSLog(@"[HPlusInspector][LONG] 🖼 Image: %.0fx%.0f",
+                img.size.width, img.size.height);
+        }
+    }
+    
+    // 5. Hierarchy
+    NSLog(@"[HPlusInspector][LONG] 📊 Class hierarchy (deep → top):");
+    UIView *v = view;
+    int depth = 0;
+    while (v && depth < 15) {
+        NSLog(@"[HPlusInspector][LONG] 📊   %@%@",
+            [@"" stringByPaddingToLength:depth * 2 withString:@" " startingAtIndex:0],
+            [self describeView:v]);
+        v = v.superview;
+        depth++;
+    }
+    
+    // 6. Best ID
+    NSString *bestID = [self bestIdentifierFromView:view];
+    NSLog(@"[HPlusInspector][LONG] ⚙️ Best ID: %@", bestID.length ? bestID : @"(none)");
+    
+    // 7. Subviews
+    if (view.subviews.count > 0) {
+        NSLog(@"[HPlusInspector][LONG] 👶 Subviews (%lu):",
+              (unsigned long)view.subviews.count);
+        int i = 0;
+        for (UIView *sub in view.subviews) {
+            if (i >= 8) {
+                NSLog(@"[HPlusInspector][LONG] 👶   ... +%lu more",
+                    (unsigned long)(view.subviews.count - i));
+                break;
+            }
+            NSLog(@"[HPlusInspector][LONG] 👶   [%d] %@", i, [self describeView:sub]);
+            i++;
+        }
+    }
+    
+    // 8. Responder chain
+    NSLog(@"[HPlusInspector][LONG] 🔗 Responder chain:");
+    UIResponder *r = view;
+    int rc = 0;
+    while (r && rc < 8) {
+        NSLog(@"[HPlusInspector][LONG] 🔗   %@%@",
+            [@"" stringByPaddingToLength:rc * 2 withString:@" " startingAtIndex:0],
+            NSStringFromClass([r class]));
+        r = r.nextResponder;
+        rc++;
+    }
+    
+    NSLog(@"[HPlusInspector][LONG] =============================");
 }
 
 #pragma mark - Best ID extraction
@@ -359,7 +449,7 @@ static char kHPlusLongPressGestureKey;
     return nil;
 }
 
-#pragma mark - Full Report (Long Press)
+#pragma mark - Full Report (للـ Alert فقط)
 
 - (NSString *)formattedReportForView:(UIView *)view {
     NSMutableString *s = [NSMutableString string];
@@ -417,9 +507,9 @@ static char kHPlusLongPressGestureKey;
         depth++;
     }
     
-    // 6. Runtime info
-    [s appendString:@"\n⚙️ Runtime info:\n"];
-    [s appendFormat:@"  Best ID: %@\n", [self bestIdentifierFromView:view] ?: @"(none)"];
+    // 6. Best ID
+    NSString *bestID = [self bestIdentifierFromView:view];
+    [s appendFormat:@"\n⚙️ Best ID: %@\n", bestID.length ? bestID : @"(none)"];
     
     // 7. Subviews
     if (view.subviews.count > 0) {
