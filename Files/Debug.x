@@ -1,9 +1,13 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
-#import <os/log.h> // 🟢 تم إضافة مكتبة السجلات الرسمية
+#import <os/log.h>
+#import "Headers.h"
+#import <rootleaks.h>
+#import <Preferences/Preferences.h>
+#import <AVFoundation/AVFoundation.h>
+#import <CoreMedia/CoreMedia.h>
 
-// مفتاح فريد للـ Associated Object
 static char kHPlusGestureKey;
 
 @interface HPlusDebugHelper : NSObject
@@ -329,10 +333,8 @@ static char kHPlusGestureKey;
                           (extractedText.length > 0 ? extractedText : 
                            NSStringFromClass([targetView class]));
     
-    // 🟢 الحل الصحيح: طباعة السجل عبر os_log بصيغة public لكي يظهر في idevicesyslog بوضوح وبدون <private>
-        os_log(OS_LOG_DEFAULT, "[HPlusInspector] %{public}s", [message UTF8String]);
+    os_log(OS_LOG_DEFAULT, "[HPlusInspector] %{public}s", [message UTF8String]);
     
-    // إظهار النافذة المنبهة على الجوال
     UIAlertController *alert = [UIAlertController 
         alertControllerWithTitle:@"🔍 HPlus Inspector" 
         message:message 
