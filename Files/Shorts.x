@@ -155,7 +155,7 @@ static void HPlusAddShortsButtons(UIView *self, NSString *iden) {
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
         @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"id.reel_footer_analytics_button": @(IS_ENABLED(RemoveShortsSoundButton))
+        @"id.app.view": @(IS_ENABLED(RemoveShortsSoundButton))
     };
     for (NSString *target in possibleIds) {
         if ([iden containsString:target] && [possibleIds[target] boolValue]) {
