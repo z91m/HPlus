@@ -29,7 +29,7 @@ static os_log_t HPlusLog(void) {
 
 #define HPlusLogDebug(fmt, ...)   os_log_debug(HPlusLog(), fmt, ##__VA_ARGS__)
 #define HPlusLogInfo(fmt, ...)    os_log_info(HPlusLog(), fmt, ##__VA_ARGS__)
-#define HPlusLogWarning(fmt, ...) os_log_warning(HPlusLog(), fmt, ##__VA_ARGS__)
+#define HPlusLogWarning(fmt, ...) os_log_with_type(HPlusLog(), OS_LOG_TYPE_DEFAULT, fmt, ##__VA_ARGS__)
 #define HPlusLogError(fmt, ...)   os_log_error(HPlusLog(), fmt, ##__VA_ARGS__)
 
 // ============================================================
@@ -1218,8 +1218,9 @@ static os_unfair_lock _settingsLock = OS_UNFAIR_LOCK_INIT;
 
         UIViewController *visibleChild = nil;
 
+        // تم تصحيح children إلى childViewControllers هنا:
         for (UIViewController *child in
-             [current.children reverseObjectEnumerator]) {
+             [current.childViewControllers reverseObjectEnumerator]) {
 
             if (child.viewIfLoaded.window &&
                 !child.viewIfLoaded.hidden) {
