@@ -95,6 +95,7 @@ static CGRect HPlusSanitizeRect(CGRect rect) {
     return rect;
 }
 
+static NSString *HPlusSafeString(NSString *value) __attribute__((unused));
 static NSString *HPlusSafeString(NSString *value) {
     if (![value isKindOfClass:[NSString class]]) {
         return nil;
@@ -125,6 +126,7 @@ static NSString *HPlusClassName(Class cls) {
 // Scene Helpers
 // ============================================================
 
+static UIWindowScene *HPlusWindowSceneForWindow(UIWindow *window) __attribute__((unused));
 static UIWindowScene *HPlusWindowSceneForWindow(UIWindow *window) {
     if (!window) {
         return nil;
@@ -1218,7 +1220,6 @@ static os_unfair_lock _settingsLock = OS_UNFAIR_LOCK_INIT;
 
         UIViewController *visibleChild = nil;
 
-        // تم تصحيح children إلى childViewControllers هنا:
         for (UIViewController *child in
              [current.childViewControllers reverseObjectEnumerator]) {
 
@@ -1823,7 +1824,6 @@ static os_unfair_lock _settingsLock = OS_UNFAIR_LOCK_INIT;
         return nil;
     }
 
-    // Do not expose query parameters or fragments.
     components.query = nil;
     components.fragment = nil;
 
