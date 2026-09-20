@@ -3,7 +3,8 @@
 #import <objc/runtime.h>
 #import <os/log.h>
 #import "Headers.h"
- 
+
+// مفتاح فريد للـ Associated Object
 static char kHPlusGestureKey;
 
 @interface HPlusDebugHelper : NSObject
@@ -19,6 +20,8 @@ static char kHPlusGestureKey;
 - (NSString *)getAdditionalInfoForView:(UIView *)view;
 - (NSString *)extractIdentifierFromView:(UIView *)view;
 - (BOOL)shouldIgnoreView:(UIView *)view;
+- (BOOL)isGeneralOrIgnoredIdentifier:(NSString *)identifier;
+- (NSString *)findDeepChildIdentifierInView:(UIView *)view depth:(int)currentDepth;
 @end
 
 %hook UIWindow
@@ -220,7 +223,7 @@ static char kHPlusGestureKey;
         if ([val isKindOfClass:[NSString class]] && [val length] > 0) return val;
     }
     
-    // فحص الأبناء لاستخراج النص الداخلي إن وجد
+    // البحث التراجعي في الأبناء لاستخراج النص الداخلي إن وجد
     for (UIView *subview in view.subviews) {
         NSString *subText = [self extractTextFromView:subview];
         if (subText.length > 0) return subText;
@@ -254,19 +257,20 @@ static char kHPlusGestureKey;
     return nil;
 }
 
-// دالة مساعدة للتحقق مما إذا كان المعرف عاماً وغير مرغوب فيه
+// قائمة شاملة بالمعرفات العامة التي يتم تجاهلها لتفادي عرضها
 - (BOOL)isGeneralOrIgnoredIdentifier:(NSString *)identifier {
     if (identifier.length == 0) return YES;
     NSArray *ignoredIDs = @[
         @"id.reel_overlay",
-        @"id.elements.list_item"
+        @"id.elements.list_item",
+        @"id.app.view"
     ];
     return [ignoredIDs containsObject:identifier];
 }
 
-// البحث العميق في الأبناء (Subviews) للوصول للمعرف الفرعي الحقيقي للزر
+// البحث العميق في الأبناء للوصول للمعرف الفرعي الحقيقي للزر حصرياً
 - (NSString *)findDeepChildIdentifierInView:(UIView *)view depth:(int)currentDepth {
-    if (!view || currentDepth > 4) return nil;
+    if (!view || currentDepth > 6) return nil;
     
     NSString *uID = view.accessibilityIdentifier;
     if (uID.length > 0 && ![self isGeneralOrIgnoredIdentifier:uID]) {
@@ -284,11 +288,13 @@ static char kHPlusGestureKey;
 - (NSString *)extractIdentifierFromView:(UIView *)view {
     if (!view) return nil;
     
+    // 1. البحث للأمام في الأبناء أولاً (لإيجاد المعرف الدقيق للزر الداخلي)
     NSString *childID = [self findDeepChildIdentifierInView:view depth:0];
     if (childID.length > 0) {
         return childID;
     }
     
+    // 2. البحث صعوداً في الآباء مع تجاهل المعرفات العامة تماماً
     UIView *currentV = view;
     while (currentV != nil) {
         NSString *currID = currentV.accessibilityIdentifier;
@@ -298,7 +304,7 @@ static char kHPlusGestureKey;
         currentV = currentV.superview;
     }
     
-    return view.accessibilityIdentifier.length > 0 ? view.accessibilityIdentifier : nil;
+    return nil;
 }
 
 - (NSString *)getAccessibilityInfoForView:(UIView *)view {
