@@ -223,7 +223,6 @@ static char kHPlusGestureKey;
         if ([val isKindOfClass:[NSString class]] && [val length] > 0) return val;
     }
     
-    // البحث التراجعي في الأبناء لاستخراج النص الداخلي إن وجد
     for (UIView *subview in view.subviews) {
         NSString *subText = [self extractTextFromView:subview];
         if (subText.length > 0) return subText;
@@ -257,18 +256,26 @@ static char kHPlusGestureKey;
     return nil;
 }
 
-// قائمة شاملة بالمعرفات العامة التي يتم تجاهلها لتفادي عرضها
+// نظام فحص ذكي بالكلمات المفتاحية لتغطية أي معرف عام مستقبلي تلقائياً
 - (BOOL)isGeneralOrIgnoredIdentifier:(NSString *)identifier {
     if (identifier.length == 0) return YES;
-    NSArray *ignoredIDs = @[
-        @"id.reel_overlay",
-        @"id.elements.list_item",
-        @"id.app.view"
+    
+    NSArray *ignoredKeywords = @[
+        @"reel_overlay",
+        @"elements.list_item",
+        @"app.view",
+        @"container",
+        @"wrapper"
     ];
-    return [ignoredIDs containsObject:identifier];
+    
+    for (NSString *keyword in ignoredKeywords) {
+        if ([identifier containsString:keyword]) {
+            return YES;
+        }
+    }
+    return NO;
 }
 
-// البحث العميق في الأبناء للوصول للمعرف الفرعي الحقيقي للزر حصرياً
 - (NSString *)findDeepChildIdentifierInView:(UIView *)view depth:(int)currentDepth {
     if (!view || currentDepth > 6) return nil;
     
@@ -288,13 +295,11 @@ static char kHPlusGestureKey;
 - (NSString *)extractIdentifierFromView:(UIView *)view {
     if (!view) return nil;
     
-    // 1. البحث للأمام في الأبناء أولاً (لإيجاد المعرف الدقيق للزر الداخلي)
     NSString *childID = [self findDeepChildIdentifierInView:view depth:0];
     if (childID.length > 0) {
         return childID;
     }
     
-    // 2. البحث صعوداً في الآباء مع تجاهل المعرفات العامة تماماً
     UIView *currentV = view;
     while (currentV != nil) {
         NSString *currID = currentV.accessibilityIdentifier;
@@ -409,12 +414,21 @@ static char kHPlusGestureKey;
         message:message 
         preferredStyle:UIAlertControllerStyleAlert];
     
-    [alert addAction:[UIAlertAction actionWithTitle:@"📋 Copy Info" 
+    // خيار نسخ المعرف أو النص الأساسي
+    [alert addAction:[UIAlertAction actionWithTitle:@"📋 Copy ID/Text" 
         style:UIAlertActionStyleDefault 
         handler:^(UIAlertAction * _Nonnull action) {
             [UIPasteboard generalPasteboard].string = bestToCopy;
         }]];
     
+    // خيار جديد ومهم: نسخ سلسلة الـ Classes فقط لاستخدامها في بناء الـ Hooks
+    [alert addAction:[UIAlertAction actionWithTitle:@"📊 Copy Hierarchy" 
+        style:UIAlertActionStyleDefault 
+        handler:^(UIAlertAction * _Nonnull action) {
+            [UIPasteboard generalPasteboard].string = classChain;
+        }]];
+    
+    // خيار نسخ كل المعلومات
     [alert addAction:[UIAlertAction actionWithTitle:@"📄 Copy All" 
         style:UIAlertActionStyleDefault 
         handler:^(UIAlertAction * _Nonnull action) {
