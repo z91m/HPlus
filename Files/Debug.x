@@ -4,7 +4,7 @@
 #import <os/log.h>
 #import "Headers.h"
 
-static char kHPlusGestureKey;
+static char HPlusGestureKey;
 
 @interface HPlusDebugHelper : NSObject
 + (instancetype)sharedInstance;
@@ -85,7 +85,7 @@ static char kHPlusGestureKey;
         return;
     }
     
-    id existingGesture = objc_getAssociatedObject(window, &kHPlusGestureKey);
+    id existingGesture = objc_getAssociatedObject(window, &HPlusGestureKey);
     if (existingGesture) return;
     
     UILongPressGestureRecognizer *longPress = 
@@ -98,7 +98,7 @@ static char kHPlusGestureKey;
     longPress.delaysTouchesEnded = NO;
     [window addGestureRecognizer:longPress];
     
-    objc_setAssociatedObject(window, &kHPlusGestureKey, longPress, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(window, &HPlusGestureKey, longPress, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (UIViewController *)topViewController {
