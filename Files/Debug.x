@@ -4,7 +4,6 @@
 #import <os/log.h>
 #import "Headers.h"
 
-// مفتاح فريد للـ Associated Object
 static char kHPlusGestureKey;
 
 @interface HPlusDebugHelper : NSObject
