@@ -409,7 +409,7 @@ static char kHPlusGestureKey;
                            NSStringFromClass([targetView class]));
     
     UIAlertController *alert = [UIAlertController 
-        alertControllerWithTitle:@"🔍 HPlus Inspector" 
+        alertControllerWithTitle:@"🔍 Hamad Inspector" 
         message:message 
         preferredStyle:UIAlertControllerStyleAlert];
     
