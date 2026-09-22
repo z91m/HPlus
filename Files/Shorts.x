@@ -164,8 +164,7 @@ static void HPlusAddShortsButtons(UIView *self, NSString *iden) {
         @"id.reels_empty_state_label": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reels_vertical_navigation_edu_overlay_animation_view": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reels_vertical_navigation_edu_overlay_swipe_up_label": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"id.reels_watch_ghost_loader": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"eml.shorts-disclosures": @(IS_ENABLED(RemoveShortsSoundButton))
+        @"id.reels_watch_ghost_loader": @(IS_ENABLED(RemoveShortsSoundButton))
     };
     for (NSString *target in possibleIds) {
         if ([iden containsString:target] && [possibleIds[target] boolValue]) {
