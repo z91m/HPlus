@@ -154,10 +154,18 @@ static void HPlusAddShortsButtons(UIView *self, NSString *iden) {
         @"decorated-avatar-id": @(IS_ENABLED(RemoveShortsChannelName)),
         @"eml.avatar_stack": @(IS_ENABLED(RemoveShortsChannelName)),
         @"eml.reel_sponsor_button": @(IS_ENABLED(RemoveShortsChannelName)),
-        @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
+        @"id.playlist.shorts_creation.button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
         @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
-        @"id.app.view": @(IS_ENABLED(RemoveShortsSoundButton))
+        @"eml.ad_badge": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"eml.badge": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"eml.shorts-disclosures": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_dismissal_toast": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_empty_state_label": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_vertical_navigation_edu_overlay_animation_view": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_vertical_navigation_edu_overlay_swipe_up_label": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_watch_ghost_loader": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"eml.shorts-disclosures": @(IS_ENABLED(RemoveShortsSoundButton))
     };
     for (NSString *target in possibleIds) {
         if ([iden containsString:target] && [possibleIds[target] boolValue]) {
