@@ -153,6 +153,7 @@ static void HPlusAddShortsButtons(UIView *self, NSString *iden) {
         @"eml.reel_channel_bar.channel_name": @(IS_ENABLED(RemoveShortsChannelName)),
         @"decorated-avatar-id": @(IS_ENABLED(RemoveShortsChannelName)),
         @"eml.avatar_stack": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"eml.reel_sponsor_button": @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
         @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
