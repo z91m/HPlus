@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build HPlus & Extract Dylib
+    name: Build HPlus & Package Everything
     runs-on: macos-latest
     permissions:
       contents: write
@@ -88,30 +88,38 @@ jobs:
           VERSION=$(grep '^Version:' control | cut -d ' ' -f2)
           echo "HPLUS_VERSION=$VERSION" >> $GITHUB_ENV
           
-          # البناء واستخراج الـ dylib لمعمارية arm64 (Rootless) فقط
+          # البناء واستخراج الـ dylib لمعمارية arm64 (Rootless)
           make clean package DEBUG=0 FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           DEB_FILE=$(ls packages/*.deb | head -n 1)
           mkdir -p temp_extracted
           dpkg-deb -x "$DEB_FILE" temp_extracted
           FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
+          
+          # إنشاء مجلد وسيط لترتيب الملفات داخله قبل ضغطها
+          mkdir -p ${{ github.workspace }}/final_package
+          
           if [ -n "$FOUND_DYLIB" ]; then
-            cp "$FOUND_DYLIB" "${{ github.workspace }}/HPlus.dylib"
+            # نسخ ملف الـ dylib وتسميته HPlus.dylib مباشرة بالمجلد الوسيط
+            cp "$FOUND_DYLIB" "${{ github.workspace }}/final_package/HPlus.dylib"
           fi
           rm -rf temp_extracted
           make clean
 
           cd ..
           
-          # ضغط ملفات المشروع مباشرة إلى المجلد الرئيسي
-          zip -r "${{ github.workspace }}/HPlus_Source_and_Project_${VERSION}.zip" HPlus -x "HPlus/.git/*"
+          # ضغط ملفات المشروع (بدون مجلدات الـ git) وحفظها كملف مضغوط داخل المجلد الوسيط
+          zip -r "${{ github.workspace }}/final_package/HPlus_Source_Code_${VERSION}.zip" HPlus -x "HPlus/.git/*"
+
+          # ضغط المجلد الوسيط بالكامل ليكون الملف النهائي الذي يحوي الملفين المطلوبين فقط
+          cd ${{ github.workspace }}/final_package
+          zip -r "${{ github.workspace }}/HPlus_v${VERSION}_Bundle.zip" *
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-         name: HPlus v${{ env.HPLUS_VERSION }} Package & Dylib
+         name: HPlus v${{ env.HPLUS_VERSION }} Bundle
          path: |
-           ${{ github.workspace }}/dylib.hplus_*.dylib
-           ${{ github.workspace }}/HPlus_Source_and_Project_*.zip
+           ${{ github.workspace }}/HPlus_v*_Bundle.zip
          if-no-files-found: error
          overwrite: true
 
@@ -121,6 +129,5 @@ jobs:
           tag_name: v${{ env.HPLUS_VERSION }}
           name: v${{ env.HPLUS_VERSION }} 
           files: |
-            dylib.hplus_*.dylib
-            HPlus_Source_and_Project_*.zip
+            HPlus_v*_Bundle.zip
           draft: true
