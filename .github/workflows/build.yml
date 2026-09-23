@@ -105,7 +105,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-         name: HPlus v${{ env.HPLUS_VERSION }} Files
+         name: HPlus v${{ env.HPLUS_VERSION }}
          path: |
            ${{ github.workspace }}/HPlus.dylib
            ${{ github.workspace }}/HPlus_Source_Code_*.zip
