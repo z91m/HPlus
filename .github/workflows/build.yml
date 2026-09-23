@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build HPlus & Package Everything
+    name: Build HPlus & Upload Separate Files
     runs-on: macos-latest
     permissions:
       contents: write
@@ -81,21 +81,18 @@ jobs:
       - name: Fix Theos od broken pipe issue
         run: sed -i '' 's/od -c "$i" | head/od -c "$i" 2>\/dev\/null | head/g' $THEOS/bin/convert_xml_plist.sh || true
 
-      - name: Build and Extract Dylib
+      - name: Build and Extract Files
         shell: bash
         run: |
           # 1. استخراج رقم الإصدار
           VERSION=$(grep '^Version:' HPlus/control | cut -d ' ' -f2)
           echo "HPLUS_VERSION=$VERSION" >> $GITHUB_ENV
-          
-          # 2. إنشاء مجلد نظيف خاص بالملفات النهائية
-          mkdir -p ${{ github.workspace }}/final_package
 
-          # 3. ضغط ملفات المشروع كملف ZIP ووضعها مباشرة داخل المجلد النهائي
+          # 2. ضغط ملفات المشروع كملف ZIP مستقل مباشرة في المجلد الرئيسي للعمل
           cd ${{ github.workspace }}
-          zip -r "final_package/HPlus_Source_Code_${VERSION}.zip" HPlus -x "HPlus/.git/*" "HPlus/.theos/*" "HPlus/packages/*"
+          zip -r "HPlus_Source_Code_${VERSION}.zip" HPlus -x "HPlus/.git/*" "HPlus/.theos/*" "HPlus/packages/*"
 
-          # 4. بناء الأداة واستخراج الـ dylib
+          # 3. الانتقال لمجلد HPlus للبناء واستخراج الـ dylib
           cd HPlus
           make clean package DEBUG=0 FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           DEB_FILE=$(ls packages/*.deb | head -n 1)
@@ -104,22 +101,19 @@ jobs:
           FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
           
           if [ -n "$FOUND_DYLIB" ]; then
-            # نسخ ملف الـ dylib باسم HPlus.dylib مباشرة للمجلد النهائي
-            cp "$FOUND_DYLIB" "${{ github.workspace }}/final_package/HPlus.dylib"
+            # نسخ ملف الـ dylib باسم HPlus.dylib مباشرة إلى المجلد الرئيسي للعمل
+            cp "$FOUND_DYLIB" "${{ github.workspace }}/HPlus.dylib"
           fi
           rm -rf temp_extracted
           make clean
 
-          # 5. الدخول للمجلد النهائي وضغط الملفين معاً بطريقة مسار نسبي نظيفة تماماً تمنع تداخل الملفات المضغوطة
-          cd ${{ github.workspace }}/final_package
-          zip -j "${{ github.workspace }}/HPlus_v${VERSION}_Bundle.zip" HPlus.dylib HPlus_Source_Code_${VERSION}.zip
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-         name: HPlus v${{ env.HPLUS_VERSION }} Bundle
+         name: HPlus v${{ env.HPLUS_VERSION }} Files
          path: |
-           ${{ github.workspace }}/HPlus_v*_Bundle.zip
+           ${{ github.workspace }}/HPlus.dylib
+           ${{ github.workspace }}/HPlus_Source_Code_*.zip
          if-no-files-found: error
          overwrite: true
 
@@ -129,5 +123,6 @@ jobs:
           tag_name: v${{ env.HPLUS_VERSION }}
           name: v${{ env.HPLUS_VERSION }} 
           files: |
-            HPlus_v*_Bundle.zip
+            HPlus.dylib
+            HPlus_Source_Code_*.zip
           draft: true
