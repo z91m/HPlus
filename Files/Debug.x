@@ -19,7 +19,6 @@ static char HPlusGestureKey;
 - (NSString *)getAdditionalInfoForView:(UIView *)view;
 - (NSString *)extractIdentifierFromView:(UIView *)view;
 - (BOOL)shouldIgnoreView:(UIView *)view;
-- (BOOL)isGeneralOrIgnoredIdentifier:(NSString *)identifier;
 - (NSString *)findDeepChildIdentifierInView:(UIView *)view depth:(int)currentDepth;
 @end
 
@@ -255,31 +254,12 @@ static char HPlusGestureKey;
     return nil;
 }
 
-// نظام فحص ذكي بالكلمات المفتاحية لتغطية أي معرف عام مستقبلي تلقائياً
-- (BOOL)isGeneralOrIgnoredIdentifier:(NSString *)identifier {
-    if (identifier.length == 0) return YES;
-    
-    NSArray *ignoredKeywords = @[
-        @"reel_overlay",
-        @"elements.list_item",
-        @"app.view",
-        @"container",
-        @"wrapper"
-    ];
-    
-    for (NSString *keyword in ignoredKeywords) {
-        if ([identifier containsString:keyword]) {
-            return YES;
-        }
-    }
-    return NO;
-}
-
+// تم حذف دالة الفحص (isGeneralOrIgnoredIdentifier) نهائياً واستخراج المعرف مباشرة
 - (NSString *)findDeepChildIdentifierInView:(UIView *)view depth:(int)currentDepth {
     if (!view || currentDepth > 6) return nil;
     
     NSString *uID = view.accessibilityIdentifier;
-    if (uID.length > 0 && ![self isGeneralOrIgnoredIdentifier:uID]) {
+    if (uID.length > 0) {
         return uID;
     }
     
@@ -302,7 +282,7 @@ static char HPlusGestureKey;
     UIView *currentV = view;
     while (currentV != nil) {
         NSString *currID = currentV.accessibilityIdentifier;
-        if (currID.length > 0 && ![self isGeneralOrIgnoredIdentifier:currID]) {
+        if (currID.length > 0) {
             return currID;
         }
         currentV = currentV.superview;
@@ -413,21 +393,18 @@ static char HPlusGestureKey;
         message:message 
         preferredStyle:UIAlertControllerStyleAlert];
     
-    // خيار نسخ المعرف أو النص الأساسي
     [alert addAction:[UIAlertAction actionWithTitle:@"📋 Copy ID/Text" 
         style:UIAlertActionStyleDefault 
         handler:^(UIAlertAction * _Nonnull action) {
             [UIPasteboard generalPasteboard].string = bestToCopy;
         }]];
     
-    // خيار جديد ومهم: نسخ سلسلة الـ Classes فقط لاستخدامها في بناء الـ Hooks
     [alert addAction:[UIAlertAction actionWithTitle:@"📊 Copy Hierarchy" 
         style:UIAlertActionStyleDefault 
         handler:^(UIAlertAction * _Nonnull action) {
             [UIPasteboard generalPasteboard].string = classChain;
         }]];
     
-    // خيار نسخ كل المعلومات
     [alert addAction:[UIAlertAction actionWithTitle:@"📄 Copy All" 
         style:UIAlertActionStyleDefault 
         handler:^(UIAlertAction * _Nonnull action) {
