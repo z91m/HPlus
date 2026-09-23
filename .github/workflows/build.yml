@@ -84,17 +84,18 @@ jobs:
       - name: Build and Extract Dylib
         shell: bash
         run: |
-          # 1. استخراج رقم الإصدار من ملف control قبل الدخول للمجلدات
+          # 1. استخراج رقم الإصدار
           VERSION=$(grep '^Version:' HPlus/control | cut -d ' ' -f2)
           echo "HPLUS_VERSION=$VERSION" >> $GITHUB_ENV
           
           # 2. إنشاء مجلد نظيف خاص بالملفات النهائية
           mkdir -p ${{ github.workspace }}/final_package
 
-          # 3. ضغط ملفات المشروع (HPlus) مباشرة كملف ZIP ووضعها داخل المجلد النهائي
-          zip -r "${{ github.workspace }}/final_package/HPlus_Source_Code_${VERSION}.zip" HPlus -x "HPlus/.git/*" "HPlus/.theos/*" "HPlus/packages/*"
+          # 3. ضغط ملفات المشروع كملف ZIP ووضعها مباشرة داخل المجلد النهائي
+          cd ${{ github.workspace }}
+          zip -r "final_package/HPlus_Source_Code_${VERSION}.zip" HPlus -x "HPlus/.git/*" "HPlus/.theos/*" "HPlus/packages/*"
 
-          # 4. الانتقال إلى مجلد HPlus لبناء الأداة واستخراج الـ dylib
+          # 4. بناء الأداة واستخراج الـ dylib
           cd HPlus
           make clean package DEBUG=0 FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           DEB_FILE=$(ls packages/*.deb | head -n 1)
@@ -108,9 +109,8 @@ jobs:
           fi
           rm -rf temp_extracted
           make clean
-          cd ..
 
-          # 5. ضغط محتويات المجلد النهائي فقط (وليس المجلد نفسه) لإنتاج ملف ZIP واحد يضم الملفين المطلوبين صافية
+          # 5. الدخول للمجلد النهائي وضغط الملفين معاً بطريقة مسار نسبي نظيفة تماماً تمنع تداخل الملفات المضغوطة
           cd ${{ github.workspace }}/final_package
           zip -j "${{ github.workspace }}/HPlus_v${VERSION}_Bundle.zip" HPlus.dylib HPlus_Source_Code_${VERSION}.zip
 
