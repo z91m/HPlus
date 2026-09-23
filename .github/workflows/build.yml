@@ -84,35 +84,35 @@ jobs:
       - name: Build and Extract Dylib
         shell: bash
         run: |
-          cd HPlus
-          VERSION=$(grep '^Version:' control | cut -d ' ' -f2)
+          # 1. استخراج رقم الإصدار من ملف control قبل الدخول للمجلدات
+          VERSION=$(grep '^Version:' HPlus/control | cut -d ' ' -f2)
           echo "HPLUS_VERSION=$VERSION" >> $GITHUB_ENV
           
-          # البناء واستخراج الـ dylib لمعمارية arm64 (Rootless)
+          # 2. إنشاء مجلد نظيف خاص بالملفات النهائية
+          mkdir -p ${{ github.workspace }}/final_package
+
+          # 3. ضغط ملفات المشروع (HPlus) مباشرة كملف ZIP ووضعها داخل المجلد النهائي
+          zip -r "${{ github.workspace }}/final_package/HPlus_Source_Code_${VERSION}.zip" HPlus -x "HPlus/.git/*" "HPlus/.theos/*" "HPlus/packages/*"
+
+          # 4. الانتقال إلى مجلد HPlus لبناء الأداة واستخراج الـ dylib
+          cd HPlus
           make clean package DEBUG=0 FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           DEB_FILE=$(ls packages/*.deb | head -n 1)
           mkdir -p temp_extracted
           dpkg-deb -x "$DEB_FILE" temp_extracted
           FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
           
-          # إنشاء مجلد وسيط لترتيب الملفات داخله قبل ضغطها
-          mkdir -p ${{ github.workspace }}/final_package
-          
           if [ -n "$FOUND_DYLIB" ]; then
-            # نسخ ملف الـ dylib وتسميته HPlus.dylib مباشرة بالمجلد الوسيط
+            # نسخ ملف الـ dylib باسم HPlus.dylib مباشرة للمجلد النهائي
             cp "$FOUND_DYLIB" "${{ github.workspace }}/final_package/HPlus.dylib"
           fi
           rm -rf temp_extracted
           make clean
-
           cd ..
-          
-          # ضغط ملفات المشروع (بدون مجلدات الـ git) وحفظها كملف مضغوط داخل المجلد الوسيط
-          zip -r "${{ github.workspace }}/final_package/HPlus_Source_Code_${VERSION}.zip" HPlus -x "HPlus/.git/*"
 
-          # ضغط المجلد الوسيط بالكامل ليكون الملف النهائي الذي يحوي الملفين المطلوبين فقط
+          # 5. ضغط محتويات المجلد النهائي فقط (وليس المجلد نفسه) لإنتاج ملف ZIP واحد يضم الملفين المطلوبين صافية
           cd ${{ github.workspace }}/final_package
-          zip -r "${{ github.workspace }}/HPlus_v${VERSION}_Bundle.zip" *
+          zip -j "${{ github.workspace }}/HPlus_v${VERSION}_Bundle.zip" HPlus.dylib HPlus_Source_Code_${VERSION}.zip
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
