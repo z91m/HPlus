@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build HPlus & Extract Dylibs
+    name: Build HPlus & Extract Dylib
     runs-on: macos-latest
     permissions:
       contents: write
@@ -81,45 +81,21 @@ jobs:
       - name: Fix Theos od broken pipe issue
         run: sed -i '' 's/od -c "$i" | head/od -c "$i" 2>\/dev\/null | head/g' $THEOS/bin/convert_xml_plist.sh || true
 
-      - name: Build and Extract Dylibs
+      - name: Build and Extract Dylib
         shell: bash
         run: |
           cd HPlus
           VERSION=$(grep '^Version:' control | cut -d ' ' -f2)
           echo "HPLUS_VERSION=$VERSION" >> $GITHUB_ENV
           
-          # البناء واستخراج الـ dylib الأول (arm64e)
-          make clean package DEBUG=0 FINALPACKAGE=1
-          DEB_FILE=$(ls packages/*.deb | head -n 1)
-          mkdir -p temp_extracted
-          dpkg-deb -x "$DEB_FILE" temp_extracted
-          FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
-          if [ -n "$FOUND_DYLIB" ]; then
-            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.hplus_${VERSION}_iphoneos-arm64e.dylib"
-          fi
-          rm -rf temp_extracted
-          make clean
-
-          # البناء واستخراج الـ dylib الثاني (rootless - arm64)
+          # البناء واستخراج الـ dylib لمعمارية arm64 (Rootless) فقط
           make clean package DEBUG=0 FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           DEB_FILE=$(ls packages/*.deb | head -n 1)
           mkdir -p temp_extracted
           dpkg-deb -x "$DEB_FILE" temp_extracted
           FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
           if [ -n "$FOUND_DYLIB" ]; then
-            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.hplus_${VERSION}_iphoneos-arm64.dylib"
-          fi
-          rm -rf temp_extracted
-          make clean
-
-          # البناء واستخراج الـ dylib الثالث (roothide - arm)
-          make clean package DEBUG=0 FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=roothide
-          DEB_FILE=$(ls packages/*.deb | head -n 1)
-          mkdir -p temp_extracted
-          dpkg-deb -x "$DEB_FILE" temp_extracted
-          FOUND_DYLIB=$(find temp_extracted -name "*.dylib" | head -n 1)
-          if [ -n "$FOUND_DYLIB" ]; then
-            cp "$FOUND_DYLIB" "${{ github.workspace }}/dylib.hplus_${VERSION}_iphoneos-arm.dylib"
+            cp "$FOUND_DYLIB" "${{ github.workspace }}/HPlus.dylib"
           fi
           rm -rf temp_extracted
           make clean
@@ -132,7 +108,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-         name: HPlus v${{ env.HPLUS_VERSION }} Package & Dylibs
+         name: HPlus v${{ env.HPLUS_VERSION }} Package & Dylib
          path: |
            ${{ github.workspace }}/dylib.hplus_*.dylib
            ${{ github.workspace }}/HPlus_Source_and_Project_*.zip
