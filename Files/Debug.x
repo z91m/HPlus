@@ -2,1909 +2,2508 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 #import <QuartzCore/QuartzCore.h>
-#import “Headers.h”
+#import "Headers.h"
 
 static char HPlusGestureKey;
 
 #ifndef HPlusInspector
-#define HPlusInspector @“HPlusInspector”
+#define HPlusInspector @"HPlusInspector"
 #endif
 
 @interface HPlusDebugHelper : NSObject
 
-* (instancetype)sharedInstance;
++ (instancetype)sharedInstance;
 
-* (void)setupGestureForWindow:(UIWindow *)window;
-* (void)removeInspectorGestures;
-* (void)refreshInspector;
-* (void)handleLongPress:(UILongPressGestureRecognizer *)sender;
-* (BOOL)isInspectorEnabled;
-* (BOOL)shouldIgnoreView:(UIView *)view;
-* (BOOL)isInteractiveView:(UIView *)view;
-* (UIWindow *)activeWindow;
-* (UIViewController *)topViewController;
-* (NSString *)safeString:(id)value;
-* (NSString *)classNameForObject:(id)object;
-* (NSString *)getViewID:(UIView *)view;
-* (NSString *)getViewLabel:(UIView *)view;
-* (NSString *)getViewText:(UIView *)view;
-* (NSString *)getTraitsString:(UIView *)view;
-* (NSString *)getFrameInfoForView:(UIView *)view;
-* (NSString *)getViewControllerInfo:(UIView *)view;
-* (NSString *)getWindowInfo:(UIView *)view;
-* (NSString *)getLayerInfo:(UIView *)view;
-* (NSString *)getSuperviewChain:(UIView *)view;
-* (NSString *)getSubviewsInfo:(UIView *)view;
-* (NSString *)getSiblingInfo:(UIView *)view;
-* (NSString *)getRuntimeInfoForObject:(id)object;
-* (NSString *)getSuperclassChainForClass:(Class)cls;
-* (NSString *)getProtocolsForClass:(Class)cls;
-* (NSString *)getPropertiesForClass:(Class)cls;
-* (NSString *)getIvarsForClass:(Class)cls;
-* (NSString *)getMethodsForClass:(Class)cls;
-* (NSString *)getGestureInfo:(UIView *)view;
-* (NSString *)getControlInfo:(UIView *)view;
-* (NSString *)getYouTubeInfoForObject:(id)object;
-* (NSString *)buildViewTreeFromView:(UIView *)view;
-* (NSString *)buildRecursiveSubtree:(UIView *)view
-    depth:(NSInteger)depth
-    maxDepth:(NSInteger)maxDepth;
-* (NSString *)getDeepAccessibilityInfo:(UIView *)view;
-* (NSString *)getAccessibilityPath:(UIView *)view;
-* (BOOL)isMeaningfulAccessibilityView:(UIView *)view;
-* (UIView *)findBestAccessibilityViewFromView:(UIView *)view;
-* (void)collectAccessibilityViews:(UIView *)view
-    result:(NSMutableArray *)result
-    maxDepth:(NSInteger)maxDepth;
-* (NSString *)buildFullReportForView:(UIView *)view
-    hitTarget:(UIView *)hitTarget;
+- (void)setupGestureForWindow:(UIWindow *)window;
+- (void)removeInspectorGestures;
+- (void)refreshInspector;
+- (void)handleLongPress:(UILongPressGestureRecognizer *)sender;
+
+- (BOOL)isInspectorEnabled;
+- (BOOL)shouldIgnoreView:(UIView *)view;
+- (BOOL)isInteractiveView:(UIView *)view;
+
+- (UIWindow *)activeWindow;
+- (UIViewController *)topViewController;
+
+- (NSString *)safeString:(id)value;
+- (NSString *)classNameForObject:(id)object;
+
+- (NSString *)getViewID:(UIView *)view;
+- (NSString *)getViewLabel:(UIView *)view;
+- (NSString *)getViewText:(UIView *)view;
+- (NSString *)getTraitsString:(UIView *)view;
+
+- (NSString *)getFrameInfoForView:(UIView *)view;
+- (NSString *)getViewControllerInfo:(UIView *)view;
+- (NSString *)getWindowInfo:(UIView *)view;
+- (NSString *)getLayerInfo:(UIView *)view;
+
+- (NSString *)getSuperviewChain:(UIView *)view;
+- (NSString *)getSubviewsInfo:(UIView *)view;
+- (NSString *)getSiblingInfo:(UIView *)view;
+
+- (NSString *)getRuntimeInfoForObject:(id)object;
+- (NSString *)getSuperclassChainForClass:(Class)cls;
+- (NSString *)getProtocolsForClass:(Class)cls;
+- (NSString *)getPropertiesForClass:(Class)cls;
+- (NSString *)getIvarsForClass:(Class)cls;
+- (NSString *)getMethodsForClass:(Class)cls;
+
+- (NSString *)getGestureInfo:(UIView *)view;
+- (NSString *)getControlInfo:(UIView *)view;
+- (NSString *)getYouTubeInfoForObject:(id)object;
+
+- (NSString *)buildViewTreeFromView:(UIView *)view;
+- (NSString *)buildRecursiveSubtree:(UIView *)view
+                              depth:(NSInteger)depth
+                           maxDepth:(NSInteger)maxDepth;
+
+- (NSString *)getDeepAccessibilityInfo:(UIView *)view;
+- (NSString *)getAccessibilityPath:(UIView *)view;
+
+- (BOOL)isMeaningfulAccessibilityView:(UIView *)view;
+- (UIView *)findBestAccessibilityViewFromView:(UIView *)view;
+
+- (void)collectAccessibilityViews:(UIView *)view
+                           result:(NSMutableArray *)result
+                          maxDepth:(NSInteger)maxDepth;
+
+- (NSString *)buildFullReportForView:(UIView *)view
+                           hitTarget:(UIView *)hitTarget;
 
 @end
 
-%hook UIWindow
-
-* (void)makeKeyAndVisible
-    {
-    %orig;
-    dispatch_async(dispatch_get_main_queue(), ^{
-    [[HPlusDebugHelper sharedInstance]
-    setupGestureForWindow:self];
-    });
-    }
-* (void)becomeKeyWindow
-    {
-    %orig;
-    dispatch_after(
-    dispatch_time(DISPATCH_TIME_NOW,
-    (int64_t)(0.05 * NSEC_PER_SEC)),
-    dispatch_get_main_queue(),
-    ^{
-    [[HPlusDebugHelper sharedInstance]
-    setupGestureForWindow:self];
-    }
-    );
-    }
-
-%end
 
 @implementation HPlusDebugHelper
 
-* (instancetype)sharedInstance
-    {
+#pragma mark - Singleton
+
++ (instancetype)sharedInstance
+{
     static HPlusDebugHelper *sharedInstance = nil;
     static dispatch_once_t onceToken;
+
     dispatch_once(&onceToken, ^{
-    sharedInstance = [[HPlusDebugHelper alloc] init];
+        sharedInstance = [[HPlusDebugHelper alloc] init];
     });
+
     return sharedInstance;
-    }
+}
 
-* (BOOL)isInspectorEnabled
-    {
+
+#pragma mark - Settings
+
+- (BOOL)isInspectorEnabled
+{
     return [[NSUserDefaults standardUserDefaults]
-    boolForKey:HPlusInspector];
-    }
-* (void)refreshInspector
-    {
+            boolForKey:HPlusInspector];
+}
+
+
+- (void)refreshInspector
+{
     dispatch_async(dispatch_get_main_queue(), ^{
+        if (![self isInspectorEnabled]) {
+            [self removeInspectorGestures];
+            return;
+        }
 
-  if (![self isInspectorEnabled]) {
-      [self removeInspectorGestures];
-      return;
-  }
-  if (@available(iOS 13.0, *)) {
-      for (UIScene *scene
-           in UIApplication.sharedApplication.connectedScenes) {
-          if (![scene isKindOfClass:[UIWindowScene class]]) {
-              continue;
-          }
-          UIWindowScene *windowScene =
-              (UIWindowScene *)scene;
-          for (UIWindow *window
-               in windowScene.windows) {
-              [self setupGestureForWindow:window];
-          }
-      }
-  } else {
+        if (@available(iOS 13.0, *)) {
+            for (UIScene *scene
+                 in UIApplication.sharedApplication.connectedScenes) {
 
+                if (![scene isKindOfClass:[UIWindowScene class]]) {
+                    continue;
+                }
+
+                UIWindowScene *windowScene =
+                    (UIWindowScene *)scene;
+
+                for (UIWindow *window in windowScene.windows) {
+                    [self setupGestureForWindow:window];
+                }
+            }
+        } else {
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored “-Wdeprecated-declarations”
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
+            for (UIWindow *window
+                 in UIApplication.sharedApplication.windows) {
+
+                [self setupGestureForWindow:window];
+            }
+
+#pragma clang diagnostic pop
+        }
+    });
+}
+
+
+#pragma mark - Window Notifications
+
+- (void)installWindowNotifications
+{
+    NSNotificationCenter *center =
+        [NSNotificationCenter defaultCenter];
+
+    [center addObserver:self
+               selector:@selector(windowDidBecomeKey:)
+                   name:UIWindowDidBecomeKeyNotification
+                 object:nil];
+
+    [center addObserver:self
+               selector:@selector(windowDidBecomeVisible:)
+                   name:UIWindowDidBecomeVisibleNotification
+                 object:nil];
+
+    [center addObserver:self
+               selector:@selector(applicationDidBecomeActive:)
+                   name:UIApplicationDidBecomeActiveNotification
+                 object:nil];
+}
+
+
+- (void)windowDidBecomeKey:(NSNotification *)notification
+{
+    UIWindow *window = notification.object;
+
+    if (![window isKindOfClass:[UIWindow class]]) {
+        return;
+    }
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self setupGestureForWindow:window];
+    });
+}
+
+
+- (void)windowDidBecomeVisible:(NSNotification *)notification
+{
+    UIWindow *window = notification.object;
+
+    if (![window isKindOfClass:[UIWindow class]]) {
+        return;
+    }
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self setupGestureForWindow:window];
+    });
+}
+
+
+- (void)applicationDidBecomeActive:(NSNotification *)notification
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self refreshInspector];
+    });
+}
+
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+
+#pragma mark - Remove Gestures
+
+- (void)removeInspectorGestures
+{
+    if (@available(iOS 13.0, *)) {
+        for (UIScene *scene
+             in UIApplication.sharedApplication.connectedScenes) {
+
+            if (![scene isKindOfClass:[UIWindowScene class]]) {
+                continue;
+            }
+
+            UIWindowScene *windowScene =
+                (UIWindowScene *)scene;
+
+            for (UIWindow *window in windowScene.windows) {
+
+                UILongPressGestureRecognizer *gesture =
+                    objc_getAssociatedObject(
+                        window,
+                        &HPlusGestureKey
+                    );
+
+                if (gesture) {
+                    [window removeGestureRecognizer:gesture];
+
+                    objc_setAssociatedObject(
+                        window,
+                        &HPlusGestureKey,
+                        nil,
+                        OBJC_ASSOCIATION_RETAIN_NONATOMIC
+                    );
+                }
+            }
+        }
+    } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
         for (UIWindow *window
              in UIApplication.sharedApplication.windows) {
-            [self setupGestureForWindow:window];
+
+            UILongPressGestureRecognizer *gesture =
+                objc_getAssociatedObject(
+                    window,
+                    &HPlusGestureKey
+                );
+
+            if (gesture) {
+                [window removeGestureRecognizer:gesture];
+
+                objc_setAssociatedObject(
+                    window,
+                    &HPlusGestureKey,
+                    nil,
+                    OBJC_ASSOCIATION_RETAIN_NONATOMIC
+                );
+            }
         }
 
 #pragma clang diagnostic pop
-}
-});
+    }
 }
 
-* (void)removeInspectorGestures
-    {
+
+#pragma mark - Ignore Views
+
+- (BOOL)shouldIgnoreView:(UIView *)view
+{
+    if (!view) {
+        return YES;
+    }
+
+    NSString *className =
+        NSStringFromClass(view.class);
+
+    NSArray *ignoredClasses = @[
+        @"_UIAlertControllerView",
+        @"UIAlertController",
+        @"_UIKeyboardLayout",
+        @"_UIRemoteKeyboardPlaceholderView",
+        @"UIKeyboard",
+        @"UIRemoteKeyboard",
+        @"UITextEffectsWindow"
+    ];
+
+    for (NSString *ignoredClass in ignoredClasses) {
+        if ([className containsString:ignoredClass]) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
+
+#pragma mark - Active Window
+
+- (UIWindow *)activeWindow
+{
+    UIWindow *result = nil;
+
     if (@available(iOS 13.0, *)) {
+        for (UIScene *scene
+             in UIApplication.sharedApplication.connectedScenes) {
 
-  for (UIScene *scene
-       in UIApplication.sharedApplication.connectedScenes) {
-      if (![scene isKindOfClass:[UIWindowScene class]]) {
-          continue;
-      }
-      UIWindowScene *windowScene =
-          (UIWindowScene *)scene;
-      for (UIWindow *window
-           in windowScene.windows) {
-          UILongPressGestureRecognizer *gesture =
-              objc_getAssociatedObject(
-                  window,
-                  &HPlusGestureKey
-              );
-          if (gesture) {
-              [window removeGestureRecognizer:gesture];
-              objc_setAssociatedObject(
-                  window,
-                  &HPlusGestureKey,
-                  nil,
-                  OBJC_ASSOCIATION_RETAIN_NONATOMIC
-              );
-          }
-      }
-  }
+            if (![scene isKindOfClass:[UIWindowScene class]]) {
+                continue;
+            }
 
-    } else {
+            UIWindowScene *windowScene =
+                (UIWindowScene *)scene;
+
+            if (windowScene.activationState !=
+                UISceneActivationStateForegroundActive) {
+                continue;
+            }
+
+            for (UIWindow *window in windowScene.windows) {
+                if (window.isKeyWindow &&
+                    !window.hidden &&
+                    window.alpha > 0.01 &&
+                    window.rootViewController) {
+                    return window;
+                }
+            }
+
+            for (UIWindow *window in windowScene.windows) {
+                if (!window.hidden &&
+                    window.alpha > 0.01 &&
+                    window.rootViewController) {
+
+                    result = window;
+                    break;
+                }
+            }
+
+            if (result) {
+                return result;
+            }
+        }
+    }
 
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored “-Wdeprecated-declarations”
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
     for (UIWindow *window
          in UIApplication.sharedApplication.windows) {
-        UILongPressGestureRecognizer *gesture =
-            objc_getAssociatedObject(
-                window,
-                &HPlusGestureKey
-            );
-        if (gesture) {
-            [window removeGestureRecognizer:gesture];
-            objc_setAssociatedObject(
-                window,
-                &HPlusGestureKey,
-                nil,
-                OBJC_ASSOCIATION_RETAIN_NONATOMIC
-            );
+
+        if (window.isKeyWindow &&
+            !window.hidden &&
+            window.alpha > 0.01 &&
+            window.rootViewController) {
+            return window;
+        }
+    }
+
+    for (UIWindow *window
+         in UIApplication.sharedApplication.windows) {
+
+        if (!window.hidden &&
+            window.alpha > 0.01 &&
+            window.rootViewController) {
+
+            result = window;
+            break;
         }
     }
 
 #pragma clang diagnostic pop
-}
-}
 
-* (BOOL)shouldIgnoreView:(UIView *)view
-    {
-    if (!view) {
-    return YES;
-    }
-    NSString *className =
-    NSStringFromClass(view.class);
-    NSArray *ignoredClasses = @[
-    @”_UIAlertControllerView”,
-    @“UIAlertController”,
-    @”_UIKeyboardLayout”,
-    @”_UIRemoteKeyboardPlaceholderView”,
-    @“UIKeyboard”,
-    @“UIRemoteKeyboard”,
-    @“UITextEffectsWindow”
-    ];
-    for (NSString *ignoredClass in ignoredClasses) {
-
-  if ([className containsString:ignoredClass]) {
-      return YES;
-  }
-
-    }
-    return NO;
-    }
-* (UIWindow *)activeWindow
-    {
-    UIWindow *result = nil;
-    if (@available(iOS 13.0, *)) {
-
-  for (UIScene *scene
-       in UIApplication.sharedApplication.connectedScenes) {
-      if (![scene isKindOfClass:[UIWindowScene class]]) {
-          continue;
-      }
-      UIWindowScene *windowScene =
-          (UIWindowScene *)scene;
-      if (windowScene.activationState !=
-          UISceneActivationStateForegroundActive) {
-          continue;
-      }
-      for (UIWindow *window
-           in windowScene.windows) {
-          if (window.isKeyWindow &&
-              !window.hidden &&
-              window.alpha > 0.01 &&
-              window.rootViewController) {
-              return window;
-          }
-      }
-      for (UIWindow *window
-           in windowScene.windows) {
-          if (!window.hidden &&
-              window.alpha > 0.01 &&
-              window.rootViewController) {
-              result = window;
-              break;
-          }
-      }
-      if (result) {
-          return result;
-      }
-  }
-
-    }
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored “-Wdeprecated-declarations”
-
-for (UIWindow *window
-     in UIApplication.sharedApplication.windows) {
-    if (window.isKeyWindow &&
-        !window.hidden &&
-        window.alpha > 0.01 &&
-        window.rootViewController) {
-        return window;
-    }
-}
-for (UIWindow *window
-     in UIApplication.sharedApplication.windows) {
-    if (!window.hidden &&
-        window.alpha > 0.01 &&
-        window.rootViewController) {
-        result = window;
-        break;
-    }
+    return result;
 }
 
-#pragma clang diagnostic pop
 
-return result;
+#pragma mark - Top View Controller
 
-}
+- (UIViewController *)topViewController
+{
+    UIWindow *window = [self activeWindow];
 
-* (UIViewController *)topViewController
-    {
-    UIWindow *window =
-    [self activeWindow];
     if (!window) {
-    return nil;
+        return nil;
     }
+
     UIViewController *vc =
-    window.rootViewController;
+        window.rootViewController;
+
     if (!vc) {
-    return nil;
+        return nil;
     }
+
     while (vc.presentedViewController &&
-    !vc.presentedViewController.isBeingDismissed) {
+           !vc.presentedViewController.isBeingDismissed) {
 
-  vc = vc.presentedViewController;
-
+        vc = vc.presentedViewController;
     }
+
     BOOL changed = YES;
+
     while (changed) {
+        changed = NO;
 
-  changed = NO;
-  if ([vc isKindOfClass:
-      [UINavigationController class]]) {
-      UIViewController *visible =
-          [(UINavigationController *)vc
-              visibleViewController];
-      if (visible && visible != vc) {
-          vc = visible;
-          changed = YES;
-      }
-  }
-  if ([vc isKindOfClass:
-      [UITabBarController class]]) {
-      UIViewController *selected =
-          [(UITabBarController *)vc
-              selectedViewController];
-      if (selected && selected != vc) {
-          vc = selected;
-          changed = YES;
-      }
-  }
-  if ([vc isKindOfClass:
-      [UISplitViewController class]]) {
-      UIViewController *last =
-          ((UISplitViewController *)vc)
-              .viewControllers.lastObject;
-      if (last && last != vc) {
-          vc = last;
-          changed = YES;
-      }
-  }
-  if (vc.presentedViewController &&
-      !vc.presentedViewController.isBeingDismissed) {
-      vc = vc.presentedViewController;
-      changed = YES;
-  }
+        if ([vc isKindOfClass:[UINavigationController class]]) {
 
+            UIViewController *visible =
+                [(UINavigationController *)vc visibleViewController];
+
+            if (visible && visible != vc) {
+                vc = visible;
+                changed = YES;
+            }
+        }
+
+        if ([vc isKindOfClass:[UITabBarController class]]) {
+
+            UIViewController *selected =
+                [(UITabBarController *)vc selectedViewController];
+
+            if (selected && selected != vc) {
+                vc = selected;
+                changed = YES;
+            }
+        }
+
+        if ([vc isKindOfClass:[UISplitViewController class]]) {
+
+            UIViewController *last =
+                ((UISplitViewController *)vc)
+                    .viewControllers.lastObject;
+
+            if (last && last != vc) {
+                vc = last;
+                changed = YES;
+            }
+        }
+
+        if (vc.presentedViewController &&
+            !vc.presentedViewController.isBeingDismissed) {
+
+            vc = vc.presentedViewController;
+            changed = YES;
+        }
     }
+
     return vc;
+}
+
+
+#pragma mark - Setup Gesture
+
+- (void)setupGestureForWindow:(UIWindow *)window
+{
+    if (![self isInspectorEnabled]) {
+        return;
     }
-* (void)setupGestureForWindow:(UIWindow *)window
-    {
-    if (![self isInspectorEnabled] ||
-    !window ||
-    [self shouldIgnoreView:window]) {
-    return;
+
+    if (!window) {
+        return;
     }
+
+    if ([self shouldIgnoreView:window]) {
+        return;
+    }
+
     NSString *windowClass =
-    NSStringFromClass(window.class);
-    if ([windowClass containsString:@“Keyboard”] ||
-    [windowClass containsString:@“Alert”]) {
-    return;
+        NSStringFromClass(window.class);
+
+    if ([windowClass containsString:@"Keyboard"] ||
+        [windowClass containsString:@"Alert"]) {
+        return;
     }
+
     if (objc_getAssociatedObject(
-    window,
-    &HPlusGestureKey)) {
-    return;
+            window,
+            &HPlusGestureKey)) {
+        return;
     }
+
     UILongPressGestureRecognizer *longPress =
-    [[UILongPressGestureRecognizer alloc]
-    initWithTarget:self
-    action:@selector(handleLongPress:)];
+        [[UILongPressGestureRecognizer alloc]
+            initWithTarget:self
+            action:@selector(handleLongPress:)];
+
     longPress.minimumPressDuration = 0.4;
     longPress.cancelsTouchesInView = NO;
     longPress.delaysTouchesBegan = NO;
     longPress.delaysTouchesEnded = NO;
+
     [window addGestureRecognizer:longPress];
+
     objc_setAssociatedObject(
-    window,
-    &HPlusGestureKey,
-    longPress,
-    OBJC_ASSOCIATION_RETAIN_NONATOMIC
+        window,
+        &HPlusGestureKey,
+        longPress,
+        OBJC_ASSOCIATION_RETAIN_NONATOMIC
     );
-    }
-* (NSString *)safeString:(id)value
-    {
+}
+
+
+#pragma mark - Basic Helpers
+
+- (NSString *)safeString:(id)value
+{
     if (!value || value == [NSNull null]) {
-    return @”(None)”;
+        return @"(None)";
     }
+
     @try {
-    NSString *description =
-    [value description];
+        NSString *description =
+            [value description];
 
-  if (!description ||
-      description.length == 0) {
-      return @"(None)";
-  }
-  return description;
+        if (!description ||
+            description.length == 0) {
+            return @"(None)";
+        }
 
-    } @catch (…) {
-    return @”(Unavailable)”;
+        return description;
     }
+    @catch (...) {
+        return @"(Unavailable)";
     }
-* (NSString *)classNameForObject:(id)object
-    {
+}
+
+
+- (NSString *)classNameForObject:(id)object
+{
     if (!object) {
-    return @”(None)”;
+        return @"(None)";
     }
-    Class cls =
-    object_getClass(object);
+
+    Class cls = object_getClass(object);
+
     if (!cls) {
-    return @”(Unknown)”;
+        return @"(Unknown)";
     }
+
     return NSStringFromClass(cls);
-    }
-* (NSString *)getViewID:(UIView *)view
-    {
+}
+
+
+#pragma mark - Accessibility
+
+- (NSString *)getViewID:(UIView *)view
+{
     if (!view) {
-    return nil;
+        return nil;
     }
+
     NSString *identifier =
-    view.accessibilityIdentifier;
+        view.accessibilityIdentifier;
+
     return identifier.length > 0
-    ? identifier
-    : nil;
-    }
-* (NSString *)getViewLabel:(UIView *)view
-    {
+        ? identifier
+        : nil;
+}
+
+
+- (NSString *)getViewLabel:(UIView *)view
+{
     if (!view) {
-    return nil;
+        return nil;
     }
+
     NSString *label =
-    view.accessibilityLabel;
+        view.accessibilityLabel;
+
     return label.length > 0
-    ? label
-    : nil;
-    }
-* (NSString *)getViewText:(UIView *)view
-    {
+        ? label
+        : nil;
+}
+
+
+- (NSString *)getViewText:(UIView *)view
+{
     if (!view) {
-    return nil;
+        return nil;
     }
+
     if ([view isKindOfClass:[UILabel class]]) {
 
-  UILabel *label =
-      (UILabel *)view;
-  if (label.text.length > 0) {
-      return label.text;
-  }
+        UILabel *label = (UILabel *)view;
 
+        if (label.text.length > 0) {
+            return label.text;
+        }
     }
+
     if ([view isKindOfClass:[UIButton class]]) {
 
-  UIButton *button =
-      (UIButton *)view;
-  NSString *title =
-      button.currentTitle;
-  if (title.length > 0) {
-      return title;
-  }
-  NSString *attributed =
-      button.currentAttributedTitle.string;
-  if (attributed.length > 0) {
-      return attributed;
-  }
-  NSString *titleLabel =
-      button.titleLabel.text;
-  if (titleLabel.length > 0) {
-      return titleLabel;
-  }
+        UIButton *button = (UIButton *)view;
 
+        NSString *title =
+            button.currentTitle;
+
+        if (title.length > 0) {
+            return title;
+        }
+
+        NSString *attributed =
+            button.currentAttributedTitle.string;
+
+        if (attributed.length > 0) {
+            return attributed;
+        }
+
+        NSString *titleLabel =
+            button.titleLabel.text;
+
+        if (titleLabel.length > 0) {
+            return titleLabel;
+        }
     }
+
     if ([view isKindOfClass:[UITextField class]]) {
 
-  UITextField *field =
-      (UITextField *)view;
-  if (field.text.length > 0) {
-      return field.text;
-  }
-  if (field.placeholder.length > 0) {
-      return field.placeholder;
-  }
+        UITextField *field =
+            (UITextField *)view;
 
+        if (field.text.length > 0) {
+            return field.text;
+        }
+
+        if (field.placeholder.length > 0) {
+            return field.placeholder;
+        }
     }
+
     if ([view isKindOfClass:[UITextView class]]) {
 
-  UITextView *textView =
-      (UITextView *)view;
-  if (textView.text.length > 0) {
-      return textView.text;
-  }
+        UITextView *textView =
+            (UITextView *)view;
 
+        if (textView.text.length > 0) {
+            return textView.text;
+        }
     }
+
     return nil;
-    }
-* (NSString *)getTraitsString:(UIView *)view
-    {
+}
+
+
+#pragma mark - Accessibility Traits
+
+- (NSString *)getTraitsString:(UIView *)view
+{
     if (!view) {
-    return nil;
+        return nil;
     }
+
     UIAccessibilityTraits traits =
-    view.accessibilityTraits;
+        view.accessibilityTraits;
+
     if (traits == 0) {
-    return nil;
+        return nil;
     }
+
     NSMutableArray *items =
-    [NSMutableArray array];
+        [NSMutableArray array];
+
     if (traits & UIAccessibilityTraitButton)
-    [items addObject:@“Button”];
+        [items addObject:@"Button"];
+
     if (traits & UIAccessibilityTraitLink)
-    [items addObject:@“Link”];
+        [items addObject:@"Link"];
+
     if (traits & UIAccessibilityTraitSelected)
-    [items addObject:@“Selected”];
+        [items addObject:@"Selected"];
+
     if (traits & UIAccessibilityTraitAdjustable)
-    [items addObject:@“Adjustable”];
+        [items addObject:@"Adjustable"];
+
     if (traits & UIAccessibilityTraitHeader)
-    [items addObject:@“Header”];
+        [items addObject:@"Header"];
+
     if (traits & UIAccessibilityTraitImage)
-    [items addObject:@“Image”];
+        [items addObject:@"Image"];
+
     if (traits & UIAccessibilityTraitSearchField)
-    [items addObject:@“SearchField”];
+        [items addObject:@"SearchField"];
+
     if (traits & UIAccessibilityTraitKeyboardKey)
-    [items addObject:@“KeyboardKey”];
+        [items addObject:@"KeyboardKey"];
+
     if (items.count == 0) {
-    return [NSString stringWithFormat:
-    @“0x%llx”,
-    (unsigned long long)traits];
+        return [NSString stringWithFormat:
+            @"0x%llx",
+            (unsigned long long)traits];
     }
-    return [items componentsJoinedByString:@”, “];
+
+    return [items componentsJoinedByString:@", "];
+}
+
+
+#pragma mark - Interactive
+
+- (BOOL)isInteractiveView:(UIView *)view
+{
+    if (!view) {
+        return NO;
     }
-* (BOOL)isInteractiveView:(UIView *)view
-    {
-    if (!view ||
-    !view.userInteractionEnabled) {
-    return NO;
+
+    if (!view.userInteractionEnabled) {
+        return NO;
     }
+
     if ([view isKindOfClass:[UIControl class]]) {
 
-  UIControl *control =
-      (UIControl *)view;
-  if (control.enabled) {
-      return YES;
-  }
+        UIControl *control =
+            (UIControl *)view;
 
+        if (control.enabled) {
+            return YES;
+        }
     }
+
     if (view.gestureRecognizers.count > 0) {
-    return YES;
+        return YES;
     }
+
     if (view.isAccessibilityElement) {
-    return YES;
+        return YES;
     }
+
     return NO;
-    }
-* (NSString *)getFrameInfoForView:(UIView *)view
-    {
+}
+
+
+#pragma mark - Frame
+
+- (NSString *)getFrameInfoForView:(UIView *)view
+{
     if (!view) {
-    return @”(Unavailable)”;
+        return @"(Unavailable)";
     }
-    CGRect frame =
-    view.frame;
-    CGRect bounds =
-    view.bounds;
+
+    CGRect frame = view.frame;
+    CGRect bounds = view.bounds;
+
     CGRect screenFrame =
-    [view convertRect:view.bounds
-    toView:nil];
+        [view convertRect:view.bounds
+                  toView:nil];
+
     return [NSString stringWithFormat:
-    @“Local Frame: (%.1f, %.1f, %.1f, %.1f)\n”
-    “Screen Frame: (%.1f, %.1f, %.1f, %.1f)\n”
-    “Bounds: (%.1f, %.1f, %.1f, %.1f)\n”
-    “Center: (%.1f, %.1f)\n”
-    “Transform: %@”,
+        @"Local Frame: (%.1f, %.1f, %.1f, %.1f)\n"
+         "Screen Frame: (%.1f, %.1f, %.1f, %.1f)\n"
+         "Bounds: (%.1f, %.1f, %.1f, %.1f)\n"
+         "Center: (%.1f, %.1f)\n"
+         "Transform: %@",
 
-  frame.origin.x,
-  frame.origin.y,
-  frame.size.width,
-  frame.size.height,
-  screenFrame.origin.x,
-  screenFrame.origin.y,
-  screenFrame.size.width,
-  screenFrame.size.height,
-  bounds.origin.x,
-  bounds.origin.y,
-  bounds.size.width,
-  bounds.size.height,
-  view.center.x,
-  view.center.y,
-  NSStringFromCGAffineTransform(
-      view.transform)];
+        frame.origin.x,
+        frame.origin.y,
+        frame.size.width,
+        frame.size.height,
 
+        screenFrame.origin.x,
+        screenFrame.origin.y,
+        screenFrame.size.width,
+        screenFrame.size.height,
+
+        bounds.origin.x,
+        bounds.origin.y,
+        bounds.size.width,
+        bounds.size.height,
+
+        view.center.x,
+        view.center.y,
+
+        NSStringFromCGAffineTransform(view.transform)];
 }
 
-* (NSString *)getLayerInfo:(UIView *)view
-    {
+
+#pragma mark - Layer
+
+- (NSString *)getLayerInfo:(UIView *)view
+{
     if (!view) {
-    return @”(Unavailable)”;
+        return @"(Unavailable)";
     }
-    CALayer *layer =
-    view.layer;
+
+    CALayer *layer = view.layer;
+
     return [NSString stringWithFormat:
-    @“Layer Class: %@\n”
-    “Z Position: %.2f\n”
-    “Opacity: %.2f\n”
-    “Hidden: %@\n”
-    “Corner Radius: %.2f\n”
-    “Border Width: %.2f\n”
-    “Masks To Bounds: %@\n”
-    “Sublayer Count: %lu”,
+        @"Layer Class: %@\n"
+         "Z Position: %.2f\n"
+         "Opacity: %.2f\n"
+         "Hidden: %@\n"
+         "Corner Radius: %.2f\n"
+         "Border Width: %.2f\n"
+         "Masks To Bounds: %@\n"
+         "Sublayer Count: %lu",
 
-  NSStringFromClass(layer.class),
-  layer.zPosition,
-  layer.opacity,
-  layer.hidden ? @"YES" : @"NO",
-  layer.cornerRadius,
-  layer.borderWidth,
-  layer.masksToBounds ? @"YES" : @"NO",
-  (unsigned long)layer.sublayers.count];
-
+        NSStringFromClass(layer.class),
+        layer.zPosition,
+        layer.opacity,
+        layer.hidden ? @"YES" : @"NO",
+        layer.cornerRadius,
+        layer.borderWidth,
+        layer.masksToBounds ? @"YES" : @"NO",
+        (unsigned long)layer.sublayers.count];
 }
 
-* (NSString *)getWindowInfo:(UIView *)view
-    {
-    UIWindow *window =
-    view.window;
+
+#pragma mark - Window Info
+
+- (NSString *)getWindowInfo:(UIView *)view
+{
+    UIWindow *window = view.window;
+
     if (!window) {
-    return @“Window: (None)”;
+        return @"Window: (None)";
     }
-    NSString *sceneState =
-    @“N/A”;
+
+    NSString *sceneState = @"N/A";
+
     if (@available(iOS 13.0, *)) {
 
-  switch (window.windowScene.activationState) {
-      case UISceneActivationStateUnattached:
-          sceneState = @"Unattached";
-          break;
-      case UISceneActivationStateForegroundInactive:
-          sceneState = @"ForegroundInactive";
-          break;
-      case UISceneActivationStateForegroundActive:
-          sceneState = @"ForegroundActive";
-          break;
-      case UISceneActivationStateBackground:
-          sceneState = @"Background";
-          break;
-      default:
-          sceneState = @"Unknown";
-          break;
-  }
+        switch (window.windowScene.activationState) {
 
+            case UISceneActivationStateUnattached:
+                sceneState = @"Unattached";
+                break;
+
+            case UISceneActivationStateForegroundInactive:
+                sceneState = @"ForegroundInactive";
+                break;
+
+            case UISceneActivationStateForegroundActive:
+                sceneState = @"ForegroundActive";
+                break;
+
+            case UISceneActivationStateBackground:
+                sceneState = @"Background";
+                break;
+
+            default:
+                sceneState = @"Unknown";
+                break;
+        }
     }
+
     return [NSString stringWithFormat:
-    @“Window Class: %@\n”
-    “Window Level: %.1f\n”
-    “Key Window: %@\n”
-    “Hidden: %@\n”
-    “Alpha: %.2f\n”
-    “Scene State: %@”,
+        @"Window Class: %@\n"
+         "Window Level: %.1f\n"
+         "Key Window: %@\n"
+         "Hidden: %@\n"
+         "Alpha: %.2f\n"
+         "Scene State: %@",
 
-  NSStringFromClass(window.class),
-  window.windowLevel,
-  window.isKeyWindow ? @"YES" : @"NO",
-  window.hidden ? @"YES" : @"NO",
-  window.alpha,
-  sceneState];
-
+        NSStringFromClass(window.class),
+        window.windowLevel,
+        window.isKeyWindow ? @"YES" : @"NO",
+        window.hidden ? @"YES" : @"NO",
+        window.alpha,
+        sceneState];
 }
 
-* (NSString *)getViewControllerInfo:(UIView *)view
-    {
+
+#pragma mark - View Controller
+
+- (NSString *)getViewControllerInfo:(UIView *)view
+{
     UIViewController *vc = nil;
-    UIResponder *responder =
-    view;
+    UIResponder *responder = view;
+
     while (responder) {
 
-  responder =
-      [responder nextResponder];
-  if ([responder
-       isKindOfClass:
-       [UIViewController class]]) {
-      vc =
-          (UIViewController *)responder;
-      break;
-  }
+        responder = [responder nextResponder];
 
+        if ([responder isKindOfClass:[UIViewController class]]) {
+
+            vc = (UIViewController *)responder;
+            break;
+        }
     }
+
     if (!vc) {
-    return @“View Controller: (None)”;
+        return @"View Controller: (None)";
     }
+
     return [NSString stringWithFormat:
-    @“View Controller: %@\n”
-    “Title: %@\n”
-    “Presented: %@\n”
-    “Being Presented: %@\n”
-    “Being Dismissed: %@”,
+        @"View Controller: %@\n"
+         "Title: %@\n"
+         "Presented: %@\n"
+         "Being Presented: %@\n"
+         "Being Dismissed: %@",
 
-  NSStringFromClass(vc.class),
-  vc.title.length > 0
-      ? vc.title
-      : @"(None)",
-  vc.presentedViewController
-      ? NSStringFromClass(
-          vc.presentedViewController.class)
-      : @"(None)",
-  vc.isBeingPresented
-      ? @"YES"
-      : @"NO",
-  vc.isBeingDismissed
-      ? @"YES"
-      : @"NO"];
+        NSStringFromClass(vc.class),
 
+        vc.title.length > 0
+            ? vc.title
+            : @"(None)",
+
+        vc.presentedViewController
+            ? NSStringFromClass(vc.presentedViewController.class)
+            : @"(None)",
+
+        vc.isBeingPresented
+            ? @"YES"
+            : @"NO",
+
+        vc.isBeingDismissed
+            ? @"YES"
+            : @"NO"];
 }
 
-* (NSString *)getSuperviewChain:(UIView *)view
-    {
+
+#pragma mark - Superview Chain
+
+- (NSString *)getSuperviewChain:(UIView *)view
+{
     NSMutableString *result =
-    [NSMutableString string];
-    UIView *current =
-    view;
+        [NSMutableString string];
+
+    UIView *current = view;
     int depth = 0;
+
     while (current && depth < 40) {
 
-  NSString *identifier =
-      [self getViewID:current];
-  NSString *label =
-      [self getViewLabel:current];
-  [result appendFormat:
-      @"[%02d] %@\n"
-       "    ID: %@\n"
-       "    Label: %@\n"
-       "    Frame: %@\n\n",
-      depth,
-      NSStringFromClass(current.class),
-      identifier.length > 0
-          ? identifier
-          : @"(None)",
-      label.length > 0
-          ? label
-          : @"(None)",
-      NSStringFromCGRect(current.frame)];
-  current =
-      current.superview;
-  depth++;
+        NSString *identifier =
+            [self getViewID:current];
 
+        NSString *label =
+            [self getViewLabel:current];
+
+        [result appendFormat:
+            @"[%02d] %@\n"
+             "    ID: %@\n"
+             "    Label: %@\n"
+             "    Frame: %@\n\n",
+
+            depth,
+
+            NSStringFromClass(current.class),
+
+            identifier.length > 0
+                ? identifier
+                : @"(None)",
+
+            label.length > 0
+                ? label
+                : @"(None)",
+
+            NSStringFromCGRect(current.frame)];
+
+        current = current.superview;
+        depth++;
     }
+
     return result.length > 0
-    ? result
-    : @”(None)”;
-    }
-* (NSString *)getSubviewsInfo:(UIView *)view
-    {
+        ? result
+        : @"(None)";
+}
+
+
+#pragma mark - Direct Subviews
+
+- (NSString *)getSubviewsInfo:(UIView *)view
+{
     if (!view ||
-    view.subviews.count == 0) {
-    return @”(None)”;
+        view.subviews.count == 0) {
+
+        return @"(None)";
     }
+
     NSMutableString *result =
-    [NSMutableString string];
+        [NSMutableString string];
+
     NSUInteger index = 0;
+
     for (UIView *subview in view.subviews) {
 
-  NSString *identifier =
-      [self getViewID:subview];
-  NSString *label =
-      [self getViewLabel:subview];
-  NSString *text =
-      [self getViewText:subview];
-  CGRect frame =
-      [subview convertRect:subview.bounds
-                    toView:nil];
-  [result appendFormat:
-      @"[%lu] %@\n"
-       "    ID: %@\n"
-       "    Label: %@\n"
-       "    Text: %@\n"
-       "    Traits: %@\n"
-       "    Interactive: %@\n"
-       "    Frame: %@\n\n",
-      (unsigned long)index,
-      NSStringFromClass(subview.class),
-      identifier.length > 0
-          ? identifier
-          : @"(None)",
-      label.length > 0
-          ? label
-          : @"(None)",
-      text.length > 0
-          ? text
-          : @"(None)",
-      [self getTraitsString:subview] ?: @"(None)",
-      [self isInteractiveView:subview]
-          ? @"YES"
-          : @"NO",
-      NSStringFromCGRect(frame)];
-  index++;
+        NSString *identifier =
+            [self getViewID:subview];
 
+        NSString *label =
+            [self getViewLabel:subview];
+
+        NSString *text =
+            [self getViewText:subview];
+
+        CGRect frame =
+            [subview convertRect:subview.bounds
+                          toView:nil];
+
+        [result appendFormat:
+            @"[%lu] %@\n"
+             "    ID: %@\n"
+             "    Label: %@\n"
+             "    Text: %@\n"
+             "    Traits: %@\n"
+             "    Interactive: %@\n"
+             "    Frame: %@\n\n",
+
+            (unsigned long)index,
+
+            NSStringFromClass(subview.class),
+
+            identifier.length > 0
+                ? identifier
+                : @"(None)",
+
+            label.length > 0
+                ? label
+                : @"(None)",
+
+            text.length > 0
+                ? text
+                : @"(None)",
+
+            [self getTraitsString:subview] ?: @"(None)",
+
+            [self isInteractiveView:subview]
+                ? @"YES"
+                : @"NO",
+
+            NSStringFromCGRect(frame)];
+
+        index++;
     }
+
     return result;
-    }
-* (NSString *)getSiblingInfo:(UIView *)view
-    {
-    UIView *parent =
-    view.superview;
-    if (!parent) {
-    return @”(No siblings)”;
-    }
-    NSMutableString *result =
-    [NSMutableString string];
-    NSArray *siblings =
-    parent.subviews;
-    for (NSUInteger i = 0;
-    i < siblings.count;
-    i++) {
-
-  UIView *sibling =
-      siblings[i];
-  NSString *identifier =
-      [self getViewID:sibling];
-  NSString *label =
-      [self getViewLabel:sibling];
-  NSString *text =
-      [self getViewText:sibling];
-  CGRect frame =
-      [sibling convertRect:sibling.bounds
-                    toView:nil];
-  [result appendFormat:
-      @"[%lu] %@%@\n"
-       "    ID: %@\n"
-       "    Label: %@\n"
-       "    Text: %@\n"
-       "    Traits: %@\n"
-       "    Interactive: %@\n"
-       "    Frame: (%.0f, %.0f, %.0f, %.0f)\n\n",
-      (unsigned long)i,
-      sibling == view
-          ? @"🎯 "
-          : @"",
-      NSStringFromClass(sibling.class),
-      identifier.length
-          ? identifier
-          : @"(None)",
-      label.length
-          ? label
-          : @"(None)",
-      text.length
-          ? text
-          : @"(None)",
-      [self getTraitsString:sibling] ?: @"(None)",
-      [self isInteractiveView:sibling]
-          ? @"YES"
-          : @"NO",
-      frame.origin.x,
-      frame.origin.y,
-      frame.size.width,
-      frame.size.height];
-
-    }
-    return result.length
-    ? result
-    : @”(No siblings)”;
-    }
-* (NSString *)getSuperclassChainForClass:(Class)cls
-    {
-    if (!cls) {
-    return @”(None)”;
-    }
-    NSMutableString *result =
-    [NSMutableString string];
-    Class current =
-    cls;
-    int depth = 0;
-    while (current && depth < 40) {
-
-  [result appendFormat:
-      @"[%02d] %@\n",
-      depth,
-      NSStringFromClass(current)];
-  current =
-      class_getSuperclass(current);
-  depth++;
-
-    }
-    return result;
-    }
-* (NSString *)getProtocolsForClass:(Class)cls
-    {
-    if (!cls) {
-    return @”(None)”;
-    }
-    NSMutableString *result =
-    [NSMutableString string];
-    unsigned int count = 0;
-    Protocol *__unsafe_unretained *protocols =
-    class_copyProtocolList(cls, &count);
-    for (unsigned int i = 0;
-    i < count;
-    i++) {
-
-  Protocol *protocol =
-      protocols[i];
-  if (protocol) {
-      [result appendFormat:
-          @"• %@\n",
-          NSStringFromProtocol(protocol)];
-  }
-
-    }
-    if (protocols) {
-    free(protocols);
-    }
-    return result.length > 0
-    ? result
-    : @”(None)”;
-    }
-* (NSString *)getPropertiesForClass:(Class)cls
-    {
-    if (!cls) {
-    return @”(None)”;
-    }
-    NSMutableString *result =
-    [NSMutableString string];
-    unsigned int count = 0;
-    objc_property_t *properties =
-    class_copyPropertyList(cls, &count);
-    for (unsigned int i = 0;
-    i < count;
-    i++) {
-
-  const char *name =
-      property_getName(properties[i]);
-  const char *attributes =
-      property_getAttributes(properties[i]);
-  if (name) {
-      [result appendFormat:
-          @"• %s | %s\n",
-          name,
-          attributes
-              ? attributes
-              : "(Unknown)"];
-  }
-
-    }
-    if (properties) {
-    free(properties);
-    }
-    return result.length > 0
-    ? result
-    : @”(None)”;
-    }
-* (NSString *)getIvarsForClass:(Class)cls
-    {
-    if (!cls) {
-    return @”(None)”;
-    }
-    NSMutableString *result =
-    [NSMutableString string];
-    unsigned int count = 0;
-    Ivar *ivars =
-    class_copyIvarList(cls, &count);
-    for (unsigned int i = 0;
-    i < count;
-    i++) {
-
-  Ivar ivar =
-      ivars[i];
-  const char *name =
-      ivar_getName(ivar);
-  const char *type =
-      ivar_getTypeEncoding(ivar);
-  ptrdiff_t offset =
-      ivar_getOffset(ivar);
-  if (name) {
-      [result appendFormat:
-          @"• %s | Type: %s | Offset: %td\n",
-          name,
-          type
-              ? type
-              : "(Unknown)",
-          offset];
-  }
-
-    }
-    if (ivars) {
-    free(ivars);
-    }
-    return result.length > 0
-    ? result
-    : @”(None)”;
-    }
-* (NSString *)getMethodsForClass:(Class)cls
-    {
-    if (!cls) {
-    return @”(None)”;
-    }
-    NSMutableString *result =
-    [NSMutableString string];
-    unsigned int count = 0;
-    Method *methods =
-    class_copyMethodList(cls, &count);
-    for (unsigned int i = 0;
-    i < count;
-    i++) {
-
-  Method method =
-      methods[i];
-  SEL selector =
-      method_getName(method);
-  const char *types =
-      method_getTypeEncoding(method);
-  if (selector) {
-      [result appendFormat:
-          @"• -[%@ %@] | %s\n",
-          NSStringFromClass(cls),
-          NSStringFromSelector(selector),
-          types
-              ? types
-              : "(Unknown)"];
-  }
-
-    }
-    if (methods) {
-    free(methods);
-    }
-    return result.length > 0
-    ? result
-    : @”(None)”;
-    }
-* (NSString *)getRuntimeInfoForObject:(id)object
-    {
-    if (!object) {
-    return @”(None)”;
-    }
-    Class cls =
-    object_getClass(object);
-    NSMutableString *result =
-    [NSMutableString string];
-    [result appendFormat:
-    @“Runtime Class: %@\n\n”,
-    NSStringFromClass(cls)];
-    [result appendString:@“SUPERCLASS CHAIN\n”];
-    [result appendString:
-    [self getSuperclassChainForClass:cls]];
-    [result appendString:@”\nPROTOCOLS\n”];
-    [result appendString:
-    [self getProtocolsForClass:cls]];
-    [result appendString:@”\nPROPERTIES\n”];
-    [result appendString:
-    [self getPropertiesForClass:cls]];
-    [result appendString:@”\nIVARS\n”];
-    [result appendString:
-    [self getIvarsForClass:cls]];
-    [result appendString:@”\nMETHODS\n”];
-    [result appendString:
-    [self getMethodsForClass:cls]];
-    return result;
-    }
-* (NSString *)getGestureInfo:(UIView *)view
-    {
-    if (!view ||
-    view.gestureRecognizers.count == 0) {
-    return @”(None)”;
-    }
-    NSMutableString *result =
-    [NSMutableString string];
-    NSUInteger index = 0;
-    for (UIGestureRecognizer *gesture
-    in view.gestureRecognizers) {
-
-  NSString *state =
-      @"Unknown";
-  switch (gesture.state) {
-      case UIGestureRecognizerStatePossible:
-          state = @"Possible";
-          break;
-      case UIGestureRecognizerStateBegan:
-          state = @"Began";
-          break;
-      case UIGestureRecognizerStateChanged:
-          state = @"Changed";
-          break;
-      case UIGestureRecognizerStateEnded:
-          state = @"Ended";
-          break;
-      case UIGestureRecognizerStateCancelled:
-          state = @"Cancelled";
-          break;
-      case UIGestureRecognizerStateFailed:
-          state = @"Failed";
-          break;
-      default:
-          break;
-  }
-  [result appendFormat:
-      @"[%lu] %@\n"
-       "    State: %@\n"
-       "    Enabled: %@\n"
-       "    Cancels Touches: %@\n"
-       "    Delays Began: %@\n"
-       "    Delays Ended: %@\n\n",
-      (unsigned long)index,
-      NSStringFromClass(gesture.class),
-      state,
-      gesture.enabled
-          ? @"YES"
-          : @"NO",
-      gesture.cancelsTouchesInView
-          ? @"YES"
-          : @"NO",
-      gesture.delaysTouchesBegan
-          ? @"YES"
-          : @"NO",
-      gesture.delaysTouchesEnded
-          ? @"YES"
-          : @"NO"];
-  index++;
-
-    }
-    return result;
-    }
-* (NSString *)getControlInfo:(UIView *)view
-    {
-    if (![view isKindOfClass:[UIControl class]]) {
-    return @“Not a UIControl”;
-    }
-    UIControl *control =
-    (UIControl *)view;
-    return [NSString stringWithFormat:
-    @“Control Class: %@\n”
-    “Enabled: %@\n”
-    “Selected: %@\n”
-    “Highlighted: %@\n”
-    “Focused: %@\n”
-    “State: %lu\n”
-    “Events: 0x%lx”,
-
-  NSStringFromClass(control.class),
-  control.enabled
-      ? @"YES"
-      : @"NO",
-  control.selected
-      ? @"YES"
-      : @"NO",
-  control.highlighted
-      ? @"YES"
-      : @"NO",
-  control.isFocused
-      ? @"YES"
-      : @"NO",
-  (unsigned long)control.state,
-  (unsigned long)control.allControlEvents];
-
 }
 
-* (NSString *)getYouTubeInfoForObject:(id)object
-    {
-    if (!object) {
-    return @”(None)”;
+
+#pragma mark - Siblings
+
+- (NSString *)getSiblingInfo:(UIView *)view
+{
+    UIView *parent = view.superview;
+
+    if (!parent) {
+        return @"(No siblings)";
     }
-    Class cls =
-    object_getClass(object);
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    NSArray *siblings = parent.subviews;
+
+    for (NSUInteger i = 0;
+         i < siblings.count;
+         i++) {
+
+        UIView *sibling = siblings[i];
+
+        NSString *identifier =
+            [self getViewID:sibling];
+
+        NSString *label =
+            [self getViewLabel:sibling];
+
+        NSString *text =
+            [self getViewText:sibling];
+
+        CGRect frame =
+            [sibling convertRect:sibling.bounds
+                          toView:nil];
+
+        [result appendFormat:
+            @"[%lu] %@%@\n"
+             "    ID: %@\n"
+             "    Label: %@\n"
+             "    Text: %@\n"
+             "    Traits: %@\n"
+             "    Interactive: %@\n"
+             "    Frame: (%.0f, %.0f, %.0f, %.0f)\n\n",
+
+            (unsigned long)i,
+
+            sibling == view
+                ? @"🎯 "
+                : @"",
+
+            NSStringFromClass(sibling.class),
+
+            identifier.length
+                ? identifier
+                : @"(None)",
+
+            label.length
+                ? label
+                : @"(None)",
+
+            text.length
+                ? text
+                : @"(None)",
+
+            [self getTraitsString:sibling] ?: @"(None)",
+
+            [self isInteractiveView:sibling]
+                ? @"YES"
+                : @"NO",
+
+            frame.origin.x,
+            frame.origin.y,
+            frame.size.width,
+            frame.size.height];
+    }
+
+    return result.length
+        ? result
+        : @"(No siblings)";
+}
+
+
+#pragma mark - Runtime Superclass
+
+- (NSString *)getSuperclassChainForClass:(Class)cls
+{
     if (!cls) {
-    return @”(None)”;
+        return @"(None)";
     }
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    Class current = cls;
+    int depth = 0;
+
+    while (current && depth < 40) {
+
+        [result appendFormat:
+            @"[%02d] %@\n",
+            depth,
+            NSStringFromClass(current)];
+
+        current = class_getSuperclass(current);
+        depth++;
+    }
+
+    return result;
+}
+
+
+#pragma mark - Protocols
+
+- (NSString *)getProtocolsForClass:(Class)cls
+{
+    if (!cls) {
+        return @"(None)";
+    }
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    unsigned int count = 0;
+
+    Protocol *__unsafe_unretained *protocols =
+        class_copyProtocolList(cls, &count);
+
+    for (unsigned int i = 0;
+         i < count;
+         i++) {
+
+        Protocol *protocol = protocols[i];
+
+        if (protocol) {
+            [result appendFormat:
+                @"• %@\n",
+                NSStringFromProtocol(protocol)];
+        }
+    }
+
+    if (protocols) {
+        free(protocols);
+    }
+
+    return result.length > 0
+        ? result
+        : @"(None)";
+}
+
+
+#pragma mark - Properties
+
+- (NSString *)getPropertiesForClass:(Class)cls
+{
+    if (!cls) {
+        return @"(None)";
+    }
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    unsigned int count = 0;
+
+    objc_property_t *properties =
+        class_copyPropertyList(cls, &count);
+
+    for (unsigned int i = 0;
+         i < count;
+         i++) {
+
+        const char *name =
+            property_getName(properties[i]);
+
+        const char *attributes =
+            property_getAttributes(properties[i]);
+
+        if (name) {
+
+            [result appendFormat:
+                @"• %s | %s\n",
+
+                name,
+
+                attributes
+                    ? attributes
+                    : "(Unknown)"];
+        }
+    }
+
+    if (properties) {
+        free(properties);
+    }
+
+    return result.length > 0
+        ? result
+        : @"(None)";
+}
+
+
+#pragma mark - Ivars
+
+- (NSString *)getIvarsForClass:(Class)cls
+{
+    if (!cls) {
+        return @"(None)";
+    }
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    unsigned int count = 0;
+
+    Ivar *ivars =
+        class_copyIvarList(cls, &count);
+
+    for (unsigned int i = 0;
+         i < count;
+         i++) {
+
+        Ivar ivar = ivars[i];
+
+        const char *name =
+            ivar_getName(ivar);
+
+        const char *type =
+            ivar_getTypeEncoding(ivar);
+
+        ptrdiff_t offset =
+            ivar_getOffset(ivar);
+
+        if (name) {
+
+            [result appendFormat:
+                @"• %s | Type: %s | Offset: %td\n",
+
+                name,
+
+                type
+                    ? type
+                    : "(Unknown)",
+
+                offset];
+        }
+    }
+
+    if (ivars) {
+        free(ivars);
+    }
+
+    return result.length > 0
+        ? result
+        : @"(None)";
+}
+
+
+#pragma mark - Methods
+
+- (NSString *)getMethodsForClass:(Class)cls
+{
+    if (!cls) {
+        return @"(None)";
+    }
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    unsigned int count = 0;
+
+    Method *methods =
+        class_copyMethodList(cls, &count);
+
+    for (unsigned int i = 0;
+         i < count;
+         i++) {
+
+        Method method = methods[i];
+
+        SEL selector =
+            method_getName(method);
+
+        const char *types =
+            method_getTypeEncoding(method);
+
+        if (selector) {
+
+            [result appendFormat:
+                @"• -[%@ %@] | %s\n",
+
+                NSStringFromClass(cls),
+
+                NSStringFromSelector(selector),
+
+                types
+                    ? types
+                    : "(Unknown)"];
+        }
+    }
+
+    if (methods) {
+        free(methods);
+    }
+
+    return result.length > 0
+        ? result
+        : @"(None)";
+}
+
+
+#pragma mark - Runtime Info
+
+- (NSString *)getRuntimeInfoForObject:(id)object
+{
+    if (!object) {
+        return @"(None)";
+    }
+
+    Class cls =
+        object_getClass(object);
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    [result appendFormat:
+        @"Runtime Class: %@\n\n",
+        NSStringFromClass(cls)];
+
+    [result appendString:
+        @"SUPERCLASS CHAIN\n"];
+
+    [result appendString:
+        [self getSuperclassChainForClass:cls]];
+
+    [result appendString:
+        @"\nPROTOCOLS\n"];
+
+    [result appendString:
+        [self getProtocolsForClass:cls]];
+
+    [result appendString:
+        @"\nPROPERTIES\n"];
+
+    [result appendString:
+        [self getPropertiesForClass:cls]];
+
+    [result appendString:
+        @"\nIVARS\n"];
+
+    [result appendString:
+        [self getIvarsForClass:cls]];
+
+    [result appendString:
+        @"\nMETHODS\n"];
+
+    [result appendString:
+        [self getMethodsForClass:cls]];
+
+    return result;
+}
+
+
+#pragma mark - Gestures
+
+- (NSString *)getGestureInfo:(UIView *)view
+{
+    if (!view ||
+        view.gestureRecognizers.count == 0) {
+
+        return @"(None)";
+    }
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    NSUInteger index = 0;
+
+    for (UIGestureRecognizer *gesture
+         in view.gestureRecognizers) {
+
+        NSString *state = @"Unknown";
+
+        switch (gesture.state) {
+
+            case UIGestureRecognizerStatePossible:
+                state = @"Possible";
+                break;
+
+            case UIGestureRecognizerStateBegan:
+                state = @"Began";
+                break;
+
+            case UIGestureRecognizerStateChanged:
+                state = @"Changed";
+                break;
+
+            case UIGestureRecognizerStateEnded:
+                state = @"Ended";
+                break;
+
+            case UIGestureRecognizerStateCancelled:
+                state = @"Cancelled";
+                break;
+
+            case UIGestureRecognizerStateFailed:
+                state = @"Failed";
+                break;
+
+            default:
+                break;
+        }
+
+        [result appendFormat:
+            @"[%lu] %@\n"
+             "    State: %@\n"
+             "    Enabled: %@\n"
+             "    Cancels Touches: %@\n"
+             "    Delays Began: %@\n"
+             "    Delays Ended: %@\n\n",
+
+            (unsigned long)index,
+
+            NSStringFromClass(gesture.class),
+
+            state,
+
+            gesture.enabled
+                ? @"YES"
+                : @"NO",
+
+            gesture.cancelsTouchesInView
+                ? @"YES"
+                : @"NO",
+
+            gesture.delaysTouchesBegan
+                ? @"YES"
+                : @"NO",
+
+            gesture.delaysTouchesEnded
+                ? @"YES"
+                : @"NO"];
+
+        index++;
+    }
+
+    return result;
+}
+
+
+#pragma mark - UIControl
+
+- (NSString *)getControlInfo:(UIView *)view
+{
+    if (![view isKindOfClass:[UIControl class]]) {
+        return @"Not a UIControl";
+    }
+
+    UIControl *control =
+        (UIControl *)view;
+
+    return [NSString stringWithFormat:
+        @"Control Class: %@\n"
+         "Enabled: %@\n"
+         "Selected: %@\n"
+         "Highlighted: %@\n"
+         "Focused: %@\n"
+         "State: %lu\n"
+         "Events: 0x%lx",
+
+        NSStringFromClass(control.class),
+
+        control.enabled
+            ? @"YES"
+            : @"NO",
+
+        control.selected
+            ? @"YES"
+            : @"NO",
+
+        control.highlighted
+            ? @"YES"
+            : @"NO",
+
+        control.isFocused
+            ? @"YES"
+            : @"NO",
+
+        (unsigned long)control.state,
+
+        (unsigned long)control.allControlEvents];
+}
+
+
+#pragma mark - YouTube Detection
+
+- (NSString *)getYouTubeInfoForObject:(id)object
+{
+    if (!object) {
+        return @"(None)";
+    }
+
+    Class cls =
+        object_getClass(object);
+
+    if (!cls) {
+        return @"(None)";
+    }
+
     NSString *className =
-    NSStringFromClass(cls);
+        NSStringFromClass(cls);
+
     NSArray *prefixes = @[
-    @“YT”,
-    @“AS”,
-    @“ELM”,
-    @“GOO”,
-    @“HAM”,
-    @“MDC”,
-    @“GIM”,
-    @“GCKN”,
-    @“GPB”,
-    @“ICN”,
-    @“MDX”,
-    @“ML”
+        @"YT",
+        @"AS",
+        @"ELM",
+        @"GOO",
+        @"HAM",
+        @"MDC",
+        @"GIM",
+        @"GCKN",
+        @"GPB",
+        @"ICN",
+        @"MDX",
+        @"ML"
     ];
+
     NSString *matchedPrefix = nil;
+
     for (NSString *prefix in prefixes) {
 
-  if ([className hasPrefix:prefix]) {
-      matchedPrefix = prefix;
-      break;
-  }
-
+        if ([className hasPrefix:prefix]) {
+            matchedPrefix = prefix;
+            break;
+        }
     }
+
     if (!matchedPrefix &&
-    ![className containsString:@“YouTube”] &&
-    ![className containsString:@“YT”]) {
+        ![className containsString:@"YouTube"] &&
+        ![className containsString:@"YT"]) {
 
-  return
-      @"Not identified as a YouTube-family class";
-
+        return
+            @"Not identified as a YouTube-family class";
     }
+
     NSMutableString *result =
-    [NSMutableString string];
+        [NSMutableString string];
+
     [result appendFormat:
-    @“Detected Class: %@\n”,
-    className];
+        @"Detected Class: %@\n",
+        className];
+
     if (matchedPrefix) {
 
-  [result appendFormat:
-      @"Family: %@*\n",
-      matchedPrefix];
+        [result appendFormat:
+            @"Family: %@*\n",
+            matchedPrefix];
 
     } else {
 
-  [result appendString:
-      @"Family: YouTube-related\n"];
-
+        [result appendString:
+            @"Family: YouTube-related\n"];
     }
-    if ([className hasPrefix:@“AS”]) {
 
-  [result appendString:
-      @"Category: AsyncDisplayKit / Texture-style UI\n"];
+    if ([className hasPrefix:@"AS"]) {
 
-    } else if ([className hasPrefix:@“ELM”]) {
+        [result appendString:
+            @"Category: AsyncDisplayKit / Texture-style UI\n"];
 
-  [result appendString:
-      @"Category: ELM UI\n"];
+    } else if ([className hasPrefix:@"ELM"]) {
 
-    } else if ([className hasPrefix:@“GOO”]) {
+        [result appendString:
+            @"Category: ELM UI\n"];
 
-  [result appendString:
-      @"Category: GOO UI / Dialog / HUD\n"];
+    } else if ([className hasPrefix:@"GOO"]) {
 
-    } else if ([className hasPrefix:@“HAM”]) {
+        [result appendString:
+            @"Category: GOO UI / Dialog / HUD\n"];
 
-  [result appendString:
-      @"Category: HAM media / playback\n"];
+    } else if ([className hasPrefix:@"HAM"]) {
 
-    } else if ([className hasPrefix:@“YT”]) {
+        [result appendString:
+            @"Category: HAM media / playback\n"];
 
-  [result appendString:
-      @"Category: YouTube UI / framework class\n"];
+    } else if ([className hasPrefix:@"YT"]) {
 
+        [result appendString:
+            @"Category: YouTube UI / framework class\n"];
     }
+
     [result appendString:
-    @“Header Repository: YouTubeHeader\n”];
+        @"Header Repository: YouTubeHeader\n"];
+
     return result;
-    }
-* (NSString *)buildViewTreeFromView:(UIView *)view
-    {
+}
+
+
+#pragma mark - Simple View Tree
+
+- (NSString *)buildViewTreeFromView:(UIView *)view
+{
     if (!view) {
-    return @”(No View)”;
+        return @"(No View)";
     }
+
     NSMutableString *tree =
-    [NSMutableString string];
-    UIView *current =
-    view;
+        [NSMutableString string];
+
+    UIView *current = view;
     int depth = 0;
+
     while (current && depth < 40) {
 
-  NSString *className =
-      NSStringFromClass(current.class);
-  NSString *identifier =
-      [self getViewID:current];
-  NSString *label =
-      [self getViewLabel:current];
-  NSString *text =
-      [self getViewText:current];
-  NSString *traits =
-      [self getTraitsString:current];
-  BOOL interactive =
-      [self isInteractiveView:current];
-  CGRect screenFrame =
-      [current convertRect:current.bounds
-                    toView:nil];
-  NSMutableString *indent =
-      [NSMutableString string];
-  for (int i = 0; i < depth; i++) {
-      [indent appendString:@"    "];
-  }
-  [tree appendFormat:
-      @"%@%@%@\n",
-      indent,
-      depth == 0
-          ? @"🎯 "
-          : @"└── ",
-      className];
-  [tree appendFormat:
-      @"%@    🔑 ID: %@\n",
-      indent,
-      identifier.length > 0
-          ? identifier
-          : @"(None)"];
-  [tree appendFormat:
-      @"%@    ♿ Label: %@\n",
-      indent,
-      label.length > 0
-          ? label
-          : @"(None)"];
-  [tree appendFormat:
-      @"%@    📝 Text: %@\n",
-      indent,
-      text.length > 0
-          ? text
-          : @"(None)"];
-  [tree appendFormat:
-      @"%@    🧩 Traits: %@\n",
-      indent,
-      traits.length > 0
-          ? traits
-          : @"(None)"];
-  [tree appendFormat:
-      @"%@    🎮 Interactive: %@\n",
-      indent,
-      interactive
-          ? @"YES"
-          : @"NO"];
-  [tree appendFormat:
-      @"%@    📍 Screen: (%.0f, %.0f, %.0f, %.0f)\n",
-      indent,
-      screenFrame.origin.x,
-      screenFrame.origin.y,
-      screenFrame.size.width,
-      screenFrame.size.height];
-  [tree appendFormat:
-      @"%@    👁️ Subviews: %lu\n",
-      indent,
-      (unsigned long)current.subviews.count];
-  if (current.gestureRecognizers.count > 0) {
-      [tree appendFormat:
-          @"%@    👆 Gestures: %lu\n",
-          indent,
-          (unsigned long)
-              current.gestureRecognizers.count];
-  }
-  [tree appendString:@"\n"];
-  current =
-      current.superview;
-  depth++;
+        NSString *className =
+            NSStringFromClass(current.class);
 
+        NSString *identifier =
+            [self getViewID:current];
+
+        NSString *label =
+            [self getViewLabel:current];
+
+        NSString *text =
+            [self getViewText:current];
+
+        NSString *traits =
+            [self getTraitsString:current];
+
+        BOOL interactive =
+            [self isInteractiveView:current];
+
+        CGRect screenFrame =
+            [current convertRect:current.bounds
+                          toView:nil];
+
+        NSMutableString *indent =
+            [NSMutableString string];
+
+        for (int i = 0; i < depth; i++) {
+            [indent appendString:@"    "];
+        }
+
+        [tree appendFormat:
+            @"%@%@%@\n",
+
+            indent,
+
+            depth == 0
+                ? @"🎯 "
+                : @"└── ",
+
+            className];
+
+        [tree appendFormat:
+            @"%@    🔑 ID: %@\n",
+
+            indent,
+
+            identifier.length > 0
+                ? identifier
+                : @"(None)"];
+
+        [tree appendFormat:
+            @"%@    ♿ Label: %@\n",
+
+            indent,
+
+            label.length > 0
+                ? label
+                : @"(None)"];
+
+        [tree appendFormat:
+            @"%@    📝 Text: %@\n",
+
+            indent,
+
+            text.length > 0
+                ? text
+                : @"(None)"];
+
+        [tree appendFormat:
+            @"%@    🧩 Traits: %@\n",
+
+            indent,
+
+            traits.length > 0
+                ? traits
+                : @"(None)"];
+
+        [tree appendFormat:
+            @"%@    🎮 Interactive: %@\n",
+
+            indent,
+
+            interactive
+                ? @"YES"
+                : @"NO"];
+
+        [tree appendFormat:
+            @"%@    📍 Screen: (%.0f, %.0f, %.0f, %.0f)\n",
+
+            indent,
+
+            screenFrame.origin.x,
+            screenFrame.origin.y,
+            screenFrame.size.width,
+            screenFrame.size.height];
+
+        [tree appendFormat:
+            @"%@    👁️ Subviews: %lu\n",
+
+            indent,
+
+            (unsigned long)current.subviews.count];
+
+        if (current.gestureRecognizers.count > 0) {
+
+            [tree appendFormat:
+                @"%@    👆 Gestures: %lu\n",
+
+                indent,
+
+                (unsigned long)
+                    current.gestureRecognizers.count];
+        }
+
+        [tree appendString:@"\n"];
+
+        current = current.superview;
+        depth++;
     }
+
     return tree;
-    }
-* (NSString *)buildRecursiveSubtree:(UIView *)view
-    depth:(NSInteger)depth
-    maxDepth:(NSInteger)maxDepth
-    {
+}
+
+
+#pragma mark - Recursive Subtree
+
+- (NSString *)buildRecursiveSubtree:(UIView *)view
+                              depth:(NSInteger)depth
+                           maxDepth:(NSInteger)maxDepth
+{
     if (!view || depth > maxDepth) {
-    return @””;
+        return @"";
     }
+
     NSMutableString *result =
-    [NSMutableString string];
+        [NSMutableString string];
+
     NSMutableString *indent =
-    [NSMutableString string];
+        [NSMutableString string];
+
     for (NSInteger i = 0; i < depth; i++) {
-    [indent appendString:@”    “];
+        [indent appendString:@"    "];
     }
+
     NSString *identifier =
-    [self getViewID:view];
+        [self getViewID:view];
+
     NSString *label =
-    [self getViewLabel:view];
+        [self getViewLabel:view];
+
     NSString *text =
-    [self getViewText:view];
+        [self getViewText:view];
+
     NSString *traits =
-    [self getTraitsString:view];
+        [self getTraitsString:view];
+
     CGRect screenFrame =
-    [view convertRect:view.bounds
-    toView:nil];
+        [view convertRect:view.bounds
+                  toView:nil];
+
     [result appendFormat:
-    @”%@%@ %@\n”
-    “%@    ID: %@\n”
-    “%@    Label: %@\n”
-    “%@    Text: %@\n”
-    “%@    Value: %@\n”
-    “%@    Hint: %@\n”
-    “%@    Traits: %@\n”
-    “%@    Interactive: %@\n”
-    “%@    A11yElement: %@\n”
-    “%@    Frame: (%.0f, %.0f, %.0f, %.0f)\n”,
+        @"%@%@ %@\n"
+         "%@    ID: %@\n"
+         "%@    Label: %@\n"
+         "%@    Text: %@\n"
+         "%@    Value: %@\n"
+         "%@    Hint: %@\n"
+         "%@    Traits: %@\n"
+         "%@    Interactive: %@\n"
+         "%@    A11yElement: %@\n"
+         "%@    Frame: (%.0f, %.0f, %.0f, %.0f)\n",
 
-  indent,
-  depth == 0 ? @"🎯" : @"└──",
-  NSStringFromClass(view.class),
-  indent,
-  identifier ?: @"(None)",
-  indent,
-  label ?: @"(None)",
-  indent,
-  text ?: @"(None)",
-  indent,
-  view.accessibilityValue ?: @"(None)",
-  indent,
-  view.accessibilityHint ?: @"(None)",
-  indent,
-  traits ?: @"(None)",
-  indent,
-  [self isInteractiveView:view]
-      ? @"YES"
-      : @"NO",
-  indent,
-  view.isAccessibilityElement
-      ? @"YES"
-      : @"NO",
-  indent,
-  screenFrame.origin.x,
-  screenFrame.origin.y,
-  screenFrame.size.width,
-  screenFrame.size.height];
+        indent,
 
-    [result appendString:@”\n”];
+        depth == 0 ? @"🎯" : @"└──",
+
+        NSStringFromClass(view.class),
+
+        indent,
+        identifier ?: @"(None)",
+
+        indent,
+        label ?: @"(None)",
+
+        indent,
+        text ?: @"(None)",
+
+        indent,
+        view.accessibilityValue ?: @"(None)",
+
+        indent,
+        view.accessibilityHint ?: @"(None)",
+
+        indent,
+        traits ?: @"(None)",
+
+        indent,
+        [self isInteractiveView:view]
+            ? @"YES"
+            : @"NO",
+
+        indent,
+        view.isAccessibilityElement
+            ? @"YES"
+            : @"NO",
+
+        indent,
+        screenFrame.origin.x,
+        screenFrame.origin.y,
+        screenFrame.size.width,
+        screenFrame.size.height];
+
+    [result appendString:@"\n"];
+
     if (depth < maxDepth) {
 
-  NSArray<UIView *> *subviews =
-      [view.subviews copy];
-  for (UIView *subview in subviews) {
-      [result appendString:
-          [self buildRecursiveSubtree:subview
-                                depth:depth + 1
-                             maxDepth:maxDepth]];
-  }
+        NSArray<UIView *> *subviews =
+            [view.subviews copy];
 
+        for (UIView *subview in subviews) {
+
+            [result appendString:
+                [self buildRecursiveSubtree:subview
+                                      depth:depth + 1
+                                   maxDepth:maxDepth]];
+        }
     }
+
     return result;
-    }
-* (BOOL)isMeaningfulAccessibilityView:(UIView *)view
-    {
+}
+
+
+#pragma mark - Deep Accessibility
+
+- (BOOL)isMeaningfulAccessibilityView:(UIView *)view
+{
     if (!view) {
-    return NO;
+        return NO;
     }
+
     if (view.isAccessibilityElement) {
-    return YES;
+        return YES;
     }
+
     NSString *identifier =
-    view.accessibilityIdentifier;
+        view.accessibilityIdentifier;
+
     NSString *label =
-    view.accessibilityLabel;
+        view.accessibilityLabel;
+
     NSString *value =
-    view.accessibilityValue;
+        view.accessibilityValue;
+
     NSString *hint =
-    view.accessibilityHint;
+        view.accessibilityHint;
+
     UIAccessibilityTraits traits =
-    view.accessibilityTraits;
+        view.accessibilityTraits;
+
     if (identifier.length > 0 ||
-    label.length > 0 ||
-    value.length > 0 ||
-    hint.length > 0 ||
-    traits != 0) {
+        label.length > 0 ||
+        value.length > 0 ||
+        hint.length > 0 ||
+        traits != 0) {
 
-  return YES;
-
+        return YES;
     }
+
     return NO;
+}
+
+
+#pragma mark - Accessibility Collector
+
+- (void)collectAccessibilityViews:(UIView *)view
+                           result:(NSMutableArray *)result
+                          maxDepth:(NSInteger)maxDepth
+{
+    if (!view ||
+        !result ||
+        maxDepth < 0) {
+        return;
     }
-* (void)collectAccessibilityViews:(UIView *)view
-    result:(NSMutableArray *)result
-    maxDepth:(NSInteger)maxDepth
-    {
-    if (!view || !result || maxDepth < 0) {
-    return;
-    }
+
     if ([self isMeaningfulAccessibilityView:view]) {
 
-  if (![result containsObject:view]) {
-      [result addObject:view];
-  }
+        if (![result containsObject:view]) {
+            [result addObject:view];
+        }
+    }
 
-    }
     if (maxDepth == 0) {
-    return;
+        return;
     }
+
     NSArray<UIView *> *subviews =
-    [view.subviews copy];
+        [view.subviews copy];
+
     for (UIView *subview in subviews) {
 
-  [self collectAccessibilityViews:subview
-                           result:result
-                          maxDepth:maxDepth - 1];
+        [self collectAccessibilityViews:subview
+                                 result:result
+                                maxDepth:maxDepth - 1];
+    }
+}
 
-    }
-    }
-* (UIView *)findBestAccessibilityViewFromView:(UIView *)view
-    {
+
+#pragma mark - Best Accessibility View
+
+- (UIView *)findBestAccessibilityViewFromView:(UIView *)view
+{
     if (!view) {
-    return nil;
+        return nil;
     }
+
     if (view.isAccessibilityElement) {
-    return view;
+        return view;
     }
-    UIView *current =
-    view;
+
+    UIView *current = view;
+
     while (current) {
 
-  if ([self isMeaningfulAccessibilityView:current]) {
-      return current;
-  }
-  current =
-      current.superview;
+        if ([self isMeaningfulAccessibilityView:current]) {
+            return current;
+        }
 
+        current = current.superview;
     }
+
     NSMutableArray *elements =
-    [NSMutableArray array];
+        [NSMutableArray array];
+
     [self collectAccessibilityViews:view
-    result:elements
-    maxDepth:15];
+                             result:elements
+                            maxDepth:15];
+
     for (UIView *candidate in elements) {
 
-  if (candidate.accessibilityLabel.length > 0) {
-      return candidate;
-  }
-
+        if (candidate.accessibilityLabel.length > 0) {
+            return candidate;
+        }
     }
+
     for (UIView *candidate in elements) {
 
-  if (candidate.accessibilityIdentifier.length > 0) {
-      return candidate;
-  }
-
+        if (candidate.accessibilityIdentifier.length > 0) {
+            return candidate;
+        }
     }
+
     return view;
-    }
-* (NSString *)getDeepAccessibilityInfo:(UIView *)view
-    {
+}
+
+
+#pragma mark - Deep Accessibility Info
+
+- (NSString *)getDeepAccessibilityInfo:(UIView *)view
+{
     if (!view) {
-    return @”(None)”;
+        return @"(None)";
     }
+
     NSMutableArray *elements =
-    [NSMutableArray array];
+        [NSMutableArray array];
+
     [self collectAccessibilityViews:view
-    result:elements
-    maxDepth:15];
+                             result:elements
+                            maxDepth:15];
+
     if (elements.count == 0) {
-    return @”(No accessibility elements found)”;
+        return @"(No accessibility elements found)";
     }
+
     NSMutableString *result =
-    [NSMutableString string];
+        [NSMutableString string];
+
     [result appendFormat:
-    @“Accessibility Elements Found: %lu\n\n”,
-    (unsigned long)elements.count];
+        @"Accessibility Elements Found: %lu\n\n",
+        (unsigned long)elements.count];
+
     NSUInteger index = 0;
+
     for (UIView *candidate in elements) {
 
-  CGRect frame =
-      [candidate convertRect:candidate.bounds
-                      toView:nil];
-  NSString *text =
-      [self getViewText:candidate];
-  NSString *traits =
-      [self getTraitsString:candidate];
-  [result appendFormat:
-      @"[%lu] %@\n"
-       "    ID: %@\n"
-       "    Label: %@\n"
-       "    Value: %@\n"
-       "    Hint: %@\n"
-       "    Text: %@\n"
-       "    Traits: %@\n"
-       "    Interactive: %@\n"
-       "    A11yElement: %@\n"
-       "    Frame: (%.0f, %.0f, %.0f, %.0f)\n\n",
-      (unsigned long)index,
-      NSStringFromClass(candidate.class),
-      candidate.accessibilityIdentifier.length
-          ? candidate.accessibilityIdentifier
-          : @"(None)",
-      candidate.accessibilityLabel.length
-          ? candidate.accessibilityLabel
-          : @"(None)",
-      candidate.accessibilityValue.length
-          ? candidate.accessibilityValue
-          : @"(None)",
-      candidate.accessibilityHint.length
-          ? candidate.accessibilityHint
-          : @"(None)",
-      text.length
-          ? text
-          : @"(None)",
-      traits.length
-          ? traits
-          : @"(None)",
-      [self isInteractiveView:candidate]
-          ? @"YES"
-          : @"NO",
-      candidate.isAccessibilityElement
-          ? @"YES"
-          : @"NO",
-      frame.origin.x,
-      frame.origin.y,
-      frame.size.width,
-      frame.size.height];
-  index++;
+        CGRect frame =
+            [candidate convertRect:candidate.bounds
+                            toView:nil];
 
+        NSString *text =
+            [self getViewText:candidate];
+
+        NSString *traits =
+            [self getTraitsString:candidate];
+
+        [result appendFormat:
+            @"[%lu] %@\n"
+             "    ID: %@\n"
+             "    Label: %@\n"
+             "    Value: %@\n"
+             "    Hint: %@\n"
+             "    Text: %@\n"
+             "    Traits: %@\n"
+             "    Interactive: %@\n"
+             "    A11yElement: %@\n"
+             "    Frame: (%.0f, %.0f, %.0f, %.0f)\n\n",
+
+            (unsigned long)index,
+
+            NSStringFromClass(candidate.class),
+
+            candidate.accessibilityIdentifier.length
+                ? candidate.accessibilityIdentifier
+                : @"(None)",
+
+            candidate.accessibilityLabel.length
+                ? candidate.accessibilityLabel
+                : @"(None)",
+
+            candidate.accessibilityValue.length
+                ? candidate.accessibilityValue
+                : @"(None)",
+
+            candidate.accessibilityHint.length
+                ? candidate.accessibilityHint
+                : @"(None)",
+
+            text.length
+                ? text
+                : @"(None)",
+
+            traits.length
+                ? traits
+                : @"(None)",
+
+            [self isInteractiveView:candidate]
+                ? @"YES"
+                : @"NO",
+
+            candidate.isAccessibilityElement
+                ? @"YES"
+                : @"NO",
+
+            frame.origin.x,
+            frame.origin.y,
+            frame.size.width,
+            frame.size.height];
+
+        index++;
     }
+
     return result;
-    }
-* (NSString *)getAccessibilityPath:(UIView *)view
-    {
+}
+
+
+#pragma mark - Accessibility Path
+
+- (NSString *)getAccessibilityPath:(UIView *)view
+{
     if (!view) {
-    return @”(None)”;
+        return @"(None)";
     }
+
     NSMutableString *result =
-    [NSMutableString string];
-    UIView *current =
-    view;
+        [NSMutableString string];
+
+    UIView *current = view;
     NSInteger depth = 0;
+
     while (current && depth < 30) {
 
-  [result appendFormat:
-      @"[%02ld] %@ | ID=%@ | Label=%@ | Text=%@\n",
-      (long)depth,
-      NSStringFromClass(current.class),
-      current.accessibilityIdentifier.length
-          ? current.accessibilityIdentifier
-          : @"(None)",
-      current.accessibilityLabel.length
-          ? current.accessibilityLabel
-          : @"(None)",
-      [self getViewText:current] ?: @"(None)"];
-  current =
-      current.superview;
-  depth++;
+        [result appendFormat:
+            @"[%02ld] %@ | ID=%@ | Label=%@ | Text=%@\n",
 
+            (long)depth,
+
+            NSStringFromClass(current.class),
+
+            current.accessibilityIdentifier.length
+                ? current.accessibilityIdentifier
+                : @"(None)",
+
+            current.accessibilityLabel.length
+                ? current.accessibilityLabel
+                : @"(None)",
+
+            [self getViewText:current] ?: @"(None)"];
+
+        current = current.superview;
+        depth++;
     }
+
     return result;
-    }
-* (NSString *)buildFullReportForView:(UIView *)view
-    hitTarget:(UIView *)hitTarget
-    {
+}
+
+
+#pragma mark - Full Report
+
+- (NSString *)buildFullReportForView:(UIView *)view
+                           hitTarget:(UIView *)hitTarget
+{
     if (!view) {
-    return @“No View”;
+        return @"No View";
     }
+
     NSString *className =
-    NSStringFromClass(view.class);
+        NSStringFromClass(view.class);
+
     NSString *identifier =
-    [self getViewID:view];
+        [self getViewID:view];
+
     NSString *label =
-    [self getViewLabel:view];
+        [self getViewLabel:view];
+
     NSString *text =
-    [self getViewText:view];
+        [self getViewText:view];
+
     NSString *traits =
-    [self getTraitsString:view];
+        [self getTraitsString:view];
+
     BOOL interactive =
-    [self isInteractiveView:view];
+        [self isInteractiveView:view];
+
     NSMutableString *report =
-    [NSMutableString string];
-    [report appendString:
-    @“🎯 SELECTED VIEW\n”
-    “══════════════════════════════\n\n”];
-    [report appendFormat:
-    @“Class: %@\n”,
-    className];
-    [report appendFormat:
-    @“Object Class: %@\n”,
-    [self classNameForObject:view]];
-    [report appendFormat:
-    @“Text: %@\n”,
-    text.length > 0
-    ? text
-    : @”(None)”];
-    [report appendString:@”\n”];
-    [report appendString:
-    @“♿ ACCESSIBILITY\n”
-    “══════════════════════════════\n\n”];
-    [report appendFormat:
-    @“ID: %@\n”
-    “Label: %@\n”
-    “Value: %@\n”
-    “Hint: %@\n”
-    “Traits: %@\n”
-    “Interactive: %@\n”
-    “Is Accessibility Element: %@”,
+        [NSMutableString string];
 
-  identifier.length > 0
-      ? identifier
-      : @"(None)",
-  label.length > 0
-      ? label
-      : @"(None)",
-  view.accessibilityValue.length > 0
-      ? view.accessibilityValue
-      : @"(None)",
-  view.accessibilityHint.length > 0
-      ? view.accessibilityHint
-      : @"(None)",
-  traits.length > 0
-      ? traits
-      : @"(None)",
-  interactive
-      ? @"YES"
-      : @"NO",
-  view.isAccessibilityElement
-      ? @"YES"
-      : @"NO"];
+    [report appendString:
+        @"🎯 SELECTED VIEW\n"
+         "══════════════════════════════\n\n"];
 
-    [report appendString:@”\n\n”];
+    [report appendFormat:
+        @"Class: %@\n",
+        className];
+
+    [report appendFormat:
+        @"Object Class: %@\n",
+        [self classNameForObject:view]];
+
+    [report appendFormat:
+        @"Text: %@\n",
+        text.length > 0
+            ? text
+            : @"(None)"];
+
+    [report appendString:@"\n"];
+
     [report appendString:
-    @“📐 GEOMETRY\n”
-    “══════════════════════════════\n\n”];
+        @"♿ ACCESSIBILITY\n"
+         "══════════════════════════════\n\n"];
+
+    [report appendFormat:
+        @"ID: %@\n"
+         "Label: %@\n"
+         "Value: %@\n"
+         "Hint: %@\n"
+         "Traits: %@\n"
+         "Interactive: %@\n"
+         "Is Accessibility Element: %@",
+
+        identifier.length > 0
+            ? identifier
+            : @"(None)",
+
+        label.length > 0
+            ? label
+            : @"(None)",
+
+        view.accessibilityValue.length > 0
+            ? view.accessibilityValue
+            : @"(None)",
+
+        view.accessibilityHint.length > 0
+            ? view.accessibilityHint
+            : @"(None)",
+
+        traits.length > 0
+            ? traits
+            : @"(None)",
+
+        interactive
+            ? @"YES"
+            : @"NO",
+
+        view.isAccessibilityElement
+            ? @"YES"
+            : @"NO"];
+
+    [report appendString:@"\n\n"];
+
     [report appendString:
-    [self getFrameInfoForView:view]];
+        @"📐 GEOMETRY\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n\n══════════════════════════════\n”
-    “🌳 VIEW / ID TREE\n”
-    “══════════════════════════════\n\n”];
+        [self getFrameInfoForView:view]];
+
     [report appendString:
-    [self buildViewTreeFromView:view]];
+        @"\n\n══════════════════════════════\n"
+         "🌳 VIEW / ID TREE\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “🌲 RECURSIVE SUBTREE\n”
-    “══════════════════════════════\n\n”];
+        [self buildViewTreeFromView:view]];
+
     [report appendString:
-    [self buildRecursiveSubtree:hitTarget ?: view
-    depth:0
-    maxDepth:8]];
+        @"\n══════════════════════════════\n"
+         "🌲 RECURSIVE SUBTREE\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “⬆️ SUPERVIEW CHAIN\n”
-    “══════════════════════════════\n\n”];
+        [self buildRecursiveSubtree:hitTarget ?: view
+                              depth:0
+                           maxDepth:8]];
+
     [report appendString:
-    [self getSuperviewChain:view]];
+        @"\n══════════════════════════════\n"
+         "⬆️ SUPERVIEW CHAIN\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “↔️ SIBLINGS\n”
-    “══════════════════════════════\n\n”];
+        [self getSuperviewChain:view]];
+
     [report appendString:
-    [self getSiblingInfo:view]];
+        @"\n══════════════════════════════\n"
+         "↔️ SIBLINGS\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “⬇️ DIRECT SUBVIEWS\n”
-    “══════════════════════════════\n\n”];
+        [self getSiblingInfo:view]];
+
     [report appendString:
-    [self getSubviewsInfo:view]];
+        @"\n══════════════════════════════\n"
+         "⬇️ DIRECT SUBVIEWS\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “♿ DEEP ACCESSIBILITY\n”
-    “══════════════════════════════\n\n”];
+        [self getSubviewsInfo:view]];
+
     [report appendString:
-    [self getDeepAccessibilityInfo:hitTarget ?: view]];
+        @"\n══════════════════════════════\n"
+         "♿ DEEP ACCESSIBILITY\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “🧭 ACCESSIBILITY PATH\n”
-    “══════════════════════════════\n\n”];
+        [self getDeepAccessibilityInfo:hitTarget ?: view]];
+
     [report appendString:
-    [self getAccessibilityPath:view]];
+        @"\n══════════════════════════════\n"
+         "🧭 ACCESSIBILITY PATH\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “🎮 CONTROL / INTERACTION\n”
-    “══════════════════════════════\n\n”];
+        [self getAccessibilityPath:view]];
+
     [report appendString:
-    [self getControlInfo:view]];
+        @"\n══════════════════════════════\n"
+         "🎮 CONTROL / INTERACTION\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n\nGESTURES\n”];
+        [self getControlInfo:view]];
+
     [report appendString:
-    [self getGestureInfo:view]];
+        @"\n\nGESTURES\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “🧬 RUNTIME CLASS\n”
-    “══════════════════════════════\n\n”];
+        [self getGestureInfo:view]];
+
     [report appendString:
-    [self getRuntimeInfoForObject:view]];
+        @"\n══════════════════════════════\n"
+         "🧬 RUNTIME CLASS\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “📱 VIEW CONTROLLER\n”
-    “══════════════════════════════\n\n”];
+        [self getRuntimeInfoForObject:view]];
+
     [report appendString:
-    [self getViewControllerInfo:view]];
+        @"\n══════════════════════════════\n"
+         "📱 VIEW CONTROLLER\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “🪟 WINDOW\n”
-    “══════════════════════════════\n\n”];
+        [self getViewControllerInfo:view]];
+
     [report appendString:
-    [self getWindowInfo:view]];
+        @"\n══════════════════════════════\n"
+         "🪟 WINDOW\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “🎨 CALAYER\n”
-    “══════════════════════════════\n\n”];
+        [self getWindowInfo:view]];
+
     [report appendString:
-    [self getLayerInfo:view]];
+        @"\n══════════════════════════════\n"
+         "🎨 CALAYER\n"
+         "══════════════════════════════\n\n"];
+
     [report appendString:
-    @”\n══════════════════════════════\n”
-    “▶️ YOUTUBE DETECTION\n”
-    “══════════════════════════════\n\n”];
+        [self getLayerInfo:view]];
+
     [report appendString:
-    [self getYouTubeInfoForObject:view]];
+        @"\n══════════════════════════════\n"
+         "▶️ YOUTUBE DETECTION\n"
+         "══════════════════════════════\n\n"];
+
+    [report appendString:
+        [self getYouTubeInfoForObject:view]];
+
     return report;
-    }
-* (void)handleLongPress:
+}
+
+
+#pragma mark - Long Press
+
+- (void)handleLongPress:
     (UILongPressGestureRecognizer *)sender
-    {
+{
     if (![self isInspectorEnabled]) {
-    return;
+        return;
     }
+
     if (sender.state !=
-    UIGestureRecognizerStateBegan) {
-    return;
+        UIGestureRecognizerStateBegan) {
+        return;
     }
+
     if (![sender.view
-    isKindOfClass:[UIWindow class]]) {
-    return;
+         isKindOfClass:[UIWindow class]]) {
+        return;
     }
+
     UIWindow *window =
-    (UIWindow *)sender.view;
+        (UIWindow *)sender.view;
+
     CGPoint point =
-    [sender locationInView:window];
+        [sender locationInView:window];
+
     UIView *hitTarget =
-    [window hitTest:point
-    withEvent:nil];
+        [window hitTest:point
+              withEvent:nil];
+
     if (!hitTarget) {
-    return;
+        return;
     }
+
     if ([self shouldIgnoreView:hitTarget]) {
-    return;
+        return;
     }
+
     if (hitTarget == window) {
-    return;
+        return;
     }
+
     UIView *target =
-    [self findBestAccessibilityViewFromView:hitTarget];
+        [self findBestAccessibilityViewFromView:hitTarget];
+
     if (!target) {
-    target = hitTarget;
+        target = hitTarget;
     }
+
     NSString *report =
-    [self buildFullReportForView:target
-    hitTarget:hitTarget];
+        [self buildFullReportForView:target
+                           hitTarget:hitTarget];
+
     NSString *tree =
-    [self buildRecursiveSubtree:hitTarget
-    depth:0
-    maxDepth:12];
+        [self buildRecursiveSubtree:hitTarget
+                              depth:0
+                           maxDepth:12];
+
     NSString *directID =
-    [self getViewID:target];
+        [self getViewID:target];
+
     if (!directID.length) {
-    directID = @”(No Direct ID)”;
+        directID = @"(No Direct ID)";
     }
+
     UIAlertController *alert =
-    [UIAlertController
-    alertControllerWithTitle:
-    @“🔍 Hamad Inspector”
-    message:report
-    preferredStyle:
-    UIAlertControllerStyleAlert];
+        [UIAlertController
+            alertControllerWithTitle:
+                @"🔍 Hamad Inspector"
+            message:report
+            preferredStyle:
+                UIAlertControllerStyleAlert];
+
     [alert addAction:
-    [UIAlertAction
-    actionWithTitle:@“📋 Copy ID”
-    style:UIAlertActionStyleDefault
-    handler:^(UIAlertAction *action) {
+        [UIAlertAction
+            actionWithTitle:@"📋 Copy ID"
+            style:UIAlertActionStyleDefault
+            handler:^(UIAlertAction *action) {
 
-          [UIPasteboard generalPasteboard].string =
-              directID;
-      }]
-
+                [UIPasteboard generalPasteboard].string =
+                    directID;
+            }]
     ];
+
     [alert addAction:
-    [UIAlertAction
-    actionWithTitle:@“🌳 Copy Tree”
-    style:UIAlertActionStyleDefault
-    handler:^(UIAlertAction *action) {
+        [UIAlertAction
+            actionWithTitle:@"🌳 Copy Tree"
+            style:UIAlertActionStyleDefault
+            handler:^(UIAlertAction *action) {
 
-          [UIPasteboard generalPasteboard].string =
-              tree;
-      }]
-
+                [UIPasteboard generalPasteboard].string =
+                    tree;
+            }]
     ];
+
     [alert addAction:
-    [UIAlertAction
-    actionWithTitle:@“📄 Copy All”
-    style:UIAlertActionStyleDefault
-    handler:^(UIAlertAction *action) {
+        [UIAlertAction
+            actionWithTitle:@"📄 Copy All"
+            style:UIAlertActionStyleDefault
+            handler:^(UIAlertAction *action) {
 
-          [UIPasteboard generalPasteboard].string =
-              report;
-      }]
-
+                [UIPasteboard generalPasteboard].string =
+                    report;
+            }]
     ];
+
     [alert addAction:
-    [UIAlertAction
-    actionWithTitle:@“👌 OK”
-    style:UIAlertActionStyleCancel
-    handler:nil]
+        [UIAlertAction
+            actionWithTitle:@"👌 OK"
+            style:UIAlertActionStyleCancel
+            handler:nil]
     ];
+
     dispatch_async(
-    dispatch_get_main_queue(),
-    ^{
+        dispatch_get_main_queue(),
+        ^{
 
-  UIViewController *vc =
-      [self topViewController];
-  if (!vc) {
-      return;
-  }
-  UIViewController *presented =
-      vc.presentedViewController;
-  if ([presented
-       isKindOfClass:
-       [UIAlertController class]]) {
-      return;
-  }
-  [vc presentViewController:alert
-                     animated:YES
-                   completion:nil];
+        UIViewController *vc =
+            [self topViewController];
 
+        if (!vc) {
+            return;
+        }
+
+        UIViewController *presented =
+            vc.presentedViewController;
+
+        if ([presented
+             isKindOfClass:
+             [UIAlertController class]]) {
+            return;
+        }
+
+        [vc presentViewController:alert
+                           animated:YES
+                         completion:nil];
     });
-    }
+}
 
 @end
 
+
+#pragma mark - Constructor
+
 %ctor
 {
-dispatch_async(
-dispatch_get_main_queue(),
-^{
+    dispatch_async(
+        dispatch_get_main_queue(),
+        ^{
 
-    [[HPlusDebugHelper sharedInstance]
-        refreshInspector];
-});
+        HPlusDebugHelper *helper =
+            [HPlusDebugHelper sharedInstance];
 
+        [helper installWindowNotifications];
+        [helper refreshInspector];
+    });
 }
