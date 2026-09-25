@@ -78,11 +78,9 @@ jobs:
             cd ${{ github.workspace }}
           fi
 
-          # جلب مكتبة FLEX تلقائياً ووضعها داخل مجلد مشروعك HPlus باسم FLEX
           if [ ! -d "HPlus/FLEX" ]; then
             git clone --quiet --depth=1 https://github.com/FLEXTool/FLEX.git HPlus/FLEX_Temp
-            mkdir -p HPlus/FLEX
-            cp -R HPlus/FLEX_Temp/Classes/* HPlus/FLEX/
+            mv HPlus/FLEX_Temp/Classes HPlus/FLEX
             rm -rf HPlus/FLEX_Temp
           fi
 
