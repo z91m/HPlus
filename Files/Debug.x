@@ -41,6 +41,7 @@ static char HPlusGestureKey;
 
 - (NSString *)getSuperviewChain:(UIView *)view;
 - (NSString *)getSubviewsInfo:(UIView *)view;
+- (NSString *)getSiblingInfo:(UIView *)view;
 
 - (NSString *)getRuntimeInfoForObject:(id)object;
 - (NSString *)getSuperclassChainForClass:(Class)cls;
@@ -54,7 +55,22 @@ static char HPlusGestureKey;
 - (NSString *)getYouTubeInfoForObject:(id)object;
 
 - (NSString *)buildViewTreeFromView:(UIView *)view;
-- (NSString *)buildFullReportForView:(UIView *)view;
+- (NSString *)buildRecursiveSubtree:(UIView *)view
+                              depth:(NSInteger)depth
+                          maxDepth:(NSInteger)maxDepth;
+
+- (NSString *)getDeepAccessibilityInfo:(UIView *)view;
+- (NSString *)getAccessibilityPath:(UIView *)view;
+
+- (BOOL)isMeaningfulAccessibilityView:(UIView *)view;
+- (UIView *)findBestAccessibilityViewFromView:(UIView *)view;
+
+- (void)collectAccessibilityViews:(UIView *)view
+                           result:(NSMutableArray *)result
+                          maxDepth:(NSInteger)maxDepth;
+
+- (NSString *)buildFullReportForView:(UIView *)view
+                           hitTarget:(UIView *)hitTarget;
 
 @end
 
@@ -64,6 +80,7 @@ static char HPlusGestureKey;
 %hook UIWindow
 
 - (void)makeKeyAndVisible {
+
     %orig;
 
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -73,11 +90,12 @@ static char HPlusGestureKey;
 }
 
 - (void)becomeKeyWindow {
+
     %orig;
 
     dispatch_after(
         dispatch_time(DISPATCH_TIME_NOW,
-                     (int64_t)(0.05 * NSEC_PER_SEC)),
+                      (int64_t)(0.05 * NSEC_PER_SEC)),
         dispatch_get_main_queue(),
         ^{
             [[HPlusDebugHelper sharedInstance]
@@ -137,7 +155,8 @@ static char HPlusGestureKey;
                 UIWindowScene *windowScene =
                     (UIWindowScene *)scene;
 
-                for (UIWindow *window in windowScene.windows) {
+                for (UIWindow *window
+                     in windowScene.windows) {
 
                     [self setupGestureForWindow:window];
                 }
@@ -176,7 +195,8 @@ static char HPlusGestureKey;
             UIWindowScene *windowScene =
                 (UIWindowScene *)scene;
 
-            for (UIWindow *window in windowScene.windows) {
+            for (UIWindow *window
+                 in windowScene.windows) {
 
                 UILongPressGestureRecognizer *gesture =
                     objc_getAssociatedObject(
@@ -582,16 +602,25 @@ static char HPlusGestureKey;
         UIButton *button =
             (UIButton *)view;
 
-        if (button.currentTitle.length > 0) {
-            return button.currentTitle;
+        NSString *title =
+            button.currentTitle;
+
+        if (title.length > 0) {
+            return title;
         }
 
-        if (button.currentAttributedTitle.string.length > 0) {
-            return button.currentAttributedTitle.string;
+        NSString *attributed =
+            button.currentAttributedTitle.string;
+
+        if (attributed.length > 0) {
+            return attributed;
         }
 
-        if (button.titleLabel.text.length > 0) {
-            return button.titleLabel.text;
+        NSString *titleLabel =
+            button.titleLabel.text;
+
+        if (titleLabel.length > 0) {
+            return titleLabel;
         }
     }
 
@@ -665,12 +694,6 @@ static char HPlusGestureKey;
     if (traits & UIAccessibilityTraitKeyboardKey)
         [items addObject:@"KeyboardKey"];
 
-    /*
-     IMPORTANT:
-     UIAccessibilityTraits is an integer type.
-     لذلك نستخدم items.count وليس traits.count.
-    */
-
     if (items.count == 0) {
 
         return [NSString stringWithFormat:
@@ -708,6 +731,10 @@ static char HPlusGestureKey;
         return YES;
     }
 
+    if (view.isAccessibilityElement) {
+        return YES;
+    }
+
     return NO;
 }
 
@@ -727,20 +754,8 @@ static char HPlusGestureKey;
         view.bounds;
 
     CGRect screenFrame =
-        CGRectZero;
-
-    if (view.window) {
-
-        screenFrame =
-            [view convertRect:view.bounds
-                      toView:nil];
-
-    } else {
-
-        screenFrame =
-            [view convertRect:view.bounds
-                      toView:nil];
-    }
+        [view convertRect:view.bounds
+                  toView:nil];
 
     return [NSString stringWithFormat:
         @"Local Frame: (%.1f, %.1f, %.1f, %.1f)\n"
@@ -1010,13 +1025,18 @@ static char HPlusGestureKey;
         NSString *text =
             [self getViewText:subview];
 
+        CGRect frame =
+            [subview convertRect:subview.bounds
+                          toView:nil];
+
         [result appendFormat:
             @"[%lu] %@\n"
              "    ID: %@\n"
              "    Label: %@\n"
              "    Text: %@\n"
-             "    Frame: %@\n"
-             "    Interactive: %@\n\n",
+             "    Traits: %@\n"
+             "    Interactive: %@\n"
+             "    Frame: %@\n\n",
 
             (unsigned long)index,
 
@@ -1034,17 +1054,102 @@ static char HPlusGestureKey;
                 ? text
                 : @"(None)",
 
-            NSStringFromCGRect(
-                subview.frame),
+            [self getTraitsString:subview] ?: @"(None)",
 
             [self isInteractiveView:subview]
                 ? @"YES"
-                : @"NO"];
+                : @"NO",
+
+            NSStringFromCGRect(frame)];
 
         index++;
     }
 
     return result;
+}
+
+
+#pragma mark - Siblings
+
+- (NSString *)getSiblingInfo:(UIView *)view {
+
+    UIView *parent =
+        view.superview;
+
+    if (!parent) {
+        return @"(No siblings)";
+    }
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    NSArray *siblings =
+        parent.subviews;
+
+    for (NSUInteger i = 0;
+         i < siblings.count;
+         i++) {
+
+        UIView *sibling =
+            siblings[i];
+
+        NSString *identifier =
+            [self getViewID:sibling];
+
+        NSString *label =
+            [self getViewLabel:sibling];
+
+        NSString *text =
+            [self getViewText:sibling];
+
+        CGRect frame =
+            [sibling convertRect:sibling.bounds
+                          toView:nil];
+
+        [result appendFormat:
+            @"[%lu] %@%@\n"
+             "    ID: %@\n"
+             "    Label: %@\n"
+             "    Text: %@\n"
+             "    Traits: %@\n"
+             "    Interactive: %@\n"
+             "    Frame: (%.0f, %.0f, %.0f, %.0f)\n\n",
+
+            (unsigned long)i,
+
+            sibling == view
+                ? @"🎯 "
+                : @"",
+
+            NSStringFromClass(sibling.class),
+
+            identifier.length
+                ? identifier
+                : @"(None)",
+
+            label.length
+                ? label
+                : @"(None)",
+
+            text.length
+                ? text
+                : @"(None)",
+
+            [self getTraitsString:sibling] ?: @"(None)",
+
+            [self isInteractiveView:sibling]
+                ? @"YES"
+                : @"NO",
+
+            frame.origin.x,
+            frame.origin.y,
+            frame.size.width,
+            frame.size.height];
+    }
+
+    return result.length
+        ? result
+        : @"(No siblings)";
 }
 
 
@@ -1068,9 +1173,7 @@ static char HPlusGestureKey;
 
         [result appendFormat:
             @"[%02d] %@\n",
-
             depth,
-
             NSStringFromClass(current)];
 
         current =
@@ -1584,7 +1687,7 @@ static char HPlusGestureKey;
 }
 
 
-#pragma mark - View Tree
+#pragma mark - Simple View Tree
 
 - (NSString *)buildViewTreeFromView:(UIView *)view {
 
@@ -1728,9 +1831,402 @@ static char HPlusGestureKey;
 }
 
 
+#pragma mark - Recursive Subtree
+
+- (NSString *)buildRecursiveSubtree:(UIView *)view
+                              depth:(NSInteger)depth
+                          maxDepth:(NSInteger)maxDepth {
+
+    if (!view || depth > maxDepth) {
+        return @"";
+    }
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    NSMutableString *indent =
+        [NSMutableString string];
+
+    for (NSInteger i = 0; i < depth; i++) {
+        [indent appendString:@"    "];
+    }
+
+    NSString *identifier =
+        [self getViewID:view];
+
+    NSString *label =
+        [self getViewLabel:view];
+
+    NSString *text =
+        [self getViewText:view];
+
+    NSString *traits =
+        [self getTraitsString:view];
+
+    CGRect screenFrame =
+        [view convertRect:view.bounds
+                  toView:nil];
+
+    [result appendFormat:
+        @"%@%@ %@\n"
+         "%@    ID: %@\n"
+         "%@    Label: %@\n"
+         "%@    Text: %@\n"
+         "%@    Value: %@\n"
+         "%@    Hint: %@\n"
+         "%@    Traits: %@\n"
+         "%@    Interactive: %@\n"
+         "%@    A11yElement: %@\n"
+         "%@    Frame: (%.0f, %.0f, %.0f, %.0f)\n",
+
+        indent,
+
+        depth == 0 ? @"🎯" : @"└──",
+
+        NSStringFromClass(view.class),
+
+        indent,
+        identifier ?: @"(None)",
+
+        indent,
+        label ?: @"(None)",
+
+        indent,
+        text ?: @"(None)",
+
+        indent,
+        view.accessibilityValue ?: @"(None)",
+
+        indent,
+        view.accessibilityHint ?: @"(None)",
+
+        indent,
+        traits ?: @"(None)",
+
+        indent,
+        [self isInteractiveView:view]
+            ? @"YES"
+            : @"NO",
+
+        indent,
+        view.isAccessibilityElement
+            ? @"YES"
+            : @"NO",
+
+        indent,
+        screenFrame.origin.x,
+        screenFrame.origin.y,
+        screenFrame.size.width,
+        screenFrame.size.height];
+
+    [result appendString:@"\n"];
+
+    if (depth < maxDepth) {
+
+        for (UIView *subview
+             in view.subviews) {
+
+            [result appendString:
+                [self buildRecursiveSubtree:subview
+                                      depth:depth + 1
+                                  maxDepth:maxDepth]];
+        }
+    }
+
+    return result;
+}
+
+
+#pragma mark - Deep Accessibility
+
+- (BOOL)isMeaningfulAccessibilityView:(UIView *)view {
+
+    if (!view) {
+        return NO;
+    }
+
+    if (view.isAccessibilityElement) {
+        return YES;
+    }
+
+    NSString *identifier =
+        view.accessibilityIdentifier;
+
+    NSString *label =
+        view.accessibilityLabel;
+
+    NSString *value =
+        view.accessibilityValue;
+
+    NSString *hint =
+        view.accessibilityHint;
+
+    UIAccessibilityTraits traits =
+        view.accessibilityTraits;
+
+    if (identifier.length > 0 ||
+        label.length > 0 ||
+        value.length > 0 ||
+        hint.length > 0 ||
+        traits != 0) {
+
+        return YES;
+    }
+
+    return NO;
+}
+
+
+- (void)collectAccessibilityViews:(UIView *)view
+                           result:(NSMutableArray *)result
+                          maxDepth:(NSInteger)maxDepth {
+
+    if (!view || !result || maxDepth < 0) {
+        return;
+    }
+
+    if ([self isMeaningfulAccessibilityView:view]) {
+
+        if (![result containsObject:view]) {
+            [result addObject:view];
+        }
+    }
+
+    if (maxDepth == 0) {
+        return;
+    }
+
+    for (UIView *subview
+         in view.subviews) {
+
+        [self collectAccessibilityViews:subview
+                                 result:result
+                                maxDepth:maxDepth - 1];
+    }
+}
+
+
+- (UIView *)findBestAccessibilityViewFromView:(UIView *)view {
+
+    if (!view) {
+        return nil;
+    }
+
+    /*
+     * إذا كان hit-test نفسه Accessibility element
+     * نفضله.
+     */
+
+    if (view.isAccessibilityElement) {
+        return view;
+    }
+
+    /*
+     * ابحث صعوداً عن أقرب عنصر له بيانات Accessibility.
+     */
+
+    UIView *current =
+        view;
+
+    while (current) {
+
+        if ([self isMeaningfulAccessibilityView:current]) {
+            return current;
+        }
+
+        current =
+            current.superview;
+    }
+
+    /*
+     * بعدها ابحث داخل descendants.
+     */
+
+    NSMutableArray *elements =
+        [NSMutableArray array];
+
+    [self collectAccessibilityViews:view
+                             result:elements
+                            maxDepth:15];
+
+    /*
+     * Label أولاً.
+     */
+
+    for (UIView *candidate
+         in elements) {
+
+        if (candidate.accessibilityLabel.length > 0) {
+            return candidate;
+        }
+    }
+
+    /*
+     * Identifier ثانياً.
+     */
+
+    for (UIView *candidate
+         in elements) {
+
+        if (candidate.accessibilityIdentifier.length > 0) {
+            return candidate;
+        }
+    }
+
+    /*
+     * آخر حل: العنصر الأصلي.
+     */
+
+    return view;
+}
+
+
+- (NSString *)getDeepAccessibilityInfo:(UIView *)view {
+
+    if (!view) {
+        return @"(None)";
+    }
+
+    NSMutableArray *elements =
+        [NSMutableArray array];
+
+    [self collectAccessibilityViews:view
+                             result:elements
+                            maxDepth:15];
+
+    if (elements.count == 0) {
+        return @"(No accessibility elements found)";
+    }
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    [result appendFormat:
+        @"Accessibility Elements Found: %lu\n\n",
+        (unsigned long)elements.count];
+
+    NSUInteger index = 0;
+
+    for (UIView *candidate
+         in elements) {
+
+        CGRect frame =
+            [candidate convertRect:candidate.bounds
+                            toView:nil];
+
+        NSString *text =
+            [self getViewText:candidate];
+
+        NSString *traits =
+            [self getTraitsString:candidate];
+
+        [result appendFormat:
+            @"[%lu] %@\n"
+             "    ID: %@\n"
+             "    Label: %@\n"
+             "    Value: %@\n"
+             "    Hint: %@\n"
+             "    Text: %@\n"
+             "    Traits: %@\n"
+             "    Interactive: %@\n"
+             "    A11yElement: %@\n"
+             "    Frame: (%.0f, %.0f, %.0f, %.0f)\n\n",
+
+            (unsigned long)index,
+
+            NSStringFromClass(candidate.class),
+
+            candidate.accessibilityIdentifier.length
+                ? candidate.accessibilityIdentifier
+                : @"(None)",
+
+            candidate.accessibilityLabel.length
+                ? candidate.accessibilityLabel
+                : @"(None)",
+
+            candidate.accessibilityValue.length
+                ? candidate.accessibilityValue
+                : @"(None)",
+
+            candidate.accessibilityHint.length
+                ? candidate.accessibilityHint
+                : @"(None)",
+
+            text.length
+                ? text
+                : @"(None)",
+
+            traits.length
+                ? traits
+                : @"(None)",
+
+            [self isInteractiveView:candidate]
+                ? @"YES"
+                : @"NO",
+
+            candidate.isAccessibilityElement
+                ? @"YES"
+                : @"NO",
+
+            frame.origin.x,
+            frame.origin.y,
+            frame.size.width,
+            frame.size.height];
+
+        index++;
+    }
+
+    return result;
+}
+
+
+- (NSString *)getAccessibilityPath:(UIView *)view {
+
+    if (!view) {
+        return @"(None)";
+    }
+
+    NSMutableString *result =
+        [NSMutableString string];
+
+    UIView *current =
+        view;
+
+    NSInteger depth = 0;
+
+    while (current && depth < 30) {
+
+        [result appendFormat:
+            @"[%02ld] %@ | ID=%@ | Label=%@ | Text=%@\n",
+
+            (long)depth,
+
+            NSStringFromClass(current.class),
+
+            current.accessibilityIdentifier.length
+                ? current.accessibilityIdentifier
+                : @"(None)",
+
+            current.accessibilityLabel.length
+                ? current.accessibilityLabel
+                : @"(None)",
+
+            [self getViewText:current] ?: @"(None)"];
+
+        current =
+            current.superview;
+
+        depth++;
+    }
+
+    return result;
+}
+
+
 #pragma mark - Full Report
 
-- (NSString *)buildFullReportForView:(UIView *)view {
+- (NSString *)buildFullReportForView:(UIView *)view
+                           hitTarget:(UIView *)hitTarget {
 
     if (!view) {
         return @"No View";
@@ -1787,7 +2283,8 @@ static char HPlusGestureKey;
          "Value: %@\n"
          "Hint: %@\n"
          "Traits: %@\n"
-         "Interactive: %@",
+         "Interactive: %@\n"
+         "Is Accessibility Element: %@",
 
         identifier.length > 0
             ? identifier
@@ -1811,6 +2308,10 @@ static char HPlusGestureKey;
 
         interactive
             ? @"YES"
+            : @"NO",
+
+        view.isAccessibilityElement
+            ? @"YES"
             : @"NO"];
 
     [report appendString:@"\n\n"];
@@ -1832,6 +2333,16 @@ static char HPlusGestureKey;
 
     [report appendString:
         @"\n══════════════════════════════\n"
+         "🌲 RECURSIVE SUBTREE\n"
+         "══════════════════════════════\n\n"];
+
+    [report appendString:
+        [self buildRecursiveSubtree:hitTarget ?: view
+                              depth:0
+                          maxDepth:8]];
+
+    [report appendString:
+        @"\n══════════════════════════════\n"
          "⬆️ SUPERVIEW CHAIN\n"
          "══════════════════════════════\n\n"];
 
@@ -1840,11 +2351,35 @@ static char HPlusGestureKey;
 
     [report appendString:
         @"\n══════════════════════════════\n"
+         "↔️ SIBLINGS\n"
+         "══════════════════════════════\n\n"];
+
+    [report appendString:
+        [self getSiblingInfo:view]];
+
+    [report appendString:
+        @"\n══════════════════════════════\n"
          "⬇️ DIRECT SUBVIEWS\n"
          "══════════════════════════════\n\n"];
 
     [report appendString:
         [self getSubviewsInfo:view]];
+
+    [report appendString:
+        @"\n══════════════════════════════\n"
+         "♿ DEEP ACCESSIBILITY\n"
+         "══════════════════════════════\n\n"];
+
+    [report appendString:
+        [self getDeepAccessibilityInfo:hitTarget ?: view]];
+
+    [report appendString:
+        @"\n══════════════════════════════\n"
+         "🧭 ACCESSIBILITY PATH\n"
+         "══════════════════════════════\n\n"];
+
+    [report appendString:
+        [self getAccessibilityPath:view]];
 
     [report appendString:
         @"\n══════════════════════════════\n"
@@ -1931,27 +2466,44 @@ static char HPlusGestureKey;
     CGPoint point =
         [sender locationInView:window];
 
-    UIView *target =
+    /*
+     * العنصر الذي استقبل اللمسة فعلياً.
+     */
+    UIView *hitTarget =
         [window hitTest:point
               withEvent:nil];
 
+    if (!hitTarget) {
+        return;
+    }
+
+    if ([self shouldIgnoreView:hitTarget]) {
+        return;
+    }
+
+    if (hitTarget == window) {
+        return;
+    }
+
+    /*
+     * نحاول العثور على أفضل Accessibility element
+     * مرتبط بالعنصر الذي تم لمسه.
+     */
+    UIView *target =
+        [self findBestAccessibilityViewFromView:hitTarget];
+
     if (!target) {
-        return;
-    }
-
-    if ([self shouldIgnoreView:target]) {
-        return;
-    }
-
-    if (target == window) {
-        return;
+        target = hitTarget;
     }
 
     NSString *report =
-        [self buildFullReportForView:target];
+        [self buildFullReportForView:target
+                           hitTarget:hitTarget];
 
     NSString *tree =
-        [self buildViewTreeFromView:target];
+        [self buildRecursiveSubtree:hitTarget
+                              depth:0
+                          maxDepth:12];
 
     NSString *directID =
         [self getViewID:target];
