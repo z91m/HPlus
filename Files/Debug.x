@@ -67,7 +67,8 @@ static char HPlusGestureKey;
     %orig;
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        [[HPlusDebugHelper sharedInstance] setupGestureForWindow:self];
+        [[HPlusDebugHelper sharedInstance]
+            setupGestureForWindow:self];
     });
 }
 
@@ -75,10 +76,12 @@ static char HPlusGestureKey;
     %orig;
 
     dispatch_after(
-        dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)),
+        dispatch_time(DISPATCH_TIME_NOW,
+                     (int64_t)(0.05 * NSEC_PER_SEC)),
         dispatch_get_main_queue(),
         ^{
-            [[HPlusDebugHelper sharedInstance] setupGestureForWindow:self];
+            [[HPlusDebugHelper sharedInstance]
+                setupGestureForWindow:self];
         }
     );
 }
@@ -92,6 +95,7 @@ static char HPlusGestureKey;
 #pragma mark - Singleton
 
 + (instancetype)sharedInstance {
+
     static HPlusDebugHelper *sharedInstance = nil;
     static dispatch_once_t onceToken;
 
@@ -106,11 +110,14 @@ static char HPlusGestureKey;
 #pragma mark - Settings
 
 - (BOOL)isInspectorEnabled {
+
     return [[NSUserDefaults standardUserDefaults]
         boolForKey:HPlusInspector];
 }
 
+
 - (void)refreshInspector {
+
     dispatch_async(dispatch_get_main_queue(), ^{
 
         if (![self isInspectorEnabled]) {
@@ -131,6 +138,7 @@ static char HPlusGestureKey;
                     (UIWindowScene *)scene;
 
                 for (UIWindow *window in windowScene.windows) {
+
                     [self setupGestureForWindow:window];
                 }
             }
@@ -219,49 +227,6 @@ static char HPlusGestureKey;
 
 #pragma clang diagnostic pop
     }
-}
-
-
-#pragma mark - Basic Helpers
-
-- (NSString *)safeString:(id)value {
-
-    if (!value || value == [NSNull null]) {
-        return @"(None)";
-    }
-
-    @try {
-
-        NSString *description =
-            [value description];
-
-        if (!description ||
-            description.length == 0) {
-
-            return @"(None)";
-        }
-
-        return description;
-
-    } @catch (...) {
-
-        return @"(Unavailable)";
-    }
-}
-
-- (NSString *)classNameForObject:(id)object {
-
-    if (!object) {
-        return @"(None)";
-    }
-
-    Class cls = object_getClass(object);
-
-    if (!cls) {
-        return @"(Unknown)";
-    }
-
-    return NSStringFromClass(cls);
 }
 
 
@@ -420,7 +385,7 @@ static char HPlusGestureKey;
 
             UIViewController *visible =
                 [(UINavigationController *)vc
-                 visibleViewController];
+                    visibleViewController];
 
             if (visible && visible != vc) {
                 vc = visible;
@@ -433,7 +398,7 @@ static char HPlusGestureKey;
 
             UIViewController *selected =
                 [(UITabBarController *)vc
-                 selectedViewController];
+                    selectedViewController];
 
             if (selected && selected != vc) {
                 vc = selected;
@@ -446,7 +411,7 @@ static char HPlusGestureKey;
 
             UIViewController *last =
                 ((UISplitViewController *)vc)
-                .viewControllers.lastObject;
+                    .viewControllers.lastObject;
 
             if (last && last != vc) {
                 vc = last;
@@ -519,6 +484,51 @@ static char HPlusGestureKey;
 }
 
 
+#pragma mark - Basic Helpers
+
+- (NSString *)safeString:(id)value {
+
+    if (!value || value == [NSNull null]) {
+        return @"(None)";
+    }
+
+    @try {
+
+        NSString *description =
+            [value description];
+
+        if (!description ||
+            description.length == 0) {
+
+            return @"(None)";
+        }
+
+        return description;
+
+    } @catch (...) {
+
+        return @"(Unavailable)";
+    }
+}
+
+
+- (NSString *)classNameForObject:(id)object {
+
+    if (!object) {
+        return @"(None)";
+    }
+
+    Class cls =
+        object_getClass(object);
+
+    if (!cls) {
+        return @"(Unknown)";
+    }
+
+    return NSStringFromClass(cls);
+}
+
+
 #pragma mark - Accessibility
 
 - (NSString *)getViewID:(UIView *)view {
@@ -535,6 +545,7 @@ static char HPlusGestureKey;
         : nil;
 }
 
+
 - (NSString *)getViewLabel:(UIView *)view {
 
     if (!view) {
@@ -548,6 +559,7 @@ static char HPlusGestureKey;
         ? label
         : nil;
 }
+
 
 - (NSString *)getViewText:(UIView *)view {
 
@@ -611,7 +623,7 @@ static char HPlusGestureKey;
 }
 
 
-#pragma mark - Traits
+#pragma mark - Accessibility Traits
 
 - (NSString *)getTraitsString:(UIView *)view {
 
@@ -650,7 +662,17 @@ static char HPlusGestureKey;
     if (traits & UIAccessibilityTraitSearchField)
         [items addObject:@"SearchField"];
 
-    if (traits.count == 0) {
+    if (traits & UIAccessibilityTraitKeyboardKey)
+        [items addObject:@"KeyboardKey"];
+
+    /*
+     IMPORTANT:
+     UIAccessibilityTraits is an integer type.
+     لذلك نستخدم items.count وليس traits.count.
+    */
+
+    if (items.count == 0) {
+
         return [NSString stringWithFormat:
             @"0x%llx",
             (unsigned long long)traits];
@@ -690,7 +712,7 @@ static char HPlusGestureKey;
 }
 
 
-#pragma mark - Geometry
+#pragma mark - Frame
 
 - (NSString *)getFrameInfoForView:(UIView *)view {
 
@@ -698,23 +720,16 @@ static char HPlusGestureKey;
         return @"(Unavailable)";
     }
 
-    CGRect localFrame =
+    CGRect frame =
         view.frame;
 
     CGRect bounds =
         view.bounds;
 
-    CGRect windowFrame =
-        CGRectZero;
-
     CGRect screenFrame =
         CGRectZero;
 
     if (view.window) {
-
-        windowFrame =
-            [view convertRect:view.bounds
-                      toView:view.window];
 
         screenFrame =
             [view convertRect:view.bounds
@@ -725,28 +740,19 @@ static char HPlusGestureKey;
         screenFrame =
             [view convertRect:view.bounds
                       toView:nil];
-
-        windowFrame =
-            screenFrame;
     }
 
     return [NSString stringWithFormat:
         @"Local Frame: (%.1f, %.1f, %.1f, %.1f)\n"
-         "Window Frame: (%.1f, %.1f, %.1f, %.1f)\n"
          "Screen Frame: (%.1f, %.1f, %.1f, %.1f)\n"
          "Bounds: (%.1f, %.1f, %.1f, %.1f)\n"
          "Center: (%.1f, %.1f)\n"
          "Transform: %@",
 
-        localFrame.origin.x,
-        localFrame.origin.y,
-        localFrame.size.width,
-        localFrame.size.height,
-
-        windowFrame.origin.x,
-        windowFrame.origin.y,
-        windowFrame.size.width,
-        windowFrame.size.height,
+        frame.origin.x,
+        frame.origin.y,
+        frame.size.width,
+        frame.size.height,
 
         screenFrame.origin.x,
         screenFrame.origin.y,
@@ -761,7 +767,8 @@ static char HPlusGestureKey;
         view.center.x,
         view.center.y,
 
-        NSStringFromCGAffineTransform(view.transform)];
+        NSStringFromCGAffineTransform(
+            view.transform)];
 }
 
 
@@ -940,8 +947,14 @@ static char HPlusGestureKey;
         NSString *identifier =
             [self getViewID:current];
 
+        NSString *label =
+            [self getViewLabel:current];
+
         [result appendFormat:
-            @"%02d | %@ | ID: %@\n",
+            @"[%02d] %@\n"
+             "    ID: %@\n"
+             "    Label: %@\n"
+             "    Frame: %@\n\n",
 
             depth,
 
@@ -949,7 +962,14 @@ static char HPlusGestureKey;
 
             identifier.length > 0
                 ? identifier
-                : @"(None)"];
+                : @"(None)",
+
+            label.length > 0
+                ? label
+                : @"(None)",
+
+            NSStringFromCGRect(
+                current.frame)];
 
         current =
             current.superview;
@@ -963,7 +983,7 @@ static char HPlusGestureKey;
 }
 
 
-#pragma mark - Subviews
+#pragma mark - Direct Subviews
 
 - (NSString *)getSubviewsInfo:(UIView *)view {
 
@@ -987,10 +1007,14 @@ static char HPlusGestureKey;
         NSString *label =
             [self getViewLabel:subview];
 
+        NSString *text =
+            [self getViewText:subview];
+
         [result appendFormat:
             @"[%lu] %@\n"
              "    ID: %@\n"
              "    Label: %@\n"
+             "    Text: %@\n"
              "    Frame: %@\n"
              "    Interactive: %@\n\n",
 
@@ -1004,6 +1028,10 @@ static char HPlusGestureKey;
 
             label.length > 0
                 ? label
+                : @"(None)",
+
+            text.length > 0
+                ? text
                 : @"(None)",
 
             NSStringFromCGRect(
@@ -1020,7 +1048,7 @@ static char HPlusGestureKey;
 }
 
 
-#pragma mark - Runtime Superclasses
+#pragma mark - Runtime Superclass
 
 - (NSString *)getSuperclassChainForClass:(Class)cls {
 
@@ -1040,7 +1068,9 @@ static char HPlusGestureKey;
 
         [result appendFormat:
             @"[%02d] %@\n",
+
             depth,
+
             NSStringFromClass(current)];
 
         current =
@@ -1383,7 +1413,9 @@ static char HPlusGestureKey;
 
             state,
 
-            gesture.enabled ? @"YES" : @"NO",
+            gesture.enabled
+                ? @"YES"
+                : @"NO",
 
             gesture.cancelsTouchesInView
                 ? @"YES"
@@ -1415,33 +1447,36 @@ static char HPlusGestureKey;
     UIControl *control =
         (UIControl *)view;
 
-    NSMutableString *result =
-        [NSMutableString string];
-
-    [result appendFormat:
+    return [NSString stringWithFormat:
         @"Control Class: %@\n"
          "Enabled: %@\n"
          "Selected: %@\n"
          "Highlighted: %@\n"
          "Focused: %@\n"
          "State: %lu\n"
-         "Events: 0x%lx\n",
+         "Events: 0x%lx",
 
         NSStringFromClass(control.class),
 
-        control.enabled ? @"YES" : @"NO",
+        control.enabled
+            ? @"YES"
+            : @"NO",
 
-        control.selected ? @"YES" : @"NO",
+        control.selected
+            ? @"YES"
+            : @"NO",
 
-        control.highlighted ? @"YES" : @"NO",
+        control.highlighted
+            ? @"YES"
+            : @"NO",
 
-        control.isFocused ? @"YES" : @"NO",
+        control.isFocused
+            ? @"YES"
+            : @"NO",
 
         (unsigned long)control.state,
 
         (unsigned long)control.allControlEvents];
-
-    return result;
 }
 
 
@@ -1463,7 +1498,7 @@ static char HPlusGestureKey;
     NSString *className =
         NSStringFromClass(cls);
 
-    NSArray *youtubePrefixes = @[
+    NSArray *prefixes = @[
         @"YT",
         @"AS",
         @"ELM",
@@ -1478,29 +1513,23 @@ static char HPlusGestureKey;
         @"ML"
     ];
 
-    NSString *matchedPrefix =
-        nil;
+    NSString *matchedPrefix = nil;
 
-    for (NSString *prefix
-         in youtubePrefixes) {
+    for (NSString *prefix in prefixes) {
 
         if ([className hasPrefix:prefix]) {
 
-            matchedPrefix =
-                prefix;
-
+            matchedPrefix = prefix;
             break;
         }
     }
 
-    if (!matchedPrefix) {
+    if (!matchedPrefix &&
+        ![className containsString:@"YouTube"] &&
+        ![className containsString:@"YT"]) {
 
-        if (![className containsString:@"YouTube"] &&
-            ![className containsString:@"YT"]) {
-
-            return
-                @"Not identified as a YouTube-family class";
-        }
+        return
+            @"Not identified as a YouTube-family class";
     }
 
     NSMutableString *result =
@@ -1674,7 +1703,7 @@ static char HPlusGestureKey;
             indent,
 
             (unsigned long)
-            current.subviews.count];
+                current.subviews.count];
 
         if (current.gestureRecognizers.count > 0) {
 
@@ -1684,7 +1713,7 @@ static char HPlusGestureKey;
                 indent,
 
                 (unsigned long)
-                current.gestureRecognizers.count];
+                    current.gestureRecognizers.count];
         }
 
         [tree appendString:@"\n"];
@@ -2009,33 +2038,15 @@ static char HPlusGestureKey;
 @end
 
 
-#pragma mark - Settings Observer
-
-%hook NSUserDefaults
-
-- (void)setBool:(BOOL)value forKey:(NSString *)defaultName {
-
-    %orig;
-
-    if ([defaultName isEqualToString:HPlusInspector]) {
-
-        dispatch_async(
-            dispatch_get_main_queue(),
-            ^{
-
-            [[HPlusDebugHelper sharedInstance]
-                refreshInspector];
-        });
-    }
-}
-
-%end
-
-
 #pragma mark - Constructor
 
 %ctor {
 
-    [[HPlusDebugHelper sharedInstance]
-        refreshInspector];
+    dispatch_async(
+        dispatch_get_main_queue(),
+        ^{
+
+        [[HPlusDebugHelper sharedInstance]
+            refreshInspector];
+    });
 }
