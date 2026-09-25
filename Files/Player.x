@@ -1589,10 +1589,8 @@ static void HPlusFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
             [customButton setImage:iconImage forState:UIControlStateNormal];
             [customButton setTintColor:[UIColor whiteColor]];
             
-            // استخدام الطريقة الآمنة لاستدعاء مدير التحميل مباشرة بنفس دوال مشروعك
             [customButton addAction:[UIAction actionWithHandler:^(__kindof UIAction * _Nonnull action) {
-                // استدعاء دالة مدير التحميل المتوفرة لديك أو تمرير الحدث
-                YTPlayerViewController *player = nil; // سيتم تعريفه تلقائياً أو عبر الـ Presenter
+                YTPlayerViewController *player = nil;
                 UIViewController *presenter = HPlusTopViewController(nil);
                 HPlusShowDownloadManager(player, presenter, customButton, NO);
             }] forControlEvents:UIControlEventTouchUpInside];
