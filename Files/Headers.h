@@ -112,6 +112,8 @@
 #define AudioPreferIndex @"HPlusAudioPreferIndex"
 #define DownloadComment @"HPlusDownloadComment"
 #define DownloadPost @"HPlusDownloadPost"
+// INSPECTOR
+#define HPlusInspector @"HPlusInspector"
 // Cache
 #define AutoClearCache @"HPlusAutoClearCache"
 // Appearance
