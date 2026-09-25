@@ -91,6 +91,7 @@
 #define IS_ENABLED(k) [[NSUserDefaults standardUserDefaults] boolForKey:k]
 #define INTFORVAL(v) [[NSUserDefaults standardUserDefaults] integerForKey:v]
 #define FixPlaybackIssues @"HPlusFixPlaybackIssues"
+#define HPlusInspector @"HPlusInspector"
 #define MuteButton @"HPlusMuteButton"
 #define SpeedButton @"HPlusSpeedButton"
 #define ShareButton @"HPlusShareButton"
@@ -112,8 +113,6 @@
 #define AudioPreferIndex @"HPlusAudioPreferIndex"
 #define DownloadComment @"HPlusDownloadComment"
 #define DownloadPost @"HPlusDownloadPost"
-// INSPECTOR
-#define HPlusInspector @"HPlusInspector"
 // Cache
 #define AutoClearCache @"HPlusAutoClearCache"
 // Appearance
