@@ -9,7 +9,8 @@ TWEAK_NAME = HPlus
 
 $(TWEAK_NAME)_FRAMEWORKS = UIKit Foundation AudioToolbox MediaPlayer QuartzCore CoreGraphics ImageIO
 
-$(TWEAK_NAME)_CFLAGS = -fobjc-arc -I$(CURDIR)/FLEX $(foreach d, $(shell find $(CURDIR)/FLEX -type d), -I$(d))
+# أضفنا -Wno-no-error لتجاهل التحذيرات البرمجية لمكتبة FLEX
+$(TWEAK_NAME)_CFLAGS = -fobjc-arc -Wno-error -I$(CURDIR)/FLEX $(foreach d, $(shell find $(CURDIR)/FLEX -type d), -I$(d))
 
 $(TWEAK_NAME)_FILES = $(wildcard Files/*.x) $(wildcard FLEX/*.m) $(wildcard FLEX/**/*.m) $(wildcard FLEX/**/**/*.m)
 
