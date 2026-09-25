@@ -9,9 +9,13 @@ TWEAK_NAME = HPlus
 
 $(TWEAK_NAME)_FRAMEWORKS = UIKit Foundation AudioToolbox MediaPlayer QuartzCore CoreGraphics ImageIO
 
-# أضفنا -Wno-no-error لتجاهل التحذيرات البرمجية لمكتبة FLEX
+# تفعيل الـ ARC وتجاهل التحذيرات وإضافة مسارات FLEX بعمق
 $(TWEAK_NAME)_CFLAGS = -fobjc-arc -Wno-error -I$(CURDIR)/FLEX $(foreach d, $(shell find $(CURDIR)/FLEX -type d), -I$(d))
 
+# إضافة إعدادات الـ Linker لتجاوز الرموز المفقودة أو غير المعرفة
+$(TWEAK_NAME)_LDFLAGS = -undefined dynamic_lookup
+
+# تجميع كل ملفات التويكس وملفات FLEX بجميع مجلداتها الفرعية
 $(TWEAK_NAME)_FILES = $(wildcard Files/*.x) $(wildcard FLEX/*.m) $(wildcard FLEX/**/*.m) $(wildcard FLEX/**/**/*.m)
 
 $(TWEAK_NAME)_INSTALL_PATH = /Library/MobileSubstrate/DynamicLibraries
