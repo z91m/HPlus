@@ -167,6 +167,28 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         settingItemId:0];
     [sectionItems addObject:fixPlaybackissues];
 
+    // Hamad Inspector
+    YTSettingsSectionItem *hamadInspector =
+        [YTSettingsSectionItemClass
+        switchItemWithTitle:YMLOC(@"HPLUS_INSPECTOR")
+        titleDescription:YMLOC(@"HPLUS_INSPECTOR_DESC")
+        accessibilityIdentifier:nil
+        switchOn:IS_ENABLED(HPlusInspector)
+        switchBlock:^BOOL (YTSettingsCell *cell, BOOL enabled) {
+
+            [[NSUserDefaults standardUserDefaults]
+                setBool:enabled
+                forKey:HPlusInspector];
+
+            [[NSUserDefaults standardUserDefaults]
+                synchronize];
+
+            return YES;
+        }
+        settingItemId:0];
+
+[sectionItems addObject:hamadInspector];
+
     // Settings
     YTSettingsSectionItem *settings = [YTSettingsSectionItemClass itemWithTitle:nil
         titleDescription:YMLOC(@"SETTINGS")
@@ -192,10 +214,6 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             return YES;
         }];
     [sectionItems addObject:search];
-
-    // Inspector
-    NSArray<YMSettingsItem *> *InspectorItems = @[
-           YMToggle(YMLOC(@"HPLUS_INSPECTOR"), YMLOC(@"HPLUS_INSPECTOR_DESC"), HPlusInspector),
 
     // Section 1
     // Downloading
