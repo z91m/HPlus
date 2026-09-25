@@ -193,8 +193,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         }];
     [sectionItems addObject:search];
 
-    // Section 0
-    // Downloading
+    // Inspector
     NSArray<YMSettingsItem *> *InspectorItems = @[
            YMToggle(YMLOC(@"HPLUS_INSPECTOR"), YMLOC(@"HPLUS_INSPECTOR_DESC"), HPlusInspector),
 
