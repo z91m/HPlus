@@ -2341,6 +2341,8 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
         if (!IS_ENABLED(AddDownloadToVideo)) return;
         
+        self.clipsToBounds = NO;
+        
         YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1502];
         
         if (!downloadBtn) {
@@ -2351,6 +2353,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
             [downloadBtn setImage:icon forState:UIControlStateNormal];
             downloadBtn.tintColor = [UIColor whiteColor];
             downloadBtn.exclusiveTouch = YES;
+            downloadBtn.userInteractionEnabled = YES;
             downloadBtn.tag = 1502;
             
             [downloadBtn addTarget:self action:@selector(didTapHPlusVideoDownload:) forControlEvents:UIControlEventTouchUpInside];
@@ -2364,7 +2367,6 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         
         UIView *likeButton = nil;
         for (UIView *subview in self.subviews) {
-            // تم تصحيح السطر هنا بإزالة الـ .string الزائدة
             if ([[subview accessibilityIdentifier] isEqualToString:@"id.video.like.button"]) {
                 likeButton = subview;
                 break;
@@ -2385,6 +2387,20 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
         [self bringSubviewToFront:downloadBtn];
     }
+}
+
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
+    NSString *accessibilityIdentifier = [self accessibilityIdentifier];
+    if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
+        UIView *downloadBtn = [self viewWithTag:1502];
+        if (downloadBtn && !downloadBtn.hidden) {
+            CGPoint btnPoint = [self convertPoint:point toView:downloadBtn];
+            if ([downloadBtn pointInside:btnPoint withEvent:event]) {
+                return YES;
+            }
+        }
+    }
+    return %orig;
 }
 
 %new
