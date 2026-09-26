@@ -2303,7 +2303,8 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
                withConfiguration:config]
           imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
   downloadBtn = [%c(YTQTMButton) iconButton];
-  [downloadBtn setImage:icon forState:UIControlStateNormal];
+  [downloadBtn setImage:icon
+                forState:UIControlStateNormal];
   downloadBtn.tintColor = [UIColor whiteColor];
   downloadBtn.exclusiveTouch = YES;
   downloadBtn.tag = 1501;
@@ -2319,7 +2320,8 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     YTReelElementAsyncComponentView *pov = nil;
     @try {
     pov = [self valueForKey:@”_playerOverlayView”];
-    } @catch (…) {}
+    } @catch (…) {
+    }
     YTReelElementAsyncComponentView *actionBar =
     [self valueForKey:@”_actionBarComponentView”];
     CGFloat X =
@@ -2383,7 +2385,8 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
                withConfiguration:config]
           imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
   downloadButton = [%c(YTQTMButton) iconButton];
-  [downloadButton setImage:icon forState:UIControlStateNormal];
+  [downloadButton setImage:icon
+                  forState:UIControlStateNormal];
   downloadButton.tintColor = [UIColor whiteColor];
   downloadButton.exclusiveTouch = YES;
   downloadButton.tag = 1502;
