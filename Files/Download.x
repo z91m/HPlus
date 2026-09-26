@@ -2341,7 +2341,6 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
         if (!IS_ENABLED(AddDownloadToVideo)) return;
         
-        // التحقق من أن هذا الشريط ينتمي للمشغل الرئيسي (Watch Next View) لضمان عدم ظهوره في فيديوهات المقترحات
         BOOL isMainPlayerBar = NO;
         UIResponder *responder = self;
         while ((responder = [responder nextResponder])) {
@@ -2426,21 +2425,25 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 - (void)didTapHPlusVideoDownload:(YTQTMButton *)button {
     UIView *selfView = (UIView *)self;
     UIViewController *ancestorVC = [selfView _viewControllerForAncestor];
-    id player = nil;
     
+    // استخراج الـ player بنفس طريقة الزر العائم تماماً
+    YTPlayerViewController *player = nil;
     if ([ancestorVC isKindOfClass:[%c(YTPlayerViewController) class]]) {
-        player = ancestorVC;
-    } else if (ancestorVC.childViewControllers.count > 0) {
-        for (UIViewController *child in ancestorVC.childViewControllers) {
-            if ([child isKindOfClass:[%c(YTPlayerViewController) class]]) {
-                player = child;
+        player = (YTPlayerViewController *)ancestorVC;
+    } else {
+        UIResponder *responder = selfView;
+        while ((responder = [responder nextResponder])) {
+            if ([responder isKindOfClass:[%c(YTPlayerViewController) class]]) {
+                player = (YTPlayerViewController *)responder;
                 break;
             }
         }
     }
     
     UIViewController *presenter = HPlusPresenterForSender(button, player);
-    HPlusShowDownloadManager(player, presenter, button, NO);
+    YTPlayerViewController *resolved = HPlusPlayerFromViewController(presenter) ?: player ?: HPlusCurrentPlayerViewController;
+    
+    HPlusShowDownloadManager(resolved, presenter, button, NO);
 }
 
 %end
