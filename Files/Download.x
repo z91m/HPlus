@@ -2364,7 +2364,8 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         
         UIView *likeButton = nil;
         for (UIView *subview in self.subviews) {
-            if ([[[subview accessibilityIdentifier] string] isEqualToString:@"id.video.like.button"]) {
+            // تم تصحيح السطر هنا بإزالة الـ .string الزائدة
+            if ([[subview accessibilityIdentifier] isEqualToString:@"id.video.like.button"]) {
                 likeButton = subview;
                 break;
             }
