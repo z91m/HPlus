@@ -220,7 +220,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     NSArray<YMSettingsItem *> *downloadingItems = @[
             YMToggle(YMLOC(@"DOWNLOAD_MANAGER"), YMLOC(@"DOWNLOAD_MANAGER_DESC"), DownloadManager),
             YMToggle(YMLOC(@"ADD_SHORTS_DOWNLOAD"), YMLOC(@"ADD_SHORTS_DOWNLOAD_DESC"), AddDownloadToShorts),
-            YMToggle(YMLOC(@"ADD_VIDEO_DOWNLOAD"), YMLOC(@"ADD_VIDEO_DOWNLOAD_DESC"), ‏AddDownloadToVideo),
+            YMToggle(YMLOC(@"ADD_VIDEO_DOWNLOAD"), YMLOC(@"ADD_VIDEO_DOWNLOAD_DESC"), AddDownloadToVideo),
             [YMTextSegment(YMLOC(@"POST_DOWNLOAD_ACTION"), PostDownloadAction, (@[YMLOC(@"POST_ACTION_SAVE_PHOTOS"), YMLOC(@"POST_ACTION_SHARE"), YMLOC(@"POST_ACTION_ASK")]), 0) visibleWhenAnyBoolKey:@[DownloadManager, AddDownloadToShorts, AddDownloadToVideo, DownloadComment, DownloadPost]],
             [[YMTextSegment(YMLOC(@"AUDIO_TRACK"), AudioPreferIndex, (@[YMLOC(@"SHOW_OPTIONS"), YMLOC(@"ORIGINAL"), YMLOC(@"ENGLISH")]), 0) visibleWhenKey:DownloadMethod equals:0] visibleWhenAnyBoolKey:@[DownloadManager, AddDownloadToShorts, AddDownloadToVideo]],
             [YMPicker(YMLOC(@"DOWNLOAD_METHOD"), YMLOC(@"DOWNLOAD_METHOD_DESC"), DownloadMethod, (@[YMLOC(@"METHOD_DIRECT"), YMLOC(@"METHOD_SERVER"), YMLOC(@"METHOD_ONDEVICE")]), 0) visibleWhenAnyBoolKey:@[DownloadManager, AddDownloadToShorts, AddDownloadToVideo]],
