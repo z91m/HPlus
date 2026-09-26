@@ -2332,68 +2332,6 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
-%hook YTWatchNextView
-
-- (void)layoutSubviews {
-    %orig;
-    
-    // استخدام UIView كـ Cast لتجنب مشكلة Forward Declaration الخاصة بـ YTWatchNextView
-    UIView *selfView = (UIView *)self;
-    
-    YTQTMButton *downloadBtn = (YTQTMButton *)[selfView viewWithTag:1502];
-    
-    if (!downloadBtn) {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-        UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-        
-        downloadBtn = [%c(YTQTMButton) iconButton];
-        [downloadBtn setImage:icon forState:UIControlStateNormal];
-        downloadBtn.tintColor = [UIColor whiteColor];
-        downloadBtn.exclusiveTouch = YES;
-        downloadBtn.tag = 1502;
-        
-        [downloadBtn addTarget:self action:@selector(didTapHPlusVideoDownload:) forControlEvents:UIControlEventTouchUpInside];
-        
-        if ([downloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
-            [downloadBtn enableNewTouchFeedback];
-        }
-        
-        [selfView addSubview:downloadBtn];
-    }
-    
-    CGFloat btnWidth = 45.0;
-    CGFloat btnHeight = 48.0;
-    CGFloat X = 210.0; 
-    CGFloat Y = 378.0; 
-    
-    downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
-    [selfView bringSubviewToFront:downloadBtn];
-}
-
-%new
-- (void)didTapHPlusVideoDownload:(YTQTMButton *)button {
-    // استخدام self كـ UIView للوصول إلى _viewControllerForAncestor بأمان
-    UIView *selfView = (UIView *)self;
-    UIViewController *ancestorVC = [selfView _viewControllerForAncestor];
-    YTPlayerViewController *player = nil;
-    
-    if ([ancestorVC isKindOfClass:[YTPlayerViewController class]]) {
-        player = (YTPlayerViewController *)ancestorVC;
-    } else if (ancestorVC.childViewControllers.count > 0) {
-        for (UIViewController *child in ancestorVC.childViewControllers) {
-            if ([child isKindOfClass:[%c(YTPlayerViewController) class]]) {
-                player = (YTPlayerViewController *)child;
-                break;
-            }
-        }
-    }
-    
-    UIViewController *presenter = HPlusPresenterForSender(button, player);
-    HPlusShowDownloadManager(player, presenter, button, NO);
-}
-
-%end
-
 %ctor {
     %init;
     YMOverlayButtonSpec *download = [[YMOverlayButtonSpec alloc] init];
