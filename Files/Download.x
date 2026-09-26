@@ -2287,77 +2287,93 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %hook YTReelWatchPlaybackOverlayView
 
-* (void)layoutSubviews {
+- (void)layoutSubviews {
     %orig;
+
     if (!IS_ENABLED(AddDownloadToShorts))
-    return;
-    YTQTMButton *downloadBtn =
-    (YTQTMButton *)[self viewWithTag:1501];
+        return;
+
+    YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
+
     if (!downloadBtn) {
-    UIImageSymbolConfiguration *config =
-    [UIImageSymbolConfiguration configurationWithPointSize:20
-    weight:UIImageSymbolWeightMedium];
+        UIImageSymbolConfiguration *config =
+            [UIImageSymbolConfiguration configurationWithPointSize:20
+                                                            weight:UIImageSymbolWeightMedium];
 
-  UIImage *icon =
-      [[UIImage systemImageNamed:@"arrow.down.circle"
-               withConfiguration:config]
-          imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-  downloadBtn = [%c(YTQTMButton) iconButton];
-  [downloadBtn setImage:icon
-                forState:UIControlStateNormal];
-  downloadBtn.tintColor = [UIColor whiteColor];
-  downloadBtn.exclusiveTouch = YES;
-  downloadBtn.tag = 1501;
-  [downloadBtn addTarget:self
-                  action:@selector(didTapHPlusShortsDownload:)
-        forControlEvents:UIControlEventTouchUpInside];
-  [downloadBtn enableNewTouchFeedback];
-  [self addSubview:downloadBtn];
+        UIImage *icon =
+            [[UIImage systemImageNamed:@"arrow.down.circle"
+                       withConfiguration:config]
+                imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
 
+        downloadBtn = [%c(YTQTMButton) iconButton];
+
+        [downloadBtn setImage:icon forState:UIControlStateNormal];
+        downloadBtn.tintColor = [UIColor whiteColor];
+        downloadBtn.exclusiveTouch = YES;
+        downloadBtn.tag = 1501;
+
+        [downloadBtn addTarget:self
+                        action:@selector(didTapHPlusShortsDownload:)
+              forControlEvents:UIControlEventTouchUpInside];
+
+        [downloadBtn enableNewTouchFeedback];
+        [self addSubview:downloadBtn];
     }
+
     CGFloat btnWidth = 64.0;
     CGFloat btnHeight = 60.0;
+
     YTReelElementAsyncComponentView *pov = nil;
+
     @try {
-    pov = [self valueForKey:@”_playerOverlayView”];
-    } @catch (…) {
+        pov = [self valueForKey:@"_playerOverlayView"];
+    } @catch (...) {
     }
+
     YTReelElementAsyncComponentView *actionBar =
-    [self valueForKey:@”_actionBarComponentView”];
+        [self valueForKey:@"_actionBarComponentView"];
+
     CGFloat X =
-    [UIScreen mainScreen].bounds.size.width
-    - actionBar.frame.origin.x
-    - btnWidth;
+        [UIScreen mainScreen].bounds.size.width
+        - actionBar.frame.origin.x
+        - btnWidth;
+
     CGFloat Y = 0.0;
+
     if (pov == nil) {
-    Y = actionBar.frame.origin.y - 76.0;
-    btnHeight += 16.0;
+        Y = actionBar.frame.origin.y - 76.0;
+        btnHeight += 16.0;
     } else {
-    Y = pov.frame.origin.y - 60.0;
+        Y = pov.frame.origin.y - 60.0;
     }
+
     downloadBtn.frame =
-    CGRectMake(X, Y, btnWidth, btnHeight);
+        CGRectMake(X, Y, btnWidth, btnHeight);
+
     [self bringSubviewToFront:downloadBtn];
-    }
+}
 
 %new
-
-* (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
+- (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
     YTShortsPlayerViewController *shortsPlayerView =
-    (YTShortsPlayerViewController *)self._viewControllerForAncestor;
+        (YTShortsPlayerViewController *)self._viewControllerForAncestor;
+
     YTPlayerViewController *player =
-    (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
+        (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
+
     UIViewController *presenter =
-    HPlusPresenterForSender(button, player);
+        HPlusPresenterForSender(button, player);
+
     HPlusShowDownloadManager(
-    player,
-    presenter,
-    button,
-    YES
+        player,
+        presenter,
+        button,
+        YES
     );
-    }
+}
 
 %end
+
 
 // ============================================================
 // NORMAL VIDEO - INJECTED BUTTON
@@ -2365,130 +2381,151 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %hook YTWatchNextView
 
-* (void)layoutSubviews {
+- (void)layoutSubviews {
     %orig;
-    if (!YMIsOverlayButtonEnabled(@“download.video”))
-    return;
+
+    if (!YMIsOverlayButtonEnabled(@"download.video"))
+        return;
+
     UIView *actionBar =
-    [self ym_findDownloadActionBar];
+        [self ym_findDownloadActionBar];
+
     if (!actionBar)
-    return;
+        return;
+
     YTQTMButton *downloadButton =
-    (YTQTMButton *)[actionBar viewWithTag:1502];
+        (YTQTMButton *)[actionBar viewWithTag:1502];
+
     if (!downloadButton) {
-    UIImageSymbolConfiguration *config =
-    [UIImageSymbolConfiguration configurationWithPointSize:20
-    weight:UIImageSymbolWeightMedium];
+        UIImageSymbolConfiguration *config =
+            [UIImageSymbolConfiguration configurationWithPointSize:20
+                                                            weight:UIImageSymbolWeightMedium];
 
-  UIImage *icon =
-      [[UIImage systemImageNamed:@"arrow.down.circle"
-               withConfiguration:config]
-          imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-  downloadButton = [%c(YTQTMButton) iconButton];
-  [downloadButton setImage:icon
-                  forState:UIControlStateNormal];
-  downloadButton.tintColor = [UIColor whiteColor];
-  downloadButton.exclusiveTouch = YES;
-  downloadButton.tag = 1502;
-  [downloadButton addTarget:self
-                     action:@selector(ym_injectedDownload:)
-           forControlEvents:UIControlEventTouchUpInside];
-  [downloadButton enableNewTouchFeedback];
-  [actionBar addSubview:downloadButton];
+        UIImage *icon =
+            [[UIImage systemImageNamed:@"arrow.down.circle"
+                       withConfiguration:config]
+                imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
 
+        downloadButton = [%c(YTQTMButton) iconButton];
+
+        [downloadButton setImage:icon
+                        forState:UIControlStateNormal];
+
+        downloadButton.tintColor = [UIColor whiteColor];
+        downloadButton.exclusiveTouch = YES;
+        downloadButton.tag = 1502;
+
+        [downloadButton addTarget:self
+                           action:@selector(ym_injectedDownload:)
+                 forControlEvents:UIControlEventTouchUpInside];
+
+        [downloadButton enableNewTouchFeedback];
+
+        [actionBar addSubview:downloadButton];
     }
+
     downloadButton.frame =
-    CGRectMake(205.0, 0.0, 41.0, 48.0);
+        CGRectMake(205.0, 0.0, 41.0, 48.0);
+
     [actionBar bringSubviewToFront:downloadButton];
-    }
+}
 
 %new
-
-* (void)ym_injectedDownload:(YTQTMButton *)button {
+- (void)ym_injectedDownload:(YTQTMButton *)button {
     YTPlayerViewController *player =
-    HPlusCurrentPlayerViewController;
+        HPlusCurrentPlayerViewController;
+
     if (!player)
-    return;
+        return;
+
     UIViewController *presenter =
-    HPlusPresenterForSender(button, player);
-    YTPlayerViewController *resolved =
-    HPlusPlayerFromViewController(presenter)
-    ?: player
-    ?: HPlusCurrentPlayerViewController;
-    if (!resolved)
-    return;
-    HPlusShowDownloadManager(
-    resolved,
-    presenter,
-    button,
-    NO
-    );
-    }
+        HPlusPresenterForSender(button, player);
 
-%new
-
-* (UIView *)ym_findDownloadActionBar {
-    return [self ym_findViewRecursive:self
-    withID:@“id.video.non_scrollable_action_bar”];
-    }
-
-%new
-
-* (UIView *)ym_findViewRecursive:(UIView *)view
-    withID:(NSString *)identifier {
-    if ([view.accessibilityIdentifier isEqualToString:identifier])
-    return view;
-    for (UIView *subview in view.subviews) {
-    UIView *result =
-    [self ym_findViewRecursive:subview
-    withID:identifier];
-
-  if (result)
-      return result;
-
-    }
-    return nil;
-    }
-
-%end
-
-// ============================================================
-// FLOATING DOWNLOAD BUTTON
-// ============================================================
-
-%ctor {
-%init;
-
-YMOverlayButtonSpec *download =
-    [[YMOverlayButtonSpec alloc] init];
-download.identifier = @"download.video";
-download.symbolName = @"arrow.down.circle";
-download.settingsSymbolName = @"arrow.down.circle";
-download.displayName = LOC(@"DOWNLOAD_BUTTON");
-download.tintColor = [UIColor whiteColor];
-download.sortOrder = 200;
-download.isVisible =
-^BOOL(YTPlayerViewController *player) {
-    return YMIsOverlayButtonEnabled(@"download.video");
-};
-download.onTap =
-^(YTPlayerViewController *player, UIButton *button) {
-    UIViewController *presenter =
-        HPlusPresenterForSender(
-            button,
-            player ?: HPlusCurrentPlayerViewController
-        );
     YTPlayerViewController *resolved =
         HPlusPlayerFromViewController(presenter)
-            ?: player
-            ?: HPlusCurrentPlayerViewController;
+        ?: player
+        ?: HPlusCurrentPlayerViewController;
+
+    if (!resolved)
+        return;
+
     HPlusShowDownloadManager(
         resolved,
         presenter,
         button,
         NO
     );
-};
-YMRegisterOverlayButton(download);
+}
 
+%new
+- (UIView *)ym_findDownloadActionBar {
+    return [self ym_findViewRecursive:self
+                               withID:@"id.video.non_scrollable_action_bar"];
+}
+
+%new
+- (UIView *)ym_findViewRecursive:(UIView *)view
+                          withID:(NSString *)identifier {
+    if ([view.accessibilityIdentifier isEqualToString:identifier])
+        return view;
+
+    for (UIView *subview in view.subviews) {
+        UIView *result =
+            [self ym_findViewRecursive:subview
+                                withID:identifier];
+
+        if (result)
+            return result;
+    }
+
+    return nil;
+}
+
+%end
+
+
+// ============================================================
+// FLOATING DOWNLOAD BUTTON
+// ============================================================
+
+%ctor {
+    %init;
+
+    YMOverlayButtonSpec *download =
+        [[YMOverlayButtonSpec alloc] init];
+
+    download.identifier = @"download.video";
+    download.symbolName = @"arrow.down.circle";
+    download.settingsSymbolName = @"arrow.down.circle";
+    download.displayName = LOC(@"DOWNLOAD_BUTTON");
+    download.tintColor = [UIColor whiteColor];
+    download.sortOrder = 200;
+
+    download.isVisible =
+        ^BOOL(YTPlayerViewController *player) {
+            return YMIsOverlayButtonEnabled(@"download.video");
+        };
+
+    download.onTap =
+        ^(YTPlayerViewController *player, UIButton *button) {
+            UIViewController *presenter =
+                HPlusPresenterForSender(
+                    button,
+                    player ?: HPlusCurrentPlayerViewController
+                );
+
+            YTPlayerViewController *resolved =
+                HPlusPlayerFromViewController(presenter)
+                ?: player
+                ?: HPlusCurrentPlayerViewController;
+
+            HPlusShowDownloadManager(
+                resolved,
+                presenter,
+                button,
+                NO
+            );
+        };
+
+    YMRegisterOverlayButton(download);
 }
