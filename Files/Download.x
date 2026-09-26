@@ -2338,105 +2338,76 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     %orig;
     
     NSString *accessibilityIdentifier = [self accessibilityIdentifier];
-    if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
+    
+    if ([accessibilityIdentifier isEqualToString:@"id.elements.list_item"]) {
         if (!IS_ENABLED(AddDownloadToVideo)) return;
         
-        BOOL isMainPlayerBar = NO;
-        UIResponder *responder = self;
-        while ((responder = [responder nextResponder])) {
-            if ([responder isKindOfClass:[%c(YTWatchNextView) class]]) {
-                isMainPlayerBar = YES;
-                break;
+        // معرفة الـ View Controller الأب لنحدد هل نحن في القائمة السفلية أم في شريط التفاعل (الإعجاب)
+        UIViewController *ancestorVC = [self _viewControllerForAncestor];
+        BOOL isActionSheet = [ancestorVC isKindOfClass:[%c(YTActionSheetDialogViewController) class]];
+        
+        // 1. إذا كنا في قائمة الثلاث نقاط (السفلية)
+        if (isActionSheet) {
+            YTQTMButton *sheetDownloadBtn = (YTQTMButton *)[self viewWithTag:1503];
+            if (!sheetDownloadBtn) {
+                sheetDownloadBtn = [%c(YTQTMButton) buttonWithType:UIButtonTypeSystem];
+                sheetDownloadBtn.tag = 1503;
+                sheetDownloadBtn.exclusiveTouch = YES;
+                sheetDownloadBtn.userInteractionEnabled = YES;
+                
+                [sheetDownloadBtn setTitle:LOC(@"DOWNLOAD_BUTTON") forState:UIControlStateNormal];
+                UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightMedium];
+                UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+                [sheetDownloadBtn setImage:icon forState:UIControlStateNormal];
+                sheetDownloadBtn.tintColor = [UIColor whiteColor];
+                
+                [sheetDownloadBtn addTarget:self action:@selector(didTapHPlusDownload:) forControlEvents:UIControlEventTouchUpInside];
+                [self addSubview:sheetDownloadBtn];
             }
+            sheetDownloadBtn.frame = self.bounds;
+            [self bringSubviewToFront:sheetDownloadBtn];
         }
-        
-        YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1502];
-        
-        if (!isMainPlayerBar) {
-            if (downloadBtn) {
-                downloadBtn.hidden = YES;
+        // 2. إذا كنا في شريط أزرار التفاعل (بجانب زر الإعجاب)
+        else {
+            YTQTMButton *barDownloadBtn = (YTQTMButton *)[self viewWithTag:1502];
+            if (!barDownloadBtn) {
+                barDownloadBtn = [%c(YTQTMButton) buttonWithType:UIButtonTypeSystem];
+                barDownloadBtn.tag = 1502;
+                barDownloadBtn.exclusiveTouch = YES;
+                barDownloadBtn.userInteractionEnabled = YES;
+                
+                UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightMedium];
+                UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+                [barDownloadBtn setImage:icon forState:UIControlStateNormal];
+                barDownloadBtn.tintColor = [UIColor whiteColor];
+                
+                [barDownloadBtn addTarget:self action:@selector(didTapHPlusDownload:) forControlEvents:UIControlEventTouchUpInside];
+                [self addSubview:barDownloadBtn];
             }
-            return;
-        }
-        
-        self.clipsToBounds = NO;
-        
-        if (!downloadBtn) {
-            UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-            UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-            
-            downloadBtn = [%c(YTQTMButton) iconButton];
-            [downloadBtn setImage:icon forState:UIControlStateNormal];
-            downloadBtn.tintColor = [UIColor whiteColor];
-            downloadBtn.exclusiveTouch = YES;
-            downloadBtn.userInteractionEnabled = YES;
-            downloadBtn.tag = 1502;
-            
-            [downloadBtn addTarget:self action:@selector(didTapHPlusVideoDownload:) forControlEvents:UIControlEventTouchUpInside];
-            
-            if ([downloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
-                [downloadBtn enableNewTouchFeedback];
-            }
-            
-            [self addSubview:downloadBtn];
-        }
-        
-        downloadBtn.hidden = NO;
-        
-        UIView *likeButton = nil;
-        for (UIView *subview in self.subviews) {
-            if ([[subview accessibilityIdentifier] isEqualToString:@"id.video.like.button"]) {
-                likeButton = subview;
-                break;
-            }
-        }
-        
-        CGFloat btnWidth = 45.0;
-        CGFloat btnHeight = 48.0;
-        CGFloat X = 210.0; 
-        CGFloat Y = 0.0;
-        
-        if (likeButton) {
-            X = CGRectGetMaxX(likeButton.frame) + 8.0;
-            Y = likeButton.frame.origin.y;
-            btnHeight = likeButton.frame.size.height;
-        }
-        
-        downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
-        [self bringSubviewToFront:downloadBtn];
-    }
-}
-
-- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
-    NSString *accessibilityIdentifier = [self accessibilityIdentifier];
-    if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
-        UIView *downloadBtn = [self viewWithTag:1502];
-        if (downloadBtn && !downloadBtn.hidden) {
-            CGPoint btnPoint = [self convertPoint:point toView:downloadBtn];
-            if ([downloadBtn pointInside:btnPoint withEvent:event]) {
-                return YES;
-            }
+            barDownloadBtn.frame = self.bounds;
+            [self bringSubviewToFront:barDownloadBtn];
         }
     }
-    return %orig;
 }
 
 %new
-- (void)didTapHPlusVideoDownload:(YTQTMButton *)button {
+- (void)didTapHPlusDownload:(YTQTMButton *)button {
     UIView *selfView = (UIView *)self;
     UIViewController *ancestorVC = [selfView _viewControllerForAncestor];
     
-    // استخراج الـ player بنفس طريقة الزر العائم تماماً
+    // إذا ضغط عليه من القائمة السفلية، نقوم بإغلاق القائمة أولاً
+    if ([ancestorVC isKindOfClass:[%c(YTActionSheetDialogViewController) class]]) {
+        if ([ancestorVC respondsToSelector:@selector(dismissViewControllerAnimated:completion:)]) {
+            [ancestorVC dismissViewControllerAnimated:YES completion:nil];
+        }
+    }
+    
     YTPlayerViewController *player = nil;
-    if ([ancestorVC isKindOfClass:[%c(YTPlayerViewController) class]]) {
-        player = (YTPlayerViewController *)ancestorVC;
-    } else {
-        UIResponder *responder = selfView;
-        while ((responder = [responder nextResponder])) {
-            if ([responder isKindOfClass:[%c(YTPlayerViewController) class]]) {
-                player = (YTPlayerViewController *)responder;
-                break;
-            }
+    UIResponder *responder = selfView;
+    while ((responder = [responder nextResponder])) {
+        if ([responder isKindOfClass:[%c(YTPlayerViewController) class]]) {
+            player = (YTPlayerViewController *)responder;
+            break;
         }
     }
     
