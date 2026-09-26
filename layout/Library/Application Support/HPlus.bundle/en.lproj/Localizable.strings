@@ -25,6 +25,10 @@
 "FIX_PLAYBACK_ISSUES" = "Fix playback issues (Temporary)";
 "FIX_PLAYBACK_ISSUES_DESC" = "Try to fix video playback issues for some users. Turning this on will make the player automatically reloads itself everytime it errors or fails to play the video.";
 
+"INSPECTOR" = "Hamad Inspector";
+"HPLUS_INSPECTOR" = "Run Inspector";
+"HPLUS_INSPECTOR_DESC" = "An inspector that searches for identifiers, functions, and classes within buttons and the application UI";
+
 "PERFER_HEADER" = "Hamad Plus perferences";
 "PERFER" = "Perferences";
 "IMPORT" = "Import settings";
@@ -59,6 +63,8 @@
 "POST_ACTION_ASK" = "Ask";
 "ADD_SHORTS_DOWNLOAD" = "Adds a download button to Shorts";
 "ADD_SHORTS_DOWNLOAD_DESC" = "Adds a download button to Shorts video overlay.";
+"ADD_VIDEO_DOWNLOAD" = "Adds a download button to Video";
+"ADD_VIDEO_DOWNLOAD_DESC" = "Adds a download button to Video Player overlay.";
 "DOWNLOAD_SHORTS" = "Download Shorts";
 "COPY_VID_INFO" = "Copy video informations";
 "COPY_TITLE" = "Copy title";
@@ -413,6 +419,8 @@
 "REMOVE_SHORTS_RELATED_VIDEO_DESC" = "Hide the related long video link bar in the Shorts player";
 "REMOVE_SHORTS_CHANNEL_NAME" = "Hide Channel Name";
 "REMOVE_SHORTS_CHANNEL_NAME_DESC" = "Hide the channel name and subscribe button in the Shorts player";
+"REMOVE_SHORTS_SOUND_BUTTON" = "Hide Sound Bar";
+"REMOVE_SHORTS_SOUND_BUTTON_DESC" = "Hide the audio or track bar in the Shorts player";
 
 "TABBAR" = "Tab bar";
 "DEFAULT_TAB" = "Default startup tab";
