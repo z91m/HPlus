@@ -2332,6 +2332,83 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
+%hook _ASDisplayView
+
+- (void)layoutSubviews {
+    %orig;
+    
+    NSString *accessibilityIdentifier = [self accessibilityIdentifier];
+    if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
+        if (!IS_ENABLED(AddDownloadToVideo)) return;
+        
+        YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1502];
+        
+        if (!downloadBtn) {
+            UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
+            UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+            
+            downloadBtn = [%c(YTQTMButton) iconButton];
+            [downloadBtn setImage:icon forState:UIControlStateNormal];
+            downloadBtn.tintColor = [UIColor whiteColor];
+            downloadBtn.exclusiveTouch = YES;
+            downloadBtn.tag = 1502;
+            
+            [downloadBtn addTarget:self action:@selector(didTapHPlusVideoDownload:) forControlEvents:UIControlEventTouchUpInside];
+            
+            if ([downloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
+                [downloadBtn enableNewTouchFeedback];
+            }
+            
+            [self addSubview:downloadBtn];
+        }
+        
+        UIView *likeButton = nil;
+        for (UIView *subview in self.subviews) {
+            if ([[[subview accessibilityIdentifier] string] isEqualToString:@"id.video.like.button"]) {
+                likeButton = subview;
+                break;
+            }
+        }
+        
+        CGFloat btnWidth = 45.0;
+        CGFloat btnHeight = 48.0;
+        CGFloat X = 210.0; 
+        CGFloat Y = 0.0;
+        
+        if (likeButton) {
+            X = CGRectGetMaxX(likeButton.frame) + 8.0;
+            Y = likeButton.frame.origin.y;
+            btnHeight = likeButton.frame.size.height;
+        }
+        
+        downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
+        [self bringSubviewToFront:downloadBtn];
+    }
+}
+
+%new
+- (void)didTapHPlusVideoDownload:(YTQTMButton *)button {
+    UIView *selfView = (UIView *)self;
+    UIViewController *ancestorVC = [selfView _viewControllerForAncestor];
+    id player = nil;
+    
+    if ([ancestorVC isKindOfClass:[%c(YTPlayerViewController) class]]) {
+        player = ancestorVC;
+    } else if (ancestorVC.childViewControllers.count > 0) {
+        for (UIViewController *child in ancestorVC.childViewControllers) {
+            if ([child isKindOfClass:[%c(YTPlayerViewController) class]]) {
+                player = child;
+                break;
+            }
+        }
+    }
+    
+    UIViewController *presenter = HPlusPresenterForSender(button, player);
+    HPlusShowDownloadManager(player, presenter, button, NO);
+}
+
+%end
+
 %ctor {
     %init;
     YMOverlayButtonSpec *download = [[YMOverlayButtonSpec alloc] init];
