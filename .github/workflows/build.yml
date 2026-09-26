@@ -60,7 +60,7 @@ jobs:
             git checkout --quiet
             mv *.sdk "$THEOS/sdks"
             
-      - name: Clone headers & FLEX Library
+      - name: Clone headers
         run: |
           if [ ! -d "$THEOS/include/YouTubeHeader" ]; then
             git clone --quiet --depth=1 https://github.com/PoomSmart/YouTubeHeader.git "$THEOS/include/YouTubeHeader"
@@ -76,12 +76,6 @@ jobs:
             cd $THEOS/include/PSHeader
             git pull --quiet --force
             cd ${{ github.workspace }}
-          fi
-
-          if [ ! -d "HPlus/FLEX" ]; then
-            git clone --quiet --depth=1 https://github.com/FLEXTool/FLEX.git HPlus/FLEX_Temp
-            mv HPlus/FLEX_Temp/Classes HPlus/FLEX
-            rm -rf HPlus/FLEX_Temp
           fi
 
       - name: Fix Theos od broken pipe issue
