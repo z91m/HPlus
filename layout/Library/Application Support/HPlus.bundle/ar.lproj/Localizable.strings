@@ -27,7 +27,7 @@
 
 "INSPECTOR" = "Hamad Inspector";
 "HPLUS_INSPECTOR" = "تشغيل الفاحص";
-"HPLUS_INSPECTOR_DESC" = "فاحص يبحث عن المعرفات والدوال والكلاسات داخل ازرار و واجهة التطبيق"
+"HPLUS_INSPECTOR_DESC" = "فاحص يبحث عن المعرفات والدوال والكلاسات داخل ازرار و واجهة التطبيق";
 
 "PERFER_HEADER" = "تفضيلات Hamad Plus";
 "PERFER" = "التفضيلات";
