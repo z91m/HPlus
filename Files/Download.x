@@ -2332,6 +2332,71 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
+‏%hook YTWatchNextView
+
+‏- (void)layoutSubviews {
+‏    %orig;
+‏    // if (!IS_ENABLED(AddDownloadToVideo)) return;
+    
+‏    YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1502];
+    
+‏    if (!downloadBtn) {
+‏        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
+‏        UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        
+‏        downloadBtn = [%c(YTQTMButton) iconButton];
+‏        [downloadBtn setImage:icon forState:UIControlStateNormal];
+‏        downloadBtn.tintColor = [UIColor whiteColor];
+‏        downloadBtn.exclusiveTouch = YES;
+‏        downloadBtn.tag = 1502;
+        
+‏        [downloadBtn addTarget:self action:@selector(didTapHPlusVideoDownload:) forControlEvents:UIControlEventTouchUpInside];
+        
+‏        if ([downloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
+‏            [downloadBtn enableNewTouchFeedback];
+        }
+        
+‏        [self addSubview:downloadBtn];
+    }
+    
+    // بناءً على إحداثيات زر الإعجاب (Screen Frame: X=164, Y=378, Width=41, Height=48)
+    // يمكننا وضع زر التحميل بجانبه مباشرة (مثلاً قبله بمسافة أو بعده)
+    // بما أن الإحداثيات هنا نسبية داخل الـ YTWatchNextView، يمكنك تعديلها بدقة:
+‏    CGFloat btnWidth = 45.0;
+‏    CGFloat btnHeight = 48.0;
+    
+    // مثلاً وضعه بجانب زر الإعجاب (زر الإعجاب يبدأ من X=164، إذن يمكن وضع زر التحميل عند X = 120 أو X = 210)
+‏    CGFloat X = 210.0; // بجانب زر الإعجاب مباشرة من الجهة الأخرى
+‏    CGFloat Y = 378.0; // نفس مستوى ارتفاع زر الإعجاب
+    
+    // ملاحظة: إذا كانت الإحداثيات تتغير بتغير الشاشة، يُفضل البحث عن الـ view الذي يحمل ID `id.video.like.button` وأخذ إحداثياته برمجياً، لكن كبداية هذه الإحداثيات مطابقة للبيانات التي أرسلتها.
+    
+‏    downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
+‏    [self bringSubviewToFront:downloadBtn];
+}
+
+‏%new
+‏- (void)didTapHPlusVideoDownload:(YTQTMButton *)button {
+‏    UIViewController *ancestorVC = [self _viewControllerForAncestor];
+‏    YTPlayerViewController *player = nil;
+    
+‏    if ([ancestorVC isKindOfClass:[YTPlayerViewController class]]) {
+‏        player = (YTPlayerViewController *)ancestorVC;
+‏    } else if (ancestorVC.childViewControllers.count > 0) {
+‏        for (UIViewController *child in ancestorVC.childViewControllers) {
+‏            if ([child isKindOfClass:[%c(YTPlayerViewController) class]]) {
+‏                player = (YTPlayerViewController *)child;
+‏                break;
+            }
+        }
+    }
+    
+‏    UIViewController *presenter = HPlusPresenterForSender(button, player);
+‏    HPlusShowDownloadManager(player, presenter, button, NO);
+}
+
+‏%end
+
 %ctor {
     %init;
     YMOverlayButtonSpec *download = [[YMOverlayButtonSpec alloc] init];
