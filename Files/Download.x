@@ -2341,9 +2341,26 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
         if (!IS_ENABLED(AddDownloadToVideo)) return;
         
-        self.clipsToBounds = NO;
+        // التحقق من أن هذا الشريط ينتمي للمشغل الرئيسي (Watch Next View) لضمان عدم ظهوره في فيديوهات المقترحات
+        BOOL isMainPlayerBar = NO;
+        UIResponder *responder = self;
+        while ((responder = [responder nextResponder])) {
+            if ([responder isKindOfClass:[%c(YTWatchNextView) class]]) {
+                isMainPlayerBar = YES;
+                break;
+            }
+        }
         
         YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1502];
+        
+        if (!isMainPlayerBar) {
+            if (downloadBtn) {
+                downloadBtn.hidden = YES;
+            }
+            return;
+        }
+        
+        self.clipsToBounds = NO;
         
         if (!downloadBtn) {
             UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
@@ -2364,6 +2381,8 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
             
             [self addSubview:downloadBtn];
         }
+        
+        downloadBtn.hidden = NO;
         
         UIView *likeButton = nil;
         for (UIView *subview in self.subviews) {
