@@ -25,6 +25,10 @@
 "FIX_PLAYBACK_ISSUES" = "إصلاح مشكلات التشغيل (مؤقت)";
 "FIX_PLAYBACK_ISSUES_DESC" = "محاولة إصلاح مشكلات تشغيل الفيديو لبعض المستخدمين. تفعيل هذا الخيار سيجعل المشغل يعيد التحميل تلقائيًا كلما حدث خطأ أو فشل في تشغيل الفيديو.";
 
+"INSPECTOR" = "Hamad Inspector";
+"HPLUS_INSPECTOR" = "تشغيل الفاحص";
+"HPLUS_INSPECTOR_DESC" = "فاحص يبحث عن المعرفات والدوال والكلاسات داخل ازرار و واجهة التطبيق"
+
 "PERFER_HEADER" = "تفضيلات Hamad Plus";
 "PERFER" = "التفضيلات";
 "IMPORT" = "استيراد الإعدادات";
@@ -59,6 +63,8 @@
 "POST_ACTION_ASK" = "اسأل";
 "ADD_SHORTS_DOWNLOAD" = "إضافة زر تنزيل إلى Shorts";
 "ADD_SHORTS_DOWNLOAD_DESC" = "إضافة زر تنزيل إلى واجهة فيديو Shorts.";
+"ADD_VIDEO_DOWNLOAD" = "إضافة زر تنزيل إلى الفيديو";
+"ADD_VIDEO_DOWNLOAD_DESC" = "إضافة زر تنزيل إلى واجهة الفيديو.";
 "DOWNLOAD_SHORTS" = "تنزيل Shorts";
 "COPY_VID_INFO" = "نسخ معلومات الفيديو";
 "COPY_TITLE" = "نسخ العنوان";
@@ -413,6 +419,8 @@
 "REMOVE_SHORTS_RELATED_VIDEO_DESC" = "إخفاء شريط ارتباط الفيديو الطويلة في مشغل الشورتات";
 "REMOVE_SHORTS_CHANNEL_NAME" = "إخفاء اسم القناة";
 "REMOVE_SHORTS_CHANNEL_NAME_DESC" = "إخفاء اسم القناة وزر الاشتراك في مشغل الشورتات";
+"REMOVE_SHORTS_SOUND_BUTTON" = "إخفاء شريط الصوت";
+"REMOVE_SHORTS_SOUND_BUTTON_DESC" = "إخفاء شريط الأغنية أو الصوت المستخدم في مشغل الشورتات";
 
 "TABBAR" = "شريط التبويبات";
 "DEFAULT_TAB" = "تبويب البدء الافتراضي";
