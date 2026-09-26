@@ -2332,6 +2332,83 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
+%hook YTWatchNextView
+- (void)layoutSubviews {
+    %orig;
+    if (!YMIsOverlayButtonEnabled(@"download.video"))
+        return;
+    UIView *actionBar =
+        [self ym_findDownloadActionBar];
+    if (!actionBar)
+        return;
+    YTQTMButton *downloadButton =
+        (YTQTMButton *)[actionBar viewWithTag:1502];
+    if (!downloadButton) {
+        UIImageSymbolConfiguration *config =
+            [UIImageSymbolConfiguration configurationWithPointSize:20
+                                                            weight:UIImageSymbolWeightMedium];
+        UIImage *icon =
+            [[UIImage systemImageNamed:@"arrow.down.circle"
+                       withConfiguration:config]
+                imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        downloadButton = [%c(YTQTMButton) iconButton];
+        [downloadButton setImage:icon
+                        forState:UIControlStateNormal];
+        downloadButton.tintColor = [UIColor whiteColor];
+        downloadButton.exclusiveTouch = YES;
+        downloadButton.tag = 1502;
+        [downloadButton addTarget:self
+                           action:@selector(ym_injectedDownload:)
+                 forControlEvents:UIControlEventTouchUpInside];
+        [downloadButton enableNewTouchFeedback];
+        [actionBar addSubview:downloadButton];
+    }
+    downloadButton.frame =
+        CGRectMake(205.0, 0.0, 41.0, 48.0);
+    [actionBar bringSubviewToFront:downloadButton];
+}
+%new
+- (void)ym_injectedDownload:(YTQTMButton *)button {
+    YTPlayerViewController *player =
+        HPlusCurrentPlayerViewController;
+    if (!player)
+        return;
+    UIViewController *presenter =
+        HPlusPresenterForSender(button, player);
+    YTPlayerViewController *resolved =
+        HPlusPlayerFromViewController(presenter)
+        ?: player
+        ?: HPlusCurrentPlayerViewController;
+    if (!resolved)
+        return;
+    HPlusShowDownloadManager(
+        resolved,
+        presenter,
+        button,
+        NO
+    );
+}
+%new
+- (UIView *)ym_findDownloadActionBar {
+    return [self ym_findViewRecursive:self
+                               withID:@"id.video.non_scrollable_action_bar"];
+}
+%new
+- (UIView *)ym_findViewRecursive:(UIView *)view
+                          withID:(NSString *)identifier {
+    if ([view.accessibilityIdentifier isEqualToString:identifier])
+        return view;
+    for (UIView *subview in view.subviews) {
+        UIView *result =
+            [self ym_findViewRecursive:subview
+                                withID:identifier];
+        if (result)
+            return result;
+    }
+    return nil;
+}
+%end
+
 %ctor {
     %init;
     YMOverlayButtonSpec *download = [[YMOverlayButtonSpec alloc] init];
