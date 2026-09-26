@@ -1547,10 +1547,7 @@ static void HPlusFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
     %orig;
     NSString *iden = self.accessibilityIdentifier;
     if (!iden || iden.length == 0) return;
-    
     BOOL shouldFilter = NO;
-    
-    // شروط الفلترة والإخفاء لباقي الأزرار الأصلية
     if ([iden isEqualToString:@"id.video.share.button"] && IS_ENABLED(RemoveVideoShareButton)) {
         shouldFilter = YES;
     } else if ([iden isEqualToString:@"id.video.add_to.button"] && IS_ENABLED(RemoveVideoSaveButton)) {
@@ -1568,35 +1565,8 @@ static void HPlusFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
     } else if ([iden isEqualToString:@"id.player.chat.toggle.button"] && IS_ENABLED(RemoveVideoLiveChatButton)) {
         shouldFilter = YES;
     }
-
-    // إذا كان يجب إخفاء الزر
     if (shouldFilter) {
         HPlusFilterVideoButtons(self, iden);
-        return;
-    }
-    
-    // إذا لم يُخفَ، وكان هو زر التحميل المحقون، نقوم بحقن الأيقونة والتفاعل
-    if ([iden isEqualToString:@"download.video"]) {
-        if ([self viewWithTag:9999] == nil && [self isKindOfClass:[UIView class]]) {
-            UIView *containerView = (UIView *)self;
-            
-            UIButton *customButton = [UIButton buttonWithType:UIButtonTypeSystem];
-            customButton.tag = 9999;
-            customButton.frame = containerView.bounds;
-            customButton.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            
-            UIImage *iconImage = [UIImage systemImageNamed:@"arrow.down.circle"];
-            [customButton setImage:iconImage forState:UIControlStateNormal];
-            [customButton setTintColor:[UIColor whiteColor]];
-            
-            [customButton addAction:[UIAction actionWithHandler:^(__kindof UIAction * _Nonnull action) {
-                YTPlayerViewController *player = nil;
-                UIViewController *presenter = HPlusTopViewController(nil);
-                HPlusShowDownloadManager(player, presenter, customButton, NO);
-            }] forControlEvents:UIControlEventTouchUpInside];
-            
-            [containerView addSubview:customButton];
-        }
     }
 }
 %end
