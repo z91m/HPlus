@@ -2388,9 +2388,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         CGFloat Y = 0.0;
         CGFloat X = 16.0;
         
-        BOOL isRTL = (self.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft);
-        
-        UIView *referenceButton = nil;
+        UIView *likeButton = nil;
         
         for (UIView *subview in self.subviews) {
             if (subview == downloadBtn || subview.hidden || subview.frame.size.width == 0) {
@@ -2398,37 +2396,18 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
             }
             
             NSString *identifier = [subview accessibilityIdentifier];
-            if ([identifier isEqualToString:@"id.video.like.button"] || 
-                [identifier isEqualToString:@"id.video.dislike.button"] ||
-                [identifier isEqualToString:@"id.video.share.button"]) {
-                
-                if (!referenceButton) {
-                    referenceButton = subview;
-                } else {
-                    if (isRTL) {
-                        if (subview.frame.origin.x < referenceButton.frame.origin.x) {
-                            referenceButton = subview;
-                        }
-                    } else {
-                        if (CGRectGetMaxX(subview.frame) > CGRectGetMaxX(referenceButton.frame)) {
-                            referenceButton = subview;
-                        }
-                    }
-                }
+            if ([identifier isEqualToString:@"id.video.like.button"]) {
+                likeButton = subview;
+                break;
             }
         }
         
-        if (referenceButton) {
-            Y = referenceButton.frame.origin.y;
-            btnHeight = referenceButton.frame.size.height;
-            
-            if (isRTL) {
-                X = referenceButton.frame.origin.x - btnWidth - 8.0;
-            } else {
-                X = CGRectGetMaxX(referenceButton.frame) + 8.0;
-            }
+        if (likeButton) {
+            Y = likeButton.frame.origin.y;
+            btnHeight = likeButton.frame.size.height;
+            X = likeButton.frame.origin.x + likeButton.frame.size.width + 8.0;
         } else {
-            X = isRTL ? 16.0 : (self.bounds.size.width - btnWidth - 16.0);
+            X = self.bounds.size.width - btnWidth - 16.0;
         }
         
         downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
