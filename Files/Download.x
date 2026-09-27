@@ -2405,7 +2405,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         if (likeButton) {
             Y = likeButton.frame.origin.y;
             btnHeight = likeButton.frame.size.height;
-            X = likeButton.frame.origin.x + likeButton.frame.size.width + 8.0;
+            X = likeButton.frame.origin.x - btnWidth - 8.0;
         } else {
             X = self.bounds.size.width - btnWidth - 16.0;
         }
