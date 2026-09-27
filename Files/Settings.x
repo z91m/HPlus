@@ -102,7 +102,6 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     YTSettingsViewController *settingsViewController = [self valueForKey:@"_settingsViewControllerDelegate"];
 
     // Tweak Version (at the top)
-    // Thanks to the original codes from YTweaks by fosterbarnes - https://github.com/fosterbarnes/YTweaks/blob/e921591a89b87256a2b37c4788bd99282f70d9c2/Settings.x
         YTSettingsSectionItem *tweakVersion = [YTSettingsSectionItemClass itemWithTitle:@"Hamad Plus v1.0.0"
         titleDescription:nil
         accessibilityIdentifier:nil
@@ -111,49 +110,6 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             return NO;
         }];
     [sectionItems addObject:tweakVersion];
-
-    // Section 0
-    // Github
-    YTSettingsSectionItem *github = [YTSettingsSectionItemClass itemWithTitle:nil
-        titleDescription:@"Github"
-        accessibilityIdentifier:nil
-        detailTextBlock:nil
-        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return NO;
-        }];
-    [sectionItems addObject:github];
-
-    // Issues
-    YTSettingsSectionItem *issues = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"NEW_ISSUES")
-        titleDescription:YMLOC(@"NEW_ISSUES_DESC") // Found bug or Feature request -> Report Issues
-        accessibilityIdentifier:nil
-        detailTextBlock:nil
-        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/z91m/HPlus"]];
-        }
-    ];
-    [sectionItems addObject:issues];
-
-    // Sources codes
-    YTSettingsSectionItem *sourceCodes = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"SOURCE_CODES")
-        titleDescription:YMLOC(@"SOURCE_CODES_DESC") // Take a look
-        accessibilityIdentifier:nil
-        detailTextBlock:nil
-        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/z91m/HPlus"]];
-        }
-    ];
-    [sectionItems addObject:sourceCodes];
-
-    // ?
-    YTSettingsSectionItem *blank = [YTSettingsSectionItemClass itemWithTitle:nil
-        titleDescription:YMLOC(@"EXTRA")
-        accessibilityIdentifier:nil
-        detailTextBlock:nil
-        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return NO;
-        }];
-    [sectionItems addObject:blank];
 
     // Fix playback issues
     YTSettingsSectionItem *fixPlaybackissues = [YTSettingsSectionItemClass switchItemWithTitle:YMLOC(@"FIX_PLAYBACK_ISSUES")
