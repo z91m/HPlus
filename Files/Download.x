@@ -2463,6 +2463,59 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
+%hook YTFullscreenActionsView
+
+- (void)layoutSubviews {
+    %orig;
+    
+    self.hidden = NO;
+    
+    if (!IS_ENABLED(AddDownloadToFullscreen)) return;
+    
+    YTQTMButton *fullscreenDownloadBtn = (YTQTMButton *)[self viewWithTag:1503];
+    
+    if (!fullscreenDownloadBtn) {
+        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
+        UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        
+        fullscreenDownloadBtn = [%c(YTQTMButton) iconButton];
+        [fullscreenDownloadBtn setImage:icon forState:UIControlStateNormal];
+        fullscreenDownloadBtn.tintColor = [UIColor whiteColor];
+        fullscreenDownloadBtn.exclusiveTouch = YES;
+        fullscreenDownloadBtn.userInteractionEnabled = YES;
+        fullscreenDownloadBtn.tag = 1503;
+        
+        [fullscreenDownloadBtn addTarget:self action:@selector(didTapHPlusVideoDownload:) forControlEvents:UIControlEventTouchUpInside];
+        
+        if ([fullscreenDownloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
+            [fullscreenDownloadBtn enableNewTouchFeedback];
+        }
+        
+        [self addSubview:fullscreenDownloadBtn];
+    }
+    
+    fullscreenDownloadBtn.hidden = NO;
+    
+    CGFloat btnWidth = 45.0;
+    CGFloat btnHeight = 48.0;
+    
+    UIView *referenceView = nil;
+    for (UIView *subview in self.subviews) {
+        if (subview != fullscreenDownloadBtn && !subview.hidden && subview.frame.size.width > 0) {
+            referenceView = subview;
+            break;
+        }
+    }
+    
+    CGFloat X = referenceView ? CGRectGetMaxX(referenceView.frame) + 8.0 : 16.0;
+    CGFloat Y = referenceView ? referenceView.frame.origin.y : 0.0;
+    
+    fullscreenDownloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
+    [self bringSubviewToFront:fullscreenDownloadBtn];
+}
+
+%end
+
 %ctor {
     %init;
     YMOverlayButtonSpec *download = [[YMOverlayButtonSpec alloc] init];
