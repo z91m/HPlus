@@ -2470,7 +2470,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     
     self.hidden = NO;
     
-    if (!IS_ENABLED(AddDownloadToFullscreen)) return;
+    if (!IS_ENABLED(AddDownloadToVideo)) return;
     
     YTQTMButton *fullscreenDownloadBtn = (YTQTMButton *)[self viewWithTag:1503];
     
