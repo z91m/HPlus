@@ -2293,7 +2293,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
     if (!downloadBtn) {
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-        UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
         downloadBtn = [%c(YTQTMButton) iconButton];
         [downloadBtn setImage:icon forState:UIControlStateNormal];
         downloadBtn.tintColor = [UIColor whiteColor];
@@ -2374,7 +2374,7 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
         
         if (!downloadBtn) {
             UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-            UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+            UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
             
             downloadBtn = [%c(YTQTMButton) iconButton];
             [downloadBtn setImage:icon forState:UIControlStateNormal];
@@ -2457,8 +2457,8 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
     %init;
     YMOverlayButtonSpec *download = [[YMOverlayButtonSpec alloc] init];
     download.identifier = @"download.video";
-    download.symbolName = @"arrow.down.circle";
-    download.settingsSymbolName = @"arrow.down.circle";
+    download.symbolName = @"arrowshape.down.circle";
+    download.settingsSymbolName = @"arrowshape.down.circle";
     download.displayName = LOC(@"DOWNLOAD_BUTTON");
     download.tintColor = [UIColor whiteColor];
     download.sortOrder = 200;
