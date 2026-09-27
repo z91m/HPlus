@@ -1571,7 +1571,7 @@ static void HPlusFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
     } else if ([iden isEqualToString:@"id.video_metadata.expand.arrow"] && IS_ENABLED(RemoveVideoAskButton)) {
         shouldFilter = YES;
     } else if ([iden isEqualToString:@"id.video_metadata.owner.view"] && IS_ENABLED(RemoveVideoAskButton)) {
-        shouldFilter = YES;		
+        shouldFilter = YES;
     }
     if (shouldFilter) {
         HPlusFilterVideoButtons(self, iden);
