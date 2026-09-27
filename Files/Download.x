@@ -2383,23 +2383,39 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         
         downloadBtn.hidden = NO;
         
-        UIView *likeButton = nil;
-        for (UIView *subview in self.subviews) {
-            if ([[subview accessibilityIdentifier] isEqualToString:@"id.video.like.button"]) {
-                likeButton = subview;
-                break;
+        UIView *referenceButton = nil;
+        CGFloat maxX = 16.0;
+        
+        NSMutableArray *sortedSubviews = [self.subviews mutableCopy];
+        [sortedSubviews sortUsingComparator:^NSComparisonResult(UIView *v1, UIView *v2) {
+            return @(v1.frame.origin.x) compare:@(v2.frame.origin.x)];
+        }];
+        
+        for (UIView *subview in sortedSubviews) {
+            if (subview == downloadBtn || subview.hidden || subview.frame.size.width == 0) {
+                continue;
+            }
+            
+            NSString *identifier = [subview accessibilityIdentifier];
+            if ([identifier isEqualToString:@"id.video.like.button"] || 
+                [identifier isEqualToString:@"id.video.dislike.button"] ||
+                [identifier isEqualToString:@"id.video.share.button"]) {
+                
+                if (CGRectGetMaxX(subview.frame) > maxX) {
+                    maxX = CGRectGetMaxX(subview.frame);
+                    referenceButton = subview;
+                }
             }
         }
         
         CGFloat btnWidth = 45.0;
         CGFloat btnHeight = 48.0;
-        CGFloat X = 210.0; 
+        CGFloat X = maxX + 8.0;
         CGFloat Y = 0.0;
         
-        if (likeButton) {
-            X = CGRectGetMaxX(likeButton.frame) + 8.0;
-            Y = likeButton.frame.origin.y;
-            btnHeight = likeButton.frame.size.height;
+        if (referenceButton) {
+            Y = referenceButton.frame.origin.y;
+            btnHeight = referenceButton.frame.size.height;
         }
         
         downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
