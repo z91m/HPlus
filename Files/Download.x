@@ -2388,7 +2388,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         
         NSMutableArray *sortedSubviews = [self.subviews mutableCopy];
         [sortedSubviews sortUsingComparator:^NSComparisonResult(UIView *v1, UIView *v2) {
-            return @(v1.frame.origin.x) compare:@(v2.frame.origin.x)];
+            return [@(v1.frame.origin.x) compare:@(v2.frame.origin.x)];
         }];
         
         for (UIView *subview in sortedSubviews) {
