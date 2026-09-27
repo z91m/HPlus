@@ -2332,6 +2332,17 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
+static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
+    for (UIView *subview in parent.subviews) {
+        if ([[subview accessibilityIdentifier] isEqualToString:identifier]) {
+            return subview;
+        }
+        UIView *found = HPlusFindViewWithID(subview, identifier);
+        if (found) return found;
+    }
+    return nil;
+}
+
 %hook _ASDisplayView
 
 - (void)layoutSubviews {
@@ -2385,29 +2396,16 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         
         CGFloat btnWidth = 45.0;
         CGFloat btnHeight = 48.0;
+        CGFloat X = 210.0; 
         CGFloat Y = 0.0;
-        CGFloat X = 16.0;
         
-        UIView *likeButton = nil;
-        
-        for (UIView *subview in self.subviews) {
-            if (subview == downloadBtn || subview.hidden || subview.frame.size.width == 0) {
-                continue;
-            }
-            
-            NSString *identifier = [subview accessibilityIdentifier];
-            if ([identifier isEqualToString:@"id.video.like.button"]) {
-                likeButton = subview;
-                break;
-            }
-        }
+        UIView *likeButton = HPlusFindViewWithID(self, @"id.video.like.button");
         
         if (likeButton) {
-            Y = likeButton.frame.origin.y;
-            btnHeight = likeButton.frame.size.height;
-            X = likeButton.frame.origin.x - btnWidth - 8.0;
-        } else {
-            X = self.bounds.size.width - btnWidth - 16.0;
+            CGRect frameInSelf = [likeButton convertRect:likeButton.bounds toView:self];
+            X = CGRectGetMaxX(frameInSelf) + 8.0;
+            Y = frameInSelf.origin.y;
+            btnHeight = frameInSelf.size.height;
         }
         
         downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
