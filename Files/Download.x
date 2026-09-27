@@ -2394,7 +2394,7 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
         
         downloadBtn.hidden = NO;
         
-        CGFloat btnWidth = 45.0;
+        CGFloat btnWidth = 41.0;
         CGFloat btnHeight = 48.0;
         CGFloat X = 210.0; 
         CGFloat Y = 0.0;
@@ -2403,7 +2403,7 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
         
         if (likeButton) {
             CGRect frameInSelf = [likeButton convertRect:likeButton.bounds toView:self];
-            X = CGRectGetMaxX(frameInSelf) + 8.0;
+            X = CGRectGetMaxX(frameInSelf);
             Y = frameInSelf.origin.y;
             btnHeight = frameInSelf.size.height;
         }
