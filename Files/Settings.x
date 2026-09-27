@@ -299,6 +299,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"HIDE_COMMENTS_SECTION"), YMLOC(@"HIDE_COMMENTS_SECTION_DESC"), HideCommentsSection),
             YMToggle(YMLOC(@"HIDE_COMMENTS_PREVIEW"), YMLOC(@"HIDE_COMMENTS_PREVIEW_DESC"), HideCommentsPreview),
             YMPicker(YMLOC(@"DRC_AUDIO_OPTIONS"), YMLOC(@"DRC_AUDIO_OPTIONS_DESC"), AutoDRCAudioIndex, (@[YMLOC(@"DEFAULT"), YMLOC(@"ENABLED"), YMLOC(@"DISABLED")]), 0),
+            YMToggle(YMLOC(@"REMOVE_VIDEO_ASK_BUTTON"), YMLOC(@"REMOVE_VIDEO_ASK_BUTTON_DESC"), RemoveVideoAskButton),			
             YMToggle(YMLOC(@"REMOVE_VIDEO_LIKE_BUTTON"), YMLOC(@"REMOVE_VIDEO_LIKE_BUTTON_DESC"), RemoveVideoLikeButton),
             YMToggle(YMLOC(@"REMOVE_VIDEO_DISLIKE_BUTTON"), YMLOC(@"REMOVE_VIDEO_DISLIKE_BUTTON_DESC"), RemoveVideoDislikeButton),
             YMToggle(YMLOC(@"REMOVE_VIDEO_SHARE_BUTTON"), YMLOC(@"REMOVE_VIDEO_SHARE_BUTTON_DESC"), RemoveVideoShareButton),
