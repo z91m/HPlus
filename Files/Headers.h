@@ -211,7 +211,7 @@
 #define RemoveVideoRemixButton @"HPlusRemoveVideoRemixButton"
 #define RemoveVideoLiveChatButton @"HPlusRemoveVideoLiveChatButton"
 #define AutoFeedMute @"HPlusAutoFeedMute"
-#define RemoveVideoLikeButton @"HPlusRemoveVideoAskButton"
+#define RemoveVideoAskButton @"HPlusRemoveVideoAskButton"
 // Shorts
 #define HideShortsTopbar @"HPlusHideShortsTopbar"
 #define HideShortsSubbar @"HPlusHideShortsSubbar"
