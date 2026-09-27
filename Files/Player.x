@@ -1564,13 +1564,13 @@ static void HPlusFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
         shouldFilter = YES;
     } else if ([iden isEqualToString:@"id.player.chat.toggle.button"] && IS_ENABLED(RemoveVideoLiveChatButton)) {
         shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.video_card_metadata_preview.view"] && IS_ENABLED(RemoveVideoAskButton)) {
+    } else if ([iden isEqualToString:@"id.video.scrollable_action_bar"] && IS_ENABLED(RemoveVideoAskButton)) {
         shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.video_metadata.collapse.arrow"] && IS_ENABLED(RemoveVideoAskButton)) {
+    } else if ([iden isEqualToString:@"id.video.ask.button"] && IS_ENABLED(RemoveVideoAskButton)) {
         shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.video_metadata.expand.arrow"] && IS_ENABLED(RemoveVideoAskButton)) {
+    } else if ([iden isEqualToString:@"id.video.metadata.button"] && IS_ENABLED(RemoveVideoAskButton)) {
         shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.video_metadata.owner.view"] && IS_ENABLED(RemoveVideoAskButton)) {
+    } else if ([iden isEqualToString:@"id.video.detailsactions.view"] && IS_ENABLED(RemoveVideoAskButton)) {
         shouldFilter = YES;
     }
     if (shouldFilter) {
