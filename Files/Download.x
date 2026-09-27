@@ -2383,15 +2383,16 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         
         downloadBtn.hidden = NO;
         
+        CGFloat btnWidth = 45.0;
+        CGFloat btnHeight = 48.0;
+        CGFloat Y = 0.0;
+        CGFloat X = 16.0;
+        
+        BOOL isRTL = (self.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft);
+        
         UIView *referenceButton = nil;
-        CGFloat maxX = 16.0;
         
-        NSMutableArray *sortedSubviews = [self.subviews mutableCopy];
-        [sortedSubviews sortUsingComparator:^NSComparisonResult(UIView *v1, UIView *v2) {
-            return [@(v1.frame.origin.x) compare:@(v2.frame.origin.x)];
-        }];
-        
-        for (UIView *subview in sortedSubviews) {
+        for (UIView *subview in self.subviews) {
             if (subview == downloadBtn || subview.hidden || subview.frame.size.width == 0) {
                 continue;
             }
@@ -2401,21 +2402,33 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
                 [identifier isEqualToString:@"id.video.dislike.button"] ||
                 [identifier isEqualToString:@"id.video.share.button"]) {
                 
-                if (CGRectGetMaxX(subview.frame) > maxX) {
-                    maxX = CGRectGetMaxX(subview.frame);
+                if (!referenceButton) {
                     referenceButton = subview;
+                } else {
+                    if (isRTL) {
+                        if (subview.frame.origin.x < referenceButton.frame.origin.x) {
+                            referenceButton = subview;
+                        }
+                    } else {
+                        if (CGRectGetMaxX(subview.frame) > CGRectGetMaxX(referenceButton.frame)) {
+                            referenceButton = subview;
+                        }
+                    }
                 }
             }
         }
         
-        CGFloat btnWidth = 45.0;
-        CGFloat btnHeight = 48.0;
-        CGFloat X = maxX + 8.0;
-        CGFloat Y = 0.0;
-        
         if (referenceButton) {
             Y = referenceButton.frame.origin.y;
             btnHeight = referenceButton.frame.size.height;
+            
+            if (isRTL) {
+                X = referenceButton.frame.origin.x - btnWidth - 8.0;
+            } else {
+                X = CGRectGetMaxX(referenceButton.frame) + 8.0;
+            }
+        } else {
+            X = isRTL ? 16.0 : (self.bounds.size.width - btnWidth - 16.0);
         }
         
         downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
@@ -2459,59 +2472,6 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     YTPlayerViewController *resolved = HPlusPlayerFromViewController(presenter) ?: player ?: HPlusCurrentPlayerViewController;
     
     HPlusShowDownloadManager(resolved, presenter, button, NO);
-}
-
-%end
-
-%hook YTFullscreenActionsView
-
-- (void)layoutSubviews {
-    %orig;
-    
-    self.hidden = NO;
-    
-    if (!IS_ENABLED(AddDownloadToVideo)) return;
-    
-    YTQTMButton *fullscreenDownloadBtn = (YTQTMButton *)[self viewWithTag:1503];
-    
-    if (!fullscreenDownloadBtn) {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-        UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-        
-        fullscreenDownloadBtn = [%c(YTQTMButton) iconButton];
-        [fullscreenDownloadBtn setImage:icon forState:UIControlStateNormal];
-        fullscreenDownloadBtn.tintColor = [UIColor whiteColor];
-        fullscreenDownloadBtn.exclusiveTouch = YES;
-        fullscreenDownloadBtn.userInteractionEnabled = YES;
-        fullscreenDownloadBtn.tag = 1503;
-        
-        [fullscreenDownloadBtn addTarget:self action:@selector(didTapHPlusVideoDownload:) forControlEvents:UIControlEventTouchUpInside];
-        
-        if ([fullscreenDownloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
-            [fullscreenDownloadBtn enableNewTouchFeedback];
-        }
-        
-        [self addSubview:fullscreenDownloadBtn];
-    }
-    
-    fullscreenDownloadBtn.hidden = NO;
-    
-    CGFloat btnWidth = 45.0;
-    CGFloat btnHeight = 48.0;
-    
-    UIView *referenceView = nil;
-    for (UIView *subview in self.subviews) {
-        if (subview != fullscreenDownloadBtn && !subview.hidden && subview.frame.size.width > 0) {
-            referenceView = subview;
-            break;
-        }
-    }
-    
-    CGFloat X = referenceView ? CGRectGetMaxX(referenceView.frame) + 8.0 : 16.0;
-    CGFloat Y = referenceView ? referenceView.frame.origin.y : 0.0;
-    
-    fullscreenDownloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
-    [self bringSubviewToFront:fullscreenDownloadBtn];
 }
 
 %end
