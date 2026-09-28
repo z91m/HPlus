@@ -149,7 +149,7 @@ static void HPlusFilterShortsButtons(_ASDisplayView *self, NSString *iden) {
 
 static void HPlusAddShortsButtons(UIView *self, NSString *iden) {
     NSDictionary *possibleIds = @{
-	    @"eml.compact_subscribe_button": @(IS_ENABLED(RemoveShortsChannelName)),
+	      @"eml.compact_subscribe_button": @(IS_ENABLED(RemoveShortsChannelName)),
         @"eml.reel_channel_bar.channel_name": @(IS_ENABLED(RemoveShortsChannelName)),
         @"decorated-avatar-id": @(IS_ENABLED(RemoveShortsChannelName)),
         @"eml.avatar_stack": @(IS_ENABLED(RemoveShortsChannelName)),
@@ -159,12 +159,14 @@ static void HPlusAddShortsButtons(UIView *self, NSString *iden) {
         @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"eml.ad_badge": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"eml.badge": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"id.creation.audio.button.video_title": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"id.creation.audio.scrubber.related_sound_button": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"id.creation.audio.scrubber.done_button": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"id.creation.audio.scrubber.open_button": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"id.creation.audio.scrubber.change_sound_button": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"id.creation.audio.scrubber.close_sound_button": @(IS_ENABLED(RemoveShortsSoundButton))
+        @"id.reel_footer_analytics_button": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_dismissal_toast": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_empty_state_label": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_vertical_navigation_edu_overlay_animation_view": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_vertical_navigation_edu_overlay_swipe_up_label": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.creation.trim.button.cancel_edit_into_a_short": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.creation.trim.button.edit_into_a_short": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.reels_watch_ghost_loader": @(IS_ENABLED(RemoveShortsSoundButton))
     };
     for (NSString *target in possibleIds) {
         if ([iden containsString:target] && [possibleIds[target] boolValue]) {
