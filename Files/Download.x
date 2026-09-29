@@ -2333,7 +2333,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         downloadLabel.userInteractionEnabled = NO;
         [self addSubview:downloadLabel];
     }
-    downloadLabel.frame = CGRectMake(X, Y + btnHeight + 0.8, btnWidth, 20.0);
+    downloadLabel.frame = CGRectMake(X, Y + btnHeight + 6.8, btnWidth, 20.0);
     [self bringSubviewToFront:downloadLabel];
 }
 
