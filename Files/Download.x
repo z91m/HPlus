@@ -2313,7 +2313,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     CGFloat X = [UIScreen mainScreen].bounds.size.width - actionBar.frame.origin.x - btnWidth;
     CGFloat Y = 0.0;
     if (pov == nil) {
-        Y = actionBar.frame.origin.y - 90.0;
+        Y = actionBar.frame.origin.y - 210.0;
         btnHeight = btnHeight + 16.0;
     } else {
         Y = pov.frame.origin.y - 60.0;
