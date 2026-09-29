@@ -2326,7 +2326,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         downloadLabel = [[UILabel alloc] init];
         downloadLabel.text = NSLocalizedString(@"تنزيل", nil);
         downloadLabel.textColor = [UIColor whiteColor];
-        downloadLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightBold];
+        downloadLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightBold];
         downloadLabel.textAlignment = NSTextAlignmentCenter;
         downloadLabel.backgroundColor = [UIColor clearColor];
         downloadLabel.tag = 1502;
