@@ -2316,7 +2316,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         Y = actionBar.frame.origin.y - 76.0;
         btnHeight = btnHeight + 16.0;
     } else {
-        Y = pov.frame.origin.y - 70.0;
+        Y = pov.frame.origin.y - 68.0;
     }
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
@@ -2337,7 +2337,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         downloadLabel.layer.shadowOpacity = 0.8;
         [self addSubview:downloadLabel];
     }
-    downloadLabel.frame = CGRectMake(X, Y + 40.0, btnWidth, 20.0);
+    downloadLabel.frame = CGRectMake(X, Y + 42.0, btnWidth, 20.0);
     [self bringSubviewToFront:downloadLabel];
 }
 
