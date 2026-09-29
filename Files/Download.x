@@ -2324,7 +2324,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     UILabel *downloadLabel = (UILabel *)[self viewWithTag:1502];
     if (!downloadLabel) {
         downloadLabel = [[UILabel alloc] init];
-        downloadLabel.text = NSLocalizedString(@"Download", nil);
+        downloadLabel.text = NSLocalizedString(@"تنزيل", nil);
         downloadLabel.textColor = [UIColor whiteColor];
         downloadLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightMedium];
         downloadLabel.textAlignment = NSTextAlignmentCenter;
@@ -2333,7 +2333,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         downloadLabel.userInteractionEnabled = NO;
         [self addSubview:downloadLabel];
     }
-    downloadLabel.frame = CGRectMake(X, Y + btnHeight + 2.0, btnWidth, 20.0);
+    downloadLabel.frame = CGRectMake(X, Y + btnHeight + 0.0, btnWidth, 20.0);
     [self bringSubviewToFront:downloadLabel];
 }
 
