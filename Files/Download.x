@@ -2287,48 +2287,63 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %hook YTReelWatchPlaybackOverlayView
 
-- (void)layoutSubviews {
+* (void)layoutSubviews {
     %orig;
     if (!IS_ENABLED(AddDownloadToShorts)) return;
     YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
     if (!downloadBtn) {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-        UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-        downloadBtn = [%c(YTQTMButton) iconButton];
-        [downloadBtn setImage:icon forState:UIControlStateNormal];
-        downloadBtn.tintColor = [UIColor whiteColor];
-        downloadBtn.exclusiveTouch = YES;
-        downloadBtn.tag = 1501;
-        [downloadBtn addTarget:self action:@selector(didTapHPlusShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
-        [downloadBtn enableNewTouchFeedback];
-        [self addSubview:downloadBtn];
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
+    UIImage *icon = [[UIImage systemImageNamed:@“arrowshape.down.circle” withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    downloadBtn = [%c(YTQTMButton) iconButton];
+    [downloadBtn setImage:icon forState:UIControlStateNormal];
+    downloadBtn.tintColor = [UIColor whiteColor];
+    downloadBtn.exclusiveTouch = YES;
+    downloadBtn.tag = 1501;
+    [downloadBtn addTarget:self action:@selector(didTapHPlusShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
+    [downloadBtn enableNewTouchFeedback];
+    [self addSubview:downloadBtn];
     }
     CGFloat btnWidth = 64.0;
     CGFloat btnHeight = 60.0;
     YTReelElementAsyncComponentView *pov = nil;
     @try {
-        pov = [self valueForKey:@"_playerOverlayView"];
-    } @catch (...) {}
-    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
+    pov = [self valueForKey:@”_playerOverlayView”];
+    } @catch (…) {}
+    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@”_actionBarComponentView”];
     CGFloat X = [UIScreen mainScreen].bounds.size.width - actionBar.frame.origin.x - btnWidth;
     CGFloat Y = 0.0;
     if (pov == nil) {
-        Y = actionBar.frame.origin.y - 76.0;
-        btnHeight = btnHeight + 16.0;
+    Y = actionBar.frame.origin.y - 76.0;
+    btnHeight = btnHeight + 16.0;
     } else {
-        Y = pov.frame.origin.y - 60.0;
+    Y = pov.frame.origin.y - 60.0;
     }
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
-}
+    UILabel *downloadLabel = (UILabel *)[self viewWithTag:1502];
+    if (!downloadLabel) {
+    downloadLabel = [[UILabel alloc] init];
+    downloadLabel.text = NSLocalizedString(@“Download”, nil);
+    downloadLabel.textColor = [UIColor whiteColor];
+    downloadLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightMedium];
+    downloadLabel.textAlignment = NSTextAlignmentCenter;
+    downloadLabel.backgroundColor = [UIColor clearColor];
+    downloadLabel.tag = 1502;
+    downloadLabel.userInteractionEnabled = NO;
+    [self addSubview:downloadLabel];
+    }
+    downloadLabel.frame = CGRectMake(X, Y + btnHeight + 2.0, btnWidth, 20.0);
+    [self bringSubviewToFront:downloadLabel];
+    }
 
 %new
-- (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
+
+* (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
     YTShortsPlayerViewController *shortsPlayerView = (YTShortsPlayerViewController *)self._viewControllerForAncestor;
     YTPlayerViewController *player = (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
     UIViewController *presenter = HPlusPresenterForSender(button, player);
     HPlusShowDownloadManager(player, presenter, button, YES);
-}
+    }
 
 %end
 
