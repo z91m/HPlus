@@ -2326,14 +2326,14 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         downloadLabel = [[UILabel alloc] init];
         downloadLabel.text = NSLocalizedString(@"تنزيل", nil);
         downloadLabel.textColor = [UIColor whiteColor];
-        downloadLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightMedium];
+        downloadLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightMedium];
         downloadLabel.textAlignment = NSTextAlignmentCenter;
         downloadLabel.backgroundColor = [UIColor clearColor];
         downloadLabel.tag = 1502;
         downloadLabel.userInteractionEnabled = NO;
         [self addSubview:downloadLabel];
     }
-    downloadLabel.frame = CGRectMake(X, Y + 42.0, btnWidth, 20.0);
+    downloadLabel.frame = CGRectMake(X, Y + 38.0, btnWidth, 20.0);
     [self bringSubviewToFront:downloadLabel];
 }
 
