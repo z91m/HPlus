@@ -2316,7 +2316,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         Y = actionBar.frame.origin.y - 76.0;
         btnHeight = btnHeight + 16.0;
     } else {
-        Y = pov.frame.origin.y - 90.0;
+        Y = pov.frame.origin.y - 70.0;
     }
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
