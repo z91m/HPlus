@@ -2331,6 +2331,10 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         downloadLabel.backgroundColor = [UIColor clearColor];
         downloadLabel.tag = 1502;
         downloadLabel.userInteractionEnabled = NO;
+        downloadLabel.layer.shadowColor = [[UIColor blackColor] CGColor];
+        downloadLabel.layer.shadowOffset = CGSizeMake(0.0, 1.0);
+        downloadLabel.layer.shadowRadius = 2.0;
+        downloadLabel.layer.shadowOpacity = 0.8;
         [self addSubview:downloadLabel];
     }
     downloadLabel.frame = CGRectMake(X, Y + 40.0, btnWidth, 20.0);
