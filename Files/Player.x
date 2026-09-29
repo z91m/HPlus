@@ -1564,7 +1564,7 @@ static void HPlusFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
         shouldFilter = YES;
     } else if ([iden isEqualToString:@"id.player.chat.toggle.button"] && IS_ENABLED(RemoveVideoLiveChatButton)) {
         shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.ui.video_metadata_carousel.collection"] && IS_ENABLED(RemoveVideoAskButton)) {
+    } else if ([iden isEqualToString:@"id.elements.button"] && IS_ENABLED(RemoveVideoAskButton)) {
         shouldFilter = YES;
     }
     if (shouldFilter) {
