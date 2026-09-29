@@ -2333,7 +2333,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         downloadLabel.userInteractionEnabled = NO;
         [self addSubview:downloadLabel];
     }
-    downloadLabel.frame = CGRectMake(X, Y + btnHeight + 6.8, btnWidth, 20.0);
+    downloadLabel.frame = CGRectMake(X, Y - 10.0, btnWidth, 20.0);
     [self bringSubviewToFront:downloadLabel];
 }
 
@@ -2409,7 +2409,7 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
         
         downloadBtn.hidden = NO;
         
-        CGFloat btnWidth = 48.0;
+        CGFloat btnWidth = 80.0;
         CGFloat btnHeight = 48.0;
         CGFloat X = 210.0; 
         CGFloat Y = 0.0;
