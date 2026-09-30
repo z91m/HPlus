@@ -2413,9 +2413,9 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
         
         downloadBtn.hidden = NO;
         
-        CGFloat btnWidth = 80.0;
+        CGFloat btnWidth = 41.0;
         CGFloat btnHeight = 48.0;
-        CGFloat X = 210.0; 
+        CGFloat X = 110.0; 
         CGFloat Y = 0.0;
         
         UIView *likeButton = HPlusFindViewWithID(self, @"id.video.like.button");
