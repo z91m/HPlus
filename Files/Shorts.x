@@ -129,7 +129,11 @@ static void HPlusFilterShortsButtons(_ASDisplayView *self, NSString *iden) {
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
+        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton)),
+        @"eml.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
+        @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
+        @"eml.reel_playlist_button": @(IS_ENABLED(RemoveShortsSaveButton)),
+        @"id.reel_playlist_button": @(IS_ENABLED(RemoveShortsSaveButton)),
     };
     for (NSString *button in buttonsList) {
         if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
@@ -153,7 +157,6 @@ static void HPlusAddShortsButtons(UIView *self, NSString *iden) {
         @"eml.reel_channel_bar.channel_name": @(IS_ENABLED(RemoveShortsChannelName)),
         @"decorated-avatar-id": @(IS_ENABLED(RemoveShortsChannelName)),
         @"eml.reel_sponsor_button": @(IS_ENABLED(RemoveShortsChannelName)),
-        @"eml.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
         @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
         @"eml.ad_badge": @(IS_ENABLED(RemoveShortsSoundButton)),
