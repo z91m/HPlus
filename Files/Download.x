@@ -2286,7 +2286,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
-*/
+/*
 %hook YTReelWatchPlaybackOverlayView
 
 - (void)layoutSubviews {
@@ -2352,7 +2352,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 }
 
 %end
-/*
+*/
 
 static UIView *HPlusFindViewWithID(UIView *parent, NSString *identifier) {
     for (UIView *subview in parent.subviews) {
