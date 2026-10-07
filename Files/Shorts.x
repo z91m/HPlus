@@ -133,7 +133,7 @@ static void HPlusFilterShortsButtons(_ASDisplayView *self, NSString *iden) {
         @"eml.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"eml.reel_playlist_button": @(IS_ENABLED(RemoveShortsSaveButton)),
-        @"id.reel_playlist_button": @(IS_ENABLED(RemoveShortsSaveButton)),
+        @"id.reel_playlist_button": @(IS_ENABLED(RemoveShortsSaveButton))
     };
     for (NSString *button in buttonsList) {
         if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
