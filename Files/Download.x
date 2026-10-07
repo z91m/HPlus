@@ -2366,83 +2366,180 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
 
 - (void)layoutSubviews {
     %orig;
-    
+
     NSString *accessibilityIdentifier = [self accessibilityIdentifier];
+
     if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
         if (!IS_ENABLED(AddDownloadToVideo)) return;
-        
+
         BOOL isMainPlayerBar = NO;
         UIResponder *responder = self;
+
         while ((responder = [responder nextResponder])) {
             if ([responder isKindOfClass:[%c(YTWatchNextView) class]]) {
                 isMainPlayerBar = YES;
                 break;
             }
         }
-        
+
         YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1502];
-        
+
         if (!isMainPlayerBar) {
             if (downloadBtn) {
                 downloadBtn.hidden = YES;
             }
             return;
         }
-        
+
         self.clipsToBounds = NO;
-        
+
         if (!downloadBtn) {
             UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
             UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-            
+
             downloadBtn = [%c(YTQTMButton) iconButton];
             [downloadBtn setImage:icon forState:UIControlStateNormal];
             downloadBtn.tintColor = [UIColor whiteColor];
             downloadBtn.exclusiveTouch = YES;
             downloadBtn.userInteractionEnabled = YES;
             downloadBtn.tag = 1502;
-            
+
             [downloadBtn addTarget:self action:@selector(didTapHPlusVideoDownload:) forControlEvents:UIControlEventTouchUpInside];
-            
+
             if ([downloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
                 [downloadBtn enableNewTouchFeedback];
             }
-            
+
             [self addSubview:downloadBtn];
         }
-        
+
         downloadBtn.hidden = NO;
-        
+
         CGFloat btnWidth = 41.0;
         CGFloat btnHeight = 48.0;
-        CGFloat X = 210.0; 
+        CGFloat X = 210.0;
         CGFloat Y = 0.0;
-        
+
         UIView *likeButton = HPlusFindViewWithID(self, @"id.video.like.button");
-        
+
         if (likeButton) {
             CGRect frameInSelf = [likeButton convertRect:likeButton.bounds toView:self];
             X = CGRectGetMaxX(frameInSelf);
             Y = frameInSelf.origin.y;
             btnHeight = frameInSelf.size.height;
         }
-        
+
         downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
         [self bringSubviewToFront:downloadBtn];
+
+        return;
     }
+
+    if (!IS_ENABLED(AddDownloadToShorts)) return;
+
+    UIView *likeButton = HPlusFindViewWithID(self, @"id.reel_like_button");
+
+    if (!likeButton) return;
+
+    self.clipsToBounds = NO;
+
+    YTQTMButton *shortsDownloadBtn = (YTQTMButton *)[self viewWithTag:1501];
+
+    if (!shortsDownloadBtn) {
+        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
+        UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+
+        shortsDownloadBtn = [%c(YTQTMButton) iconButton];
+        [shortsDownloadBtn setImage:icon forState:UIControlStateNormal];
+        shortsDownloadBtn.tintColor = [UIColor whiteColor];
+        shortsDownloadBtn.exclusiveTouch = YES;
+        shortsDownloadBtn.userInteractionEnabled = YES;
+        shortsDownloadBtn.tag = 1501;
+
+        [shortsDownloadBtn addTarget:self action:@selector(didTapHPlusShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
+
+        if ([shortsDownloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
+            [shortsDownloadBtn enableNewTouchFeedback];
+        }
+
+        [self addSubview:shortsDownloadBtn];
+    }
+
+    shortsDownloadBtn.hidden = NO;
+
+    CGRect likeFrame = [likeButton convertRect:likeButton.bounds toView:self];
+
+    CGFloat btnWidth = likeFrame.size.width;
+    CGFloat btnHeight = likeFrame.size.height;
+
+    shortsDownloadBtn.frame = CGRectMake(
+        likeFrame.origin.x,
+        likeFrame.origin.y - btnHeight,
+        btnWidth,
+        btnHeight
+    );
+
+    [self bringSubviewToFront:shortsDownloadBtn];
+
+    UILabel *downloadLabel = (UILabel *)[self viewWithTag:1503];
+
+    if (!downloadLabel) {
+        downloadLabel = [[UILabel alloc] init];
+        downloadLabel.text = NSLocalizedString(@"تنزيل", nil);
+        downloadLabel.textColor = [UIColor whiteColor];
+        downloadLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightBold];
+        downloadLabel.textAlignment = NSTextAlignmentCenter;
+        downloadLabel.backgroundColor = [UIColor clearColor];
+        downloadLabel.tag = 1503;
+        downloadLabel.userInteractionEnabled = NO;
+        downloadLabel.layer.shadowColor = [[UIColor blackColor] CGColor];
+        downloadLabel.layer.shadowOffset = CGSizeMake(0.0, 1.0);
+        downloadLabel.layer.shadowRadius = 2.0;
+        downloadLabel.layer.shadowOpacity = 0.8;
+        [self addSubview:downloadLabel];
+    }
+
+    downloadLabel.hidden = NO;
+
+    downloadLabel.frame = CGRectMake(
+        likeFrame.origin.x,
+        likeFrame.origin.y - btnHeight + 42.0,
+        btnWidth,
+        20.0
+    );
+
+    [self bringSubviewToFront:downloadLabel];
 }
 
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
     NSString *accessibilityIdentifier = [self accessibilityIdentifier];
+
     if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
         UIView *downloadBtn = [self viewWithTag:1502];
+
         if (downloadBtn && !downloadBtn.hidden) {
             CGPoint btnPoint = [self convertPoint:point toView:downloadBtn];
+
             if ([downloadBtn pointInside:btnPoint withEvent:event]) {
                 return YES;
             }
         }
     }
+
+    UIView *shortsLikeButton = HPlusFindViewWithID(self, @"id.reel_like_button");
+
+    if (shortsLikeButton && IS_ENABLED(AddDownloadToShorts)) {
+        UIView *shortsDownloadBtn = [self viewWithTag:1501];
+
+        if (shortsDownloadBtn && !shortsDownloadBtn.hidden) {
+            CGPoint btnPoint = [self convertPoint:point toView:shortsDownloadBtn];
+
+            if ([shortsDownloadBtn pointInside:btnPoint withEvent:event]) {
+                return YES;
+            }
+        }
+    }
+
     return %orig;
 }
 
@@ -2450,12 +2547,14 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
 - (void)didTapHPlusVideoDownload:(YTQTMButton *)button {
     UIView *selfView = (UIView *)self;
     UIViewController *ancestorVC = [selfView _viewControllerForAncestor];
-    
+
     YTPlayerViewController *player = nil;
+
     if ([ancestorVC isKindOfClass:[%c(YTPlayerViewController) class]]) {
         player = (YTPlayerViewController *)ancestorVC;
     } else {
         UIResponder *responder = selfView;
+
         while ((responder = [responder nextResponder])) {
             if ([responder isKindOfClass:[%c(YTPlayerViewController) class]]) {
                 player = (YTPlayerViewController *)responder;
@@ -2463,11 +2562,35 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
             }
         }
     }
-    
+
     UIViewController *presenter = HPlusPresenterForSender(button, player);
     YTPlayerViewController *resolved = HPlusPlayerFromViewController(presenter) ?: player ?: HPlusCurrentPlayerViewController;
-    
+
     HPlusShowDownloadManager(resolved, presenter, button, NO);
+}
+
+%new
+- (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
+    UIViewController *vc = nil;
+
+    @try {
+        vc = [self valueForKey:@"_viewControllerForAncestor"];
+    } @catch (...) {}
+
+    if (!vc) return;
+
+    YTShortsPlayerViewController *shortsPlayerView = (YTShortsPlayerViewController *)vc;
+    YTPlayerViewController *player = nil;
+
+    if (shortsPlayerView.childViewControllers.count > 0) {
+        player = (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
+    }
+
+    if (!player) return;
+
+    UIViewController *presenter = HPlusPresenterForSender(button, player);
+
+    HPlusShowDownloadManager(player, presenter, button, YES);
 }
 
 %end
