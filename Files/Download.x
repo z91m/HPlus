@@ -2275,6 +2275,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
     HPlusPresentMenu(nil, items, presenter, self);
 }
 
+    */
 %new
 - (void)HPlusDownloadButtonTapped:(UITapGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateEnded) return;
@@ -2350,6 +2351,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 }
 
 %end
+    */
 
 static UIView *HPlusFindViewWithID(UIView *parent, NSString *identifier) {
     for (UIView *subview in parent.subviews) {
