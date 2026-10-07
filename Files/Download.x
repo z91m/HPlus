@@ -2571,27 +2571,12 @@ static UIView *HPlusFindViewWithID(UIView *parent, NSString *identifier) {
 }
 
 %new
-
-* (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
-    UIView *selfView = (UIView *)self;
-    UIViewController *ancestorVC = [selfView _viewControllerForAncestor];
-    YTPlayerViewController *player = nil;
-    if ([ancestorVC isKindOfClass:[%c(YTPlayerViewController) class]]) {
-    player = (YTPlayerViewController *)ancestorVC;
-    } else {
-    UIResponder *responder = selfView;
-    while ((responder = [responder nextResponder])) {
-    if ([responder isKindOfClass:[%c(YTPlayerViewController) class]]) {
-    player = (YTPlayerViewController *)responder;
-    break;
-    }
-    }
-    }
+- (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
+    YTShortsPlayerViewController *shortsPlayerView = (YTShortsPlayerViewController *)self._viewControllerForAncestor;
+    YTPlayerViewController *player = (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
     UIViewController *presenter = HPlusPresenterForSender(button, player);
-    YTPlayerViewController *resolved = HPlusPlayerFromViewController(presenter) ?: player ?: HPlusCurrentPlayerViewController;
-    if (!resolved) return;
-    HPlusShowDownloadManager(resolved, presenter, button, YES);
-    }
+    HPlusShowDownloadManager(player, presenter, button, YES);
+}
 
 %end
 
