@@ -2351,7 +2351,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
-static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
+static UIView *HPlusFindViewWithID(UIView *parent, NSString *identifier) {
     for (UIView *subview in parent.subviews) {
         if ([[subview accessibilityIdentifier] isEqualToString:identifier]) {
             return subview;
@@ -2469,8 +2469,8 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
 
     CGRect likeFrame = [likeButton convertRect:likeButton.bounds toView:self];
 
-    CGFloat btnWidth = likeFrame.size.width;
-    CGFloat btnHeight = likeFrame.size.height;
+    CGFloat btnWidth = 64.0;
+    CGFloat btnHeight = 60.0;
 
     shortsDownloadBtn.frame = CGRectMake(
         likeFrame.origin.x,
@@ -2526,12 +2526,11 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
         }
     }
 
-    UIView *shortsLikeButton = HPlusFindViewWithID(self, @"id.reel_like_button");
-
-    if (shortsLikeButton && IS_ENABLED(AddDownloadToShorts)) {
+    if (IS_ENABLED(AddDownloadToShorts)) {
+        UIView *shortsLikeButton = HPlusFindViewWithID(self, @"id.reel_like_button");
         UIView *shortsDownloadBtn = [self viewWithTag:1501];
 
-        if (shortsDownloadBtn && !shortsDownloadBtn.hidden) {
+        if (shortsLikeButton && shortsDownloadBtn && !shortsDownloadBtn.hidden) {
             CGPoint btnPoint = [self convertPoint:point toView:shortsDownloadBtn];
 
             if ([shortsDownloadBtn pointInside:btnPoint withEvent:event]) {
@@ -2571,26 +2570,29 @@ static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
 
 %new
 - (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
-    UIViewController *vc = nil;
+    YTShortsPlayerViewController *shortsPlayerView = (YTShortsPlayerViewController *)self._viewControllerForAncestor;
 
-    @try {
-        vc = [self valueForKey:@"_viewControllerForAncestor"];
-    } @catch (...) {}
+    if (!shortsPlayerView) return;
 
-    if (!vc) return;
-
-    YTShortsPlayerViewController *shortsPlayerView = (YTShortsPlayerViewController *)vc;
     YTPlayerViewController *player = nil;
 
-    if (shortsPlayerView.childViewControllers.count > 0) {
-        player = (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
+    for (UIViewController *vc in shortsPlayerView.childViewControllers) {
+        if ([vc isKindOfClass:[%c(YTPlayerViewController) class]]) {
+            player = (YTPlayerViewController *)vc;
+            break;
+        }
+    }
+
+    if (!player) {
+        player = HPlusCurrentPlayerViewController;
     }
 
     if (!player) return;
 
     UIViewController *presenter = HPlusPresenterForSender(button, player);
+    YTPlayerViewController *resolved = HPlusPlayerFromViewController(presenter) ?: player;
 
-    HPlusShowDownloadManager(player, presenter, button, YES);
+    HPlusShowDownloadManager(resolved, presenter, button, YES);
 }
 
 %end
