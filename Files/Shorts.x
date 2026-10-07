@@ -129,11 +129,7 @@ static void HPlusFilterShortsButtons(_ASDisplayView *self, NSString *iden) {
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton)),
-        @"eml.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
-        @"id.reel_save_button": @(IS_ENABLED(RemoveShortsSaveButton)),
-        @"eml.reel_playlist_button": @(IS_ENABLED(RemoveShortsSaveButton)),
-        @"id.reel_playlist_button": @(IS_ENABLED(RemoveShortsSaveButton))
+        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
     };
     for (NSString *button in buttonsList) {
         if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
@@ -155,13 +151,19 @@ static void HPlusAddShortsButtons(UIView *self, NSString *iden) {
     NSDictionary *possibleIds = @{
 	      @"eml.compact_subscribe_button": @(IS_ENABLED(RemoveShortsChannelName)),
         @"eml.reel_channel_bar.channel_name": @(IS_ENABLED(RemoveShortsChannelName)),
-        @"decorated-avatar-id": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"id.channel.reel.avatar": @(IS_ENABLED(RemoveShortsChannelName)),
         @"eml.reel_sponsor_button": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"id.reel_sponsor_button": @(IS_ENABLED(RemoveShortsChannelName)),
+        @"eml.reel_avatar_stack": @(IS_ENABLED(RemoveShortsChannelName)),
         @"id.reel_multi_format_link": @(IS_ENABLED(RemoveShortsRelatedVideo)),
         @"eml.shorts-video-title": @(IS_ENABLED(RemoveShortsTitleButton)),
+        @"id.playlist.save_playlist": @(IS_ENABLED(RemoveShortsSaveButton)),
+        @"id.reel.save_playlist": @(IS_ENABLED(RemoveShortsSaveButton)),
+        @"id.reel.save_playlist_button": @(IS_ENABLED(RemoveShortsSaveButton)),
+        @"eml.reel.save_playlist_button": @(IS_ENABLED(RemoveShortsSaveButton)),
         @"eml.ad_badge": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"eml.badge": @(IS_ENABLED(RemoveShortsSoundButton)),
-        @"eml.reel_sound_metadata": @(IS_ENABLED(RemoveShortsSoundButton)),
+        @"id.elements.components.suggested_action.button": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reels_dismissal_toast": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reels_empty_state_label": @(IS_ENABLED(RemoveShortsSoundButton)),
         @"id.reels_vertical_navigation_edu_overlay_animation_view": @(IS_ENABLED(RemoveShortsSoundButton)),
