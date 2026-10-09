@@ -2299,7 +2299,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         [downloadBtn setImage:icon forState:UIControlStateNormal];
         downloadBtn.tintColor = [UIColor whiteColor];
         downloadBtn.exclusiveTouch = YES;
-        downloadBtn.tag = 1501;
+        downloadBtn.tag = 1503;
         [downloadBtn addTarget:self action:@selector(didTapHPlusShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
         [downloadBtn enableNewTouchFeedback];
         [self addSubview:downloadBtn];
@@ -2438,53 +2438,38 @@ static UIView *HPlusFindViewWithID(UIView *parent, NSString *identifier) {
     }
 
     if (!IS_ENABLED(AddDownloadToShorts)) return;
-
-    UIView *likeButton = HPlusFindViewWithID(self, @"id.reel_like_button");
-
-    if (!likeButton) return;
-
-    self.clipsToBounds = NO;
-
-    YTQTMButton *shortsDownloadBtn = (YTQTMButton *)[self viewWithTag:1501];
-
-    if (!shortsDownloadBtn) {
+    YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
+    if (!downloadBtn) {
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
         UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-
-        shortsDownloadBtn = [%c(YTQTMButton) iconButton];
-        [shortsDownloadBtn setImage:icon forState:UIControlStateNormal];
-        shortsDownloadBtn.tintColor = [UIColor whiteColor];
-        shortsDownloadBtn.exclusiveTouch = YES;
-        shortsDownloadBtn.userInteractionEnabled = YES;
-        shortsDownloadBtn.tag = 1501;
-
-        [shortsDownloadBtn addTarget:self action:@selector(didTapHPlusShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
-
-        if ([shortsDownloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
-            [shortsDownloadBtn enableNewTouchFeedback];
-        }
-
-        [self addSubview:shortsDownloadBtn];
+        downloadBtn = [%c(YTQTMButton) iconButton];
+        [downloadBtn setImage:icon forState:UIControlStateNormal];
+        downloadBtn.tintColor = [UIColor whiteColor];
+        downloadBtn.exclusiveTouch = YES;
+        downloadBtn.tag = 1501;
+        [downloadBtn addTarget:self action:@selector(didTapHPlusShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
+        [downloadBtn enableNewTouchFeedback];
+        [self addSubview:downloadBtn];
     }
-
-    shortsDownloadBtn.hidden = NO;
-
-    CGRect likeFrame = [likeButton convertRect:likeButton.bounds toView:self];
-
     CGFloat btnWidth = 64.0;
     CGFloat btnHeight = 60.0;
-
-    shortsDownloadBtn.frame = CGRectMake(
-        likeFrame.origin.x,
-        likeFrame.origin.y - btnHeight,
-        btnWidth,
-        btnHeight
-    );
-
-    [self bringSubviewToFront:shortsDownloadBtn];
-
-    UILabel *downloadLabel = (UILabel *)[self viewWithTag:1503];
-
+    YTReelElementAsyncComponentView *pov = nil;
+    @try {
+        pov = [self valueForKey:@"_playerOverlayView"];
+    } @catch (...) {}
+    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
+    CGFloat X = actionBar.frame.origin.x;
+    CGFloat Y = 0.0;
+    if (pov == nil) {
+        Y = actionBar.frame.origin.y - 76.0;
+        btnHeight = btnHeight + 16.0;
+    } else {
+        Y = pov.frame.origin.y - 68.0;
+    }
+    downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
+    [self bringSubviewToFront:downloadBtn];
+    
+    UILabel *downloadLabel = (UILabel *)[self viewWithTag:1502];
     if (!downloadLabel) {
         downloadLabel = [[UILabel alloc] init];
         downloadLabel.text = NSLocalizedString(@"تنزيل", nil);
@@ -2492,56 +2477,16 @@ static UIView *HPlusFindViewWithID(UIView *parent, NSString *identifier) {
         downloadLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightBold];
         downloadLabel.textAlignment = NSTextAlignmentCenter;
         downloadLabel.backgroundColor = [UIColor clearColor];
-        downloadLabel.tag = 1503;
+        downloadLabel.tag = 1502;
         downloadLabel.userInteractionEnabled = NO;
         downloadLabel.layer.shadowColor = [[UIColor blackColor] CGColor];
         downloadLabel.layer.shadowOffset = CGSizeMake(0.0, 1.0);
-        downloadLabel.layer.shadowRadius = 2.0;
+        downloadLabel.layer.shadowRadius = 1.0;
         downloadLabel.layer.shadowOpacity = 0.8;
         [self addSubview:downloadLabel];
     }
-
-    downloadLabel.hidden = NO;
-
-    downloadLabel.frame = CGRectMake(
-        likeFrame.origin.x,
-        likeFrame.origin.y - btnHeight + 42.0,
-        btnWidth,
-        20.0
-    );
-
+    downloadLabel.frame = CGRectMake(X, Y + 42.0, btnWidth, 20.0);
     [self bringSubviewToFront:downloadLabel];
-}
-
-- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
-    NSString *accessibilityIdentifier = [self accessibilityIdentifier];
-
-    if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
-        UIView *downloadBtn = [self viewWithTag:1502];
-
-        if (downloadBtn && !downloadBtn.hidden) {
-            CGPoint btnPoint = [self convertPoint:point toView:downloadBtn];
-
-            if ([downloadBtn pointInside:btnPoint withEvent:event]) {
-                return YES;
-            }
-        }
-    }
-
-    if (IS_ENABLED(AddDownloadToShorts)) {
-        UIView *shortsLikeButton = HPlusFindViewWithID(self, @"id.reel_like_button");
-        UIView *shortsDownloadBtn = [self viewWithTag:1501];
-
-        if (shortsLikeButton && shortsDownloadBtn && !shortsDownloadBtn.hidden) {
-            CGPoint btnPoint = [self convertPoint:point toView:shortsDownloadBtn];
-
-            if ([shortsDownloadBtn pointInside:btnPoint withEvent:event]) {
-                return YES;
-            }
-        }
-    }
-
-    return %orig;
 }
 
 %new
