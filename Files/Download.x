@@ -2296,6 +2296,9 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
         downloadBtn = [%c(YTQTMButton) iconButton];
         [downloadBtn setImage:icon forState:UIControlStateNormal];
+		    downloadBtn.text = NSLocalizedString(@"تنزيل", nil);
+        downloadBtn.textColor = [UIColor whiteColor];
+        downloadBtn.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightBold];
         downloadBtn.tintColor = [UIColor whiteColor];
         downloadBtn.exclusiveTouch = YES;
         downloadBtn.tag = 1501;
