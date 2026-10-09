@@ -2285,158 +2285,10 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
 
 %end
 
-/*
 %hook YTReelWatchPlaybackOverlayView
 
 - (void)layoutSubviews {
     %orig;
-    if (!IS_ENABLED(AddDownloadToShorts)) return;
-    YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
-    if (!downloadBtn) {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-        UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-        downloadBtn = [%c(YTQTMButton) iconButton];
-        [downloadBtn setImage:icon forState:UIControlStateNormal];
-        downloadBtn.tintColor = [UIColor whiteColor];
-        downloadBtn.exclusiveTouch = YES;
-        downloadBtn.tag = 1503;
-        [downloadBtn addTarget:self action:@selector(didTapHPlusShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
-        [downloadBtn enableNewTouchFeedback];
-        [self addSubview:downloadBtn];
-    }
-    CGFloat btnWidth = 64.0;
-    CGFloat btnHeight = 60.0;
-    YTReelElementAsyncComponentView *pov = nil;
-    @try {
-        pov = [self valueForKey:@"_playerOverlayView"];
-    } @catch (...) {}
-    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
-    CGFloat X = actionBar.frame.origin.x;
-    CGFloat Y = 0.0;
-    if (pov == nil) {
-        Y = actionBar.frame.origin.y - 76.0;
-        btnHeight = btnHeight + 16.0;
-    } else {
-        Y = pov.frame.origin.y - 68.0;
-    }
-    downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
-    [self bringSubviewToFront:downloadBtn];
-    
-    UILabel *downloadLabel = (UILabel *)[self viewWithTag:1502];
-    if (!downloadLabel) {
-        downloadLabel = [[UILabel alloc] init];
-        downloadLabel.text = NSLocalizedString(@"تنزيل", nil);
-        downloadLabel.textColor = [UIColor whiteColor];
-        downloadLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightBold];
-        downloadLabel.textAlignment = NSTextAlignmentCenter;
-        downloadLabel.backgroundColor = [UIColor clearColor];
-        downloadLabel.tag = 1502;
-        downloadLabel.userInteractionEnabled = NO;
-        downloadLabel.layer.shadowColor = [[UIColor blackColor] CGColor];
-        downloadLabel.layer.shadowOffset = CGSizeMake(0.0, 1.0);
-        downloadLabel.layer.shadowRadius = 2.0;
-        downloadLabel.layer.shadowOpacity = 0.8;
-        [self addSubview:downloadLabel];
-    }
-    downloadLabel.frame = CGRectMake(X, Y + 42.0, btnWidth, 20.0);
-    [self bringSubviewToFront:downloadLabel];
-}
-
-%new
-- (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
-    YTShortsPlayerViewController *shortsPlayerView = (YTShortsPlayerViewController *)self._viewControllerForAncestor;
-    YTPlayerViewController *player = (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
-    UIViewController *presenter = HPlusPresenterForSender(button, player);
-    HPlusShowDownloadManager(player, presenter, button, YES);
-}
-
-%end
-*/
-
-static UIView *HPlusFindViewWithID(UIView *parent, NSString *identifier) {
-    for (UIView *subview in parent.subviews) {
-        if ([[subview accessibilityIdentifier] isEqualToString:identifier]) {
-            return subview;
-        }
-        UIView *found = HPlusFindViewWithID(subview, identifier);
-        if (found) return found;
-    }
-    return nil;
-}
-
-%hook _ASDisplayView
-
-- (void)layoutSubviews {
-    %orig;
-
-    NSString *accessibilityIdentifier = [self accessibilityIdentifier];
-
-    if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
-        if (!IS_ENABLED(AddDownloadToVideo)) return;
-
-        BOOL isMainPlayerBar = NO;
-        UIResponder *responder = self;
-
-        while ((responder = [responder nextResponder])) {
-            if ([responder isKindOfClass:[%c(YTWatchNextView) class]]) {
-                isMainPlayerBar = YES;
-                break;
-            }
-        }
-
-        YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1502];
-
-        if (!isMainPlayerBar) {
-            if (downloadBtn) {
-                downloadBtn.hidden = YES;
-            }
-            return;
-        }
-
-        self.clipsToBounds = NO;
-
-        if (!downloadBtn) {
-            UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-            UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-
-            downloadBtn = [%c(YTQTMButton) iconButton];
-            [downloadBtn setImage:icon forState:UIControlStateNormal];
-            downloadBtn.tintColor = [UIColor whiteColor];
-            downloadBtn.exclusiveTouch = YES;
-            downloadBtn.userInteractionEnabled = YES;
-            downloadBtn.tag = 1502;
-
-            [downloadBtn addTarget:self action:@selector(didTapHPlusVideoDownload:) forControlEvents:UIControlEventTouchUpInside];
-
-            if ([downloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
-                [downloadBtn enableNewTouchFeedback];
-            }
-
-            [self addSubview:downloadBtn];
-        }
-
-        downloadBtn.hidden = NO;
-
-        CGFloat btnWidth = 41.0;
-        CGFloat btnHeight = 48.0;
-        CGFloat X = 210.0;
-        CGFloat Y = 0.0;
-
-        UIView *likeButton = HPlusFindViewWithID(self, @"id.video.like.button");
-
-        if (likeButton) {
-            CGRect frameInSelf = [likeButton convertRect:likeButton.bounds toView:self];
-            X = CGRectGetMaxX(frameInSelf);
-            Y = frameInSelf.origin.y;
-            btnHeight = frameInSelf.size.height;
-        }
-
-        downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
-        [self bringSubviewToFront:downloadBtn];
-
-        return;
-    }
-
     if (!IS_ENABLED(AddDownloadToShorts)) return;
     YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
     if (!downloadBtn) {
@@ -2458,7 +2310,7 @@ static UIView *HPlusFindViewWithID(UIView *parent, NSString *identifier) {
         pov = [self valueForKey:@"_playerOverlayView"];
     } @catch (...) {}
     YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
-    CGFloat X = actionBar.frame.origin.x;
+    CGFloat X = [UIScreen mainScreen].bounds.size.width - actionBar.frame.origin.x - btnWidth;
     CGFloat Y = 0.0;
     if (pov == nil) {
         Y = actionBar.frame.origin.y - 76.0;
@@ -2468,39 +2320,123 @@ static UIView *HPlusFindViewWithID(UIView *parent, NSString *identifier) {
     }
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
-    
-    UILabel *downloadLabel = (UILabel *)[self viewWithTag:1502];
-    if (!downloadLabel) {
-        downloadLabel = [[UILabel alloc] init];
-        downloadLabel.text = NSLocalizedString(@"تنزيل", nil);
-        downloadLabel.textColor = [UIColor whiteColor];
-        downloadLabel.font = [UIFont systemFontOfSize:12.0 weight:UIFontWeightBold];
-        downloadLabel.textAlignment = NSTextAlignmentCenter;
-        downloadLabel.backgroundColor = [UIColor clearColor];
-        downloadLabel.tag = 1502;
-        downloadLabel.userInteractionEnabled = NO;
-        downloadLabel.layer.shadowColor = [[UIColor blackColor] CGColor];
-        downloadLabel.layer.shadowOffset = CGSizeMake(0.0, 1.0);
-        downloadLabel.layer.shadowRadius = 1.0;
-        downloadLabel.layer.shadowOpacity = 0.8;
-        [self addSubview:downloadLabel];
+}
+
+%new
+- (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
+    YTShortsPlayerViewController *shortsPlayerView = (YTShortsPlayerViewController *)self._viewControllerForAncestor;
+    YTPlayerViewController *player = (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
+    UIViewController *presenter = HPlusPresenterForSender(button, player);
+    HPlusShowDownloadManager(player, presenter, button, YES);
+}
+
+%end
+
+static UIView * HPlusFindViewWithID(UIView *parent, NSString *identifier) {
+    for (UIView *subview in parent.subviews) {
+        if ([[subview accessibilityIdentifier] isEqualToString:identifier]) {
+            return subview;
+        }
+        UIView *found = HPlusFindViewWithID(subview, identifier);
+        if (found) return found;
     }
-    downloadLabel.frame = CGRectMake(X, Y + 42.0, btnWidth, 20.0);
-    [self bringSubviewToFront:downloadLabel];
+    return nil;
+}
+
+%hook _ASDisplayView
+
+- (void)layoutSubviews {
+    %orig;
+    
+    NSString *accessibilityIdentifier = [self accessibilityIdentifier];
+    if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
+        if (!IS_ENABLED(AddDownloadToVideo)) return;
+        
+        BOOL isMainPlayerBar = NO;
+        UIResponder *responder = self;
+        while ((responder = [responder nextResponder])) {
+            if ([responder isKindOfClass:[%c(YTWatchNextView) class]]) {
+                isMainPlayerBar = YES;
+                break;
+            }
+        }
+        
+        YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1502];
+        
+        if (!isMainPlayerBar) {
+            if (downloadBtn) {
+                downloadBtn.hidden = YES;
+            }
+            return;
+        }
+        
+        self.clipsToBounds = NO;
+        
+        if (!downloadBtn) {
+            UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
+            UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+            
+            downloadBtn = [%c(YTQTMButton) iconButton];
+            [downloadBtn setImage:icon forState:UIControlStateNormal];
+            downloadBtn.tintColor = [UIColor whiteColor];
+            downloadBtn.exclusiveTouch = YES;
+            downloadBtn.userInteractionEnabled = YES;
+            downloadBtn.tag = 1502;
+            
+            [downloadBtn addTarget:self action:@selector(didTapHPlusVideoDownload:) forControlEvents:UIControlEventTouchUpInside];
+            
+            if ([downloadBtn respondsToSelector:@selector(enableNewTouchFeedback)]) {
+                [downloadBtn enableNewTouchFeedback];
+            }
+            
+            [self addSubview:downloadBtn];
+        }
+        
+        downloadBtn.hidden = NO;
+        
+        CGFloat btnWidth = 41.0;
+        CGFloat btnHeight = 48.0;
+        CGFloat X = 210.0; 
+        CGFloat Y = 0.0;
+        
+        UIView *likeButton = HPlusFindViewWithID(self, @"id.video.like.button");
+        
+        if (likeButton) {
+            CGRect frameInSelf = [likeButton convertRect:likeButton.bounds toView:self];
+            X = CGRectGetMaxX(frameInSelf);
+            Y = frameInSelf.origin.y;
+            btnHeight = frameInSelf.size.height;
+        }
+        
+        downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
+        [self bringSubviewToFront:downloadBtn];
+    }
+}
+
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
+    NSString *accessibilityIdentifier = [self accessibilityIdentifier];
+    if ([accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
+        UIView *downloadBtn = [self viewWithTag:1502];
+        if (downloadBtn && !downloadBtn.hidden) {
+            CGPoint btnPoint = [self convertPoint:point toView:downloadBtn];
+            if ([downloadBtn pointInside:btnPoint withEvent:event]) {
+                return YES;
+            }
+        }
+    }
+    return %orig;
 }
 
 %new
 - (void)didTapHPlusVideoDownload:(YTQTMButton *)button {
     UIView *selfView = (UIView *)self;
     UIViewController *ancestorVC = [selfView _viewControllerForAncestor];
-
+    
     YTPlayerViewController *player = nil;
-
     if ([ancestorVC isKindOfClass:[%c(YTPlayerViewController) class]]) {
         player = (YTPlayerViewController *)ancestorVC;
     } else {
         UIResponder *responder = selfView;
-
         while ((responder = [responder nextResponder])) {
             if ([responder isKindOfClass:[%c(YTPlayerViewController) class]]) {
                 player = (YTPlayerViewController *)responder;
@@ -2508,36 +2444,10 @@ static UIView *HPlusFindViewWithID(UIView *parent, NSString *identifier) {
             }
         }
     }
-
+    
     UIViewController *presenter = HPlusPresenterForSender(button, player);
     YTPlayerViewController *resolved = HPlusPlayerFromViewController(presenter) ?: player ?: HPlusCurrentPlayerViewController;
-
-    HPlusShowDownloadManager(resolved, presenter, button, NO);
-}
-
-%new
-- (void)didTapHPlusShortsDownload:(YTQTMButton *)button {
-    UIView *selfView = (UIView *)self;
-    UIViewController *ancestorVC = [selfView _viewControllerForAncestor];
-
-    YTPlayerViewController *player = nil;
-
-    if ([ancestorVC isKindOfClass:[%c(YTPlayerViewController) class]]) {
-        player = (YTPlayerViewController *)ancestorVC;
-    } else {
-        UIResponder *responder = selfView;
-
-        while ((responder = [responder nextResponder])) {
-            if ([responder isKindOfClass:[%c(YTPlayerViewController) class]]) {
-                player = (YTPlayerViewController *)responder;
-                break;
-            }
-        }
-    }
-
-    UIViewController *presenter = HPlusPresenterForSender(button, player);
-    YTPlayerViewController *resolved = HPlusPlayerFromViewController(presenter) ?: player ?: HPlusCurrentPlayerViewController;
-
+    
     HPlusShowDownloadManager(resolved, presenter, button, NO);
 }
 
