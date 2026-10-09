@@ -2296,9 +2296,6 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         UIImage *icon = [[UIImage systemImageNamed:@"arrowshape.down.circle" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
         downloadBtn = [%c(YTQTMButton) iconButton];
         [downloadBtn setImage:icon forState:UIControlStateNormal];
-        [downloadBtn setTitle:NSLocalizedString(@"تنزيل", nil) forState:UIControlStateNormal];
-        [downloadBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        [downloadBtn.titleLabel setFont:[UIFont systemFontOfSize:12.0 weight:UIFontWeightBold]];
         downloadBtn.tintColor = [UIColor whiteColor];
         downloadBtn.exclusiveTouch = YES;
         downloadBtn.tag = 1501;
@@ -2306,8 +2303,8 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         [downloadBtn enableNewTouchFeedback];
         [self addSubview:downloadBtn];
     }
-    CGFloat btnWidth = 64.0;
-    CGFloat btnHeight = 60.0;
+    CGFloat btnWidth = 68.0;
+    CGFloat btnHeight = 64.0;
     YTReelElementAsyncComponentView *pov = nil;
     @try {
         pov = [self valueForKey:@"_playerOverlayView"];
