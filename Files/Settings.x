@@ -621,27 +621,27 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
 %end
 
 	%ctor {
-	    [[NSUserDefaults standardUserDefaults] registerDefaults:@{
-	        AutoClearCache: @YES,
-	        DownloadMethod: @2,
-	        YTLogoIndex: @1,
-	        BackgroundPlayback: @YES,
-	        DownloadManager: @YES,
-	        SBButtonKey: @YES,
-	        DisableHints: @YES,
-	        RewindSeconds: @10.0,
-	        ForwardSeconds: @10.0,
-	    }];
-	    %init;
-	
-	‏    dispatch_async(dispatch_get_main_queue(), ^{
-	‏        UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
-	‏        [center requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge) completionHandler:^(BOOL granted, NSError * _Nullable error) {
-	‏            if (granted) {
-	‏                dispatch_async(dispatch_get_main_queue(), ^{
-	‏                    [[UIApplication sharedApplication] registerForRemoteNotifications];
-	                });
-	            }
-	        }];
-	    });
+    [[NSUserDefaults standardUserDefaults] registerDefaults:@{
+        AutoClearCache: @YES,
+        DownloadMethod: @2,
+        YTLogoIndex: @1,
+        BackgroundPlayback: @YES,
+        DownloadManager: @YES,
+        SBButtonKey: @YES,
+        DisableHints: @YES,
+        RewindSeconds: @10.0,
+        ForwardSeconds: @10.0,
+    }];
+    %init;
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+        [center requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge) completionHandler:^(BOOL granted, NSError * _Nullable error) {
+            if (granted) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [[UIApplication sharedApplication] registerForRemoteNotifications];
+                });
+            }
+        }];
+    });
 }
