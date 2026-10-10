@@ -2303,8 +2303,8 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         [downloadBtn enableNewTouchFeedback];
         [self addSubview:downloadBtn];
     }
-    CGFloat btnWidth = 68.0;
-    CGFloat btnHeight = 64.0;
+    CGFloat btnWidth = 64.0;
+    CGFloat btnHeight = 60.0;
     YTReelElementAsyncComponentView *pov = nil;
     @try {
         pov = [self valueForKey:@"_playerOverlayView"];
@@ -2316,7 +2316,7 @@ static UIImage *HPlusExtractPostImage(UIView *cellView) {
         Y = actionBar.frame.origin.y - 76.0;
         btnHeight = btnHeight + 16.0;
     } else {
-        Y = pov.frame.origin.y - 68.0;
+        Y = pov.frame.origin.y - 60.0;
     }
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
