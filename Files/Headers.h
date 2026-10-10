@@ -79,6 +79,7 @@
 #import <YouTubeHeader/YTSettingsSectionController.h>
 #import <YouTubeHeader/YTSearchableSettingsViewController.h>
 #import <YouTubeHeader/YTUIUtils.h>
+#import <UserNotifications/UserNotifications.h>
 
 #define DownloadFix @"HPlusDownloadFix"
 #define DownloadServerIndex @"HPlusDownloadServerIndex"
